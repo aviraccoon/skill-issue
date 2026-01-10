@@ -1,0 +1,50 @@
+/* Task button styles */
+
+.task {
+	width: 100%;
+	padding: 0.75rem 1rem;
+	background: var(--task-background);
+	color: var(--fg);
+	border: 1px solid var(--border);
+	border-radius: var(--task-radius);
+	text-align: left;
+	cursor: pointer;
+	transition:
+		border-color 0.15s,
+		transform 0.1s;
+	font-size: 1rem;
+}
+
+.task:hover {
+	border-color: var(--accent);
+}
+
+.task:active {
+	transform: scale(0.98);
+}
+
+.selected {
+	border-color: var(--accent);
+	box-shadow: 0 0 0 2px color-mix(in srgb, var(--accent) 20%, transparent);
+}
+
+.succeeded {
+	opacity: 0.5;
+	text-decoration: line-through;
+}
+
+.failing {
+	animation: almost 0.3s ease-out;
+}
+
+@keyframes almost {
+	0% {
+		transform: scale(1);
+	}
+	30% {
+		transform: scale(0.97);
+	}
+	100% {
+		transform: scale(1);
+	}
+}

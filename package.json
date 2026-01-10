@@ -1,0 +1,19 @@
+{
+	"name": "skill-issue",
+	"module": "src/index.ts",
+	"type": "module",
+	"private": true,
+	"scripts": {
+		"dev": "bun run --hot src/server.ts",
+		"build": "bun build src/index.ts --outdir dist --minify",
+		"check": "biome check && tsc --noEmit",
+		"format": "biome check --write",
+		"test": "bun test",
+		"gen:css-types": "bun scripts/gen-css-types.ts"
+	},
+	"devDependencies": {
+		"@biomejs/biome": "^2.3.11",
+		"@types/bun": "latest",
+		"typescript": "^5"
+	}
+}

@@ -1,0 +1,111 @@
+/* Dev tools panel styles */
+
+.container {
+	position: fixed;
+	bottom: 0;
+	left: 0;
+	right: 0;
+	background: #1e1e1e;
+	color: #d4d4d4;
+	font-family: "Courier New", monospace;
+	font-size: 12px;
+	border-top: 2px solid #3c3c3c;
+	z-index: 1000;
+	max-height: 50vh;
+	overflow: hidden;
+	display: flex;
+	flex-direction: column;
+}
+
+.collapsed {
+	max-height: 2rem;
+}
+
+.header {
+	display: flex;
+	justify-content: space-between;
+	align-items: center;
+	padding: 0.5rem 1rem;
+	background: #2d2d2d;
+	cursor: pointer;
+	user-select: none;
+}
+
+.header:hover {
+	background: #3c3c3c;
+}
+
+.title {
+	font-weight: bold;
+	color: #569cd6;
+}
+
+.toggle {
+	color: #808080;
+}
+
+.content {
+	padding: 1rem;
+	overflow-y: auto;
+	flex: 1;
+}
+
+.collapsed .content {
+	display: none;
+}
+
+.section {
+	margin-bottom: 1rem;
+}
+
+.section h4 {
+	color: #dcdcaa;
+	margin-bottom: 0.5rem;
+	font-size: 11px;
+	text-transform: uppercase;
+}
+
+.row {
+	display: flex;
+	gap: 1rem;
+	margin-bottom: 0.25rem;
+}
+
+.key {
+	color: #9cdcfe;
+	min-width: 100px;
+}
+
+.value {
+	color: #ce9178;
+}
+
+.valueNumber {
+	color: #b5cea8;
+}
+
+.valueHidden {
+	color: #c586c0;
+}
+
+.controls {
+	display: flex;
+	gap: 0.5rem;
+	margin-top: 1rem;
+	padding-top: 1rem;
+	border-top: 1px solid #3c3c3c;
+}
+
+.btn {
+	padding: 0.25rem 0.5rem;
+	background: #0e639c;
+	color: white;
+	border: none;
+	border-radius: 2px;
+	cursor: pointer;
+	font-size: 11px;
+}
+
+.btn:hover {
+	background: #1177bb;
+}

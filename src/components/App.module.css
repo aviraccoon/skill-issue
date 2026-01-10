@@ -1,0 +1,82 @@
+/* App layout styles */
+
+.header {
+	display: flex;
+	justify-content: space-between;
+	align-items: baseline;
+	padding: 1rem 0;
+	border-bottom: 1px solid var(--border);
+	margin-bottom: 1rem;
+}
+
+.title {
+	font-size: 1.5rem;
+	font-weight: 600;
+	text-transform: capitalize;
+	background: var(--title-background);
+	-webkit-background-clip: text;
+	-webkit-text-fill-color: var(--title-text-fill);
+	background-clip: text;
+}
+
+.timeBlock {
+	color: var(--muted);
+	text-transform: capitalize;
+}
+
+.main {
+	display: grid;
+	grid-template-columns: 1fr 200px;
+	gap: 1.5rem;
+	flex: 1;
+}
+
+.taskListContainer {
+	display: flex;
+	flex-direction: column;
+	gap: 1rem;
+}
+
+.slots {
+	display: flex;
+	gap: 0.5rem;
+}
+
+.slot {
+	width: 1rem;
+	height: 1rem;
+	border-radius: 50%;
+	background: var(--slot-empty);
+	border: 2px solid var(--border);
+}
+
+.slotUsed {
+	background: var(--slot-used);
+}
+
+.taskList {
+	list-style: none;
+	display: flex;
+	flex-direction: column;
+	gap: 0.5rem;
+}
+
+.footer {
+	padding: 1rem 0;
+	border-top: 1px solid var(--border);
+	margin-top: 1rem;
+}
+
+.skipBtn {
+	padding: 0.5rem 1rem;
+	background: transparent;
+	border: 1px solid var(--border);
+	border-radius: 0.25rem;
+	cursor: pointer;
+	color: var(--muted);
+}
+
+.skipBtn:hover {
+	border-color: var(--fg);
+	color: var(--fg);
+}

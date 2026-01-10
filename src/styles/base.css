@@ -1,0 +1,79 @@
+/* Global reset and base styles */
+
+* {
+	box-sizing: border-box;
+	margin: 0;
+	padding: 0;
+}
+
+:root {
+	/* Core colors */
+	--bg: #fafafa;
+	--fg: #1a1a1a;
+	--muted: #666;
+	--border: #e0e0e0;
+	--accent: #2563eb;
+	--success: #16a34a;
+	--slot-empty: #e5e7eb;
+	--slot-used: #9ca3af;
+	--surface: #ffffff;
+
+	/* Time-based backgrounds */
+	--morning-bg: #fef9c3;
+	--afternoon-bg: #fafafa;
+	--evening-bg: #fef3c7;
+	--night-bg: #1e293b;
+	--night-fg: #f1f5f9;
+
+	/* Component theming (overridden by themes) */
+	--task-radius: 0.5rem;
+	--task-background: var(--surface);
+	--panel-radius: 0.5rem;
+	--panel-background: var(--surface);
+	--attempt-btn-background: var(--accent);
+	--attempt-btn-color: white;
+	--attempt-btn-radius: 0.25rem;
+	--attempt-btn-border: none;
+	--title-background: none;
+	--title-text-fill: var(--fg);
+
+	font-family: system-ui, -apple-system, sans-serif;
+	font-size: 16px;
+	line-height: 1.5;
+}
+
+body {
+	background: var(--bg);
+	color: var(--fg);
+	min-height: 100vh;
+}
+
+#app {
+	max-width: 600px;
+	margin: 0 auto;
+	padding: 1rem;
+	display: flex;
+	flex-direction: column;
+	min-height: 100vh;
+}
+
+/* Time block theming */
+[data-time="morning"] {
+	--bg: var(--morning-bg);
+}
+
+[data-time="afternoon"] {
+	--bg: var(--afternoon-bg);
+}
+
+[data-time="evening"] {
+	--bg: var(--evening-bg);
+}
+
+[data-time="night"] {
+	--bg: var(--night-bg);
+	--fg: var(--night-fg);
+	--border: #334155;
+	--muted: #94a3b8;
+	--surface: #1e293b;
+}

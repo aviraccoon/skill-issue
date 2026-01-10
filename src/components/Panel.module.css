@@ -1,0 +1,70 @@
+/* Task panel styles */
+
+.panel {
+	padding: 1rem;
+	background: var(--panel-background);
+	color: var(--fg);
+	border: 1px solid var(--border);
+	border-radius: var(--panel-radius);
+	align-self: start;
+}
+
+.empty {
+	color: var(--muted);
+	font-style: italic;
+}
+
+.taskName {
+	font-weight: 600;
+	margin-bottom: 0.5rem;
+}
+
+.stats {
+	font-size: 0.875rem;
+	color: var(--muted);
+	margin-bottom: 1rem;
+}
+
+.attemptBtn {
+	width: 100%;
+	padding: 0.5rem 1rem;
+	background: var(--attempt-btn-background);
+	color: var(--attempt-btn-color);
+	border: var(--attempt-btn-border);
+	border-radius: var(--attempt-btn-radius);
+	cursor: pointer;
+	font-size: 1rem;
+	font-weight: inherit;
+}
+
+.attemptBtn:hover {
+	opacity: 0.9;
+}
+
+.attemptBtn:disabled {
+	background: var(--muted);
+	cursor: not-allowed;
+}
+
+.attemptFailed {
+	animation: attemptShake 0.4s ease-out;
+}
+
+@keyframes attemptShake {
+	0%,
+	100% {
+		transform: translateX(0);
+	}
+	20% {
+		transform: translateX(-4px);
+	}
+	40% {
+		transform: translateX(4px);
+	}
+	60% {
+		transform: translateX(-2px);
+	}
+	80% {
+		transform: translateX(2px);
+	}
+}

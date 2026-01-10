@@ -1,0 +1,52 @@
+/* Theme switcher styles */
+
+.switcher {
+	position: fixed;
+	top: 1rem;
+	right: 1rem;
+	display: flex;
+	gap: 0.25rem;
+	background: var(--bg);
+	border: 1px solid var(--border);
+	border-radius: 0.5rem;
+	padding: 0.25rem;
+	z-index: 100;
+}
+
+.btn {
+	width: 1.5rem;
+	height: 1.5rem;
+	border: 2px solid transparent;
+	border-radius: 0.25rem;
+	cursor: pointer;
+	transition: border-color 0.15s;
+}
+
+.btn:hover {
+	border-color: var(--fg);
+}
+
+.active {
+	border-color: var(--accent);
+}
+
+/* Theme preview colors - these don't change with theme */
+.light {
+	background: linear-gradient(135deg, #fafafa 50%, #fef9c3 50%);
+}
+
+.dark {
+	background: linear-gradient(135deg, #1e293b 50%, #334155 50%);
+}
+
+.hacker {
+	background: linear-gradient(135deg, #0a0a0a 50%, #00ff00 50%);
+}
+
+.cozy {
+	background: linear-gradient(135deg, #fdf4e3 50%, #d4a574 50%);
+}
+
+.vapor {
+	background: linear-gradient(135deg, #ff71ce 50%, #01cdfe 50%);
+}

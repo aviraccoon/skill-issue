@@ -1,0 +1,97 @@
+/* Theme definitions */
+
+/* Dark theme */
+[data-theme="dark"] {
+	--bg: #0f172a;
+	--fg: #e2e8f0;
+	--muted: #64748b;
+	--border: #334155;
+	--accent: #3b82f6;
+	--success: #22c55e;
+	--slot-empty: #1e293b;
+	--slot-used: #475569;
+	--surface: #1e293b;
+	--morning-bg: #1e293b;
+	--afternoon-bg: #0f172a;
+	--evening-bg: #1e293b;
+	--night-bg: #020617;
+	--night-fg: #f1f5f9;
+}
+
+/* Hacker theme - because 2am productivity */
+[data-theme="hacker"] {
+	--bg: #0a0a0a;
+	--fg: #00ff00;
+	--muted: #00aa00;
+	--border: #003300;
+	--accent: #00ff00;
+	--success: #00ff00;
+	--slot-empty: #001100;
+	--slot-used: #00ff00;
+	--surface: #0a0a0a;
+	--morning-bg: #0a0a0a;
+	--afternoon-bg: #0a0a0a;
+	--evening-bg: #0a0a0a;
+	--night-bg: #000000;
+	--night-fg: #00ff00;
+
+	/* Component overrides */
+	--attempt-btn-background: #003300;
+	--attempt-btn-border: 1px solid #00ff00;
+
+	font-family: "Courier New", monospace;
+}
+
+/* Cozy theme - warm and forgiving */
+[data-theme="cozy"] {
+	--bg: #fdf4e3;
+	--fg: #5c4033;
+	--muted: #8b7355;
+	--border: #d4a574;
+	--accent: #c67c4e;
+	--success: #7d9d6a;
+	--slot-empty: #f5e6d3;
+	--slot-used: #d4a574;
+	--surface: #fff8eb;
+	--morning-bg: #fff8eb;
+	--afternoon-bg: #fdf4e3;
+	--evening-bg: #f5e6d3;
+	--night-bg: #3d2914;
+	--night-fg: #fdf4e3;
+
+	/* Component overrides */
+	--task-radius: 1rem;
+	--panel-radius: 1rem;
+	--attempt-btn-background: #c67c4e;
+	--attempt-btn-radius: 1rem;
+
+	font-family: Georgia, serif;
+}
+
+/* Vaporwave theme - aesthetic dysfunction */
+[data-theme="vapor"] {
+	--bg: #1a1a2e;
+	--fg: #ff71ce;
+	--muted: #01cdfe;
+	--border: #b967ff;
+	--accent: #05ffa1;
+	--success: #05ffa1;
+	--slot-empty: #2d2d44;
+	--slot-used: #ff71ce;
+	--surface: #16213e;
+	--morning-bg: #1a1a2e;
+	--afternoon-bg: #1a1a2e;
+	--evening-bg: #16213e;
+	--night-bg: #0f0f1a;
+	--night-fg: #fffb96;
+
+	/* Component overrides */
+	--task-background: linear-gradient(135deg, #1a1a2e, #16213e);
+	--panel-background: linear-gradient(135deg, #1a1a2e, #16213e);
+	--attempt-btn-background: linear-gradient(90deg, #ff71ce, #01cdfe);
+	--attempt-btn-color: #1a1a2e;
+	--title-background: linear-gradient(90deg, #ff71ce, #01cdfe, #05ffa1);
+	--title-text-fill: transparent;
+
+	font-family: "Arial Black", sans-serif;
+}
