@@ -158,10 +158,9 @@ export function initDevTools(store: Store<GameState>) {
 	store.subscribe((state) => renderDevState(state));
 }
 
-/** Formats a multiplier as a percentage modifier string (e.g., "+10%" or "-20%"). */
+/** Formats a multiplier for display (e.g., "×1.1" or "×0.85"). */
 function formatModifier(multiplier: number): string {
-	const percent = Math.round((multiplier - 1) * 100);
-	return percent >= 0 ? `+${percent}%` : `${percent}%`;
+	return `×${multiplier.toFixed(2)}`;
 }
 
 /** Renders the current state in the dev panel. */
