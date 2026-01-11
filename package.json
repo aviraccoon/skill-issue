@@ -5,7 +5,7 @@
 	"private": true,
 	"scripts": {
 		"dev": "bun run --hot src/server.ts",
-		"build": "bun build src/index.ts --outdir dist --minify",
+		"build": "bun build index.html --outdir dist --minify",
 		"check": "biome check && tsc --noEmit",
 		"format": "biome check --write",
 		"test": "bun test",
