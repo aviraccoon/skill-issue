@@ -1,5 +1,9 @@
 import { DAYS, type GameState, TIME_BLOCKS } from "../state";
 import type { Store } from "../store";
+import {
+	ALL_NIGHTER_ENERGY_PENALTY,
+	canPushThrough,
+} from "../systems/allnighter";
 import { wasDogWalkedToday } from "../systems/dog";
 import { calculateSleepQuality } from "../systems/sleep";
 import { clamp } from "../utils/math";
@@ -38,7 +42,10 @@ export function endWeekendDay(store: Store<GameState>) {
 	showDaySummary(store);
 }
 
-/** Shows the end-of-day summary screen. Handles dog walk failure state. */
+/**
+ * Handles end-of-day flow. May show night choice or day summary.
+ * Called when night block ends or extended night ends.
+ */
 function showDaySummary(store: Store<GameState>) {
 	const state = store.getState();
 
@@ -46,12 +53,21 @@ function showDaySummary(store: Store<GameState>) {
 	const dogWalked = wasDogWalkedToday(state);
 	store.set("dogFailedYesterday", !dogWalked);
 
+	// Check if player can choose to push through
+	// Only offer choice at end of normal night (not extended night, not weekend)
+	if (state.timeBlock === "night" && canPushThrough(state)) {
+		store.set("screen", "nightChoice");
+		return;
+	}
+
+	// Otherwise go straight to day summary
 	store.set("screen", "daySummary");
 }
 
 /**
  * Continues to the next day after viewing the summary.
  * Applies sleep quality modifiers and resets day state.
+ * Handles all-nighter penalties if player pushed through.
  */
 export function continueToNextDay(store: Store<GameState>) {
 	const state = store.getState();
@@ -64,22 +80,38 @@ export function continueToNextDay(store: Store<GameState>) {
 		return;
 	}
 
+	const pulledAllNighter = state.inExtendedNight;
+
 	// Calculate and apply sleep quality effects
 	const sleepMod = calculateSleepQuality(state);
 	store.update("energy", (e) => clamp(e + sleepMod.energy, 0, 1));
 	store.update("momentum", (m) => clamp(m + sleepMod.momentum, 0, 1));
+
+	// Apply all-nighter penalty if player pushed through
+	if (pulledAllNighter) {
+		store.update("energy", (e) => clamp(e - ALL_NIGHTER_ENERGY_PENALTY, 0, 1));
+	}
 
 	// Advance to next day
 	store.set("day", nextDay);
 	store.set("dayIndex", nextDayIndex);
 	store.set("screen", "game");
 
+	// Track all-nighter for next night (blocks consecutive)
+	store.set("pushedThroughLastNight", pulledAllNighter);
+	store.set("inExtendedNight", false);
+
 	// Reset based on day type
-	if (nextDayIndex >= 5) {
+	const weekend = nextDayIndex >= 5;
+	if (weekend) {
 		// Weekend - 8 action points, no time blocks
 		store.set("weekendPointsRemaining", 8);
+	} else if (pulledAllNighter) {
+		// Weekday after all-nighter - skip morning, start at afternoon
+		store.set("timeBlock", "afternoon");
+		store.set("slotsRemaining", 3);
 	} else {
-		// Weekday - morning with 3 slots
+		// Normal weekday - morning with 3 slots
 		store.set("timeBlock", "morning");
 		store.set("slotsRemaining", 3);
 	}

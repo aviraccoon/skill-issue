@@ -1,6 +1,7 @@
 import type { GameState, Task } from "../state";
 import { createInitialState, isWeekend, TIME_BLOCKS } from "../state";
 import type { Store } from "../store";
+import { calculateExtendedNightSlots } from "../systems/allnighter";
 import { clearSave } from "../systems/persistence";
 import {
 	calculateSuccessProbability,
@@ -248,7 +249,7 @@ function renderDevState(state: GameState) {
 		</div>
 		<div class="${styles.row}">
 			<span class="${styles.key}">Slots</span>
-			<span class="${styles.valueNumber}">${state.slotsRemaining}/3</span>
+			<span class="${styles.valueNumber}">${state.slotsRemaining}/${state.inExtendedNight ? calculateExtendedNightSlots(state.energy) : 3}${state.inExtendedNight ? " (late)" : ""}</span>
 		</div>
 
 		<h4>Hidden State</h4>

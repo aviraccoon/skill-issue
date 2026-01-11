@@ -8,6 +8,7 @@ import { getEvolvedDescription } from "../systems/evolution";
 import { seededShuffle } from "../utils/random";
 import appStyles from "./App.module.css";
 import { renderDaySummary } from "./DaySummary";
+import { renderNightChoice } from "./NightChoice";
 import panelStyles from "./Panel.module.css";
 import taskStyles from "./Task.module.css";
 import { renderWeekComplete } from "./WeekComplete";
@@ -27,6 +28,10 @@ export function renderApp(store: Store<GameState>) {
 	if (!app) return;
 
 	switch (state.screen) {
+		case "nightChoice":
+			gameInitialized = false;
+			renderNightChoice(store, state, app);
+			break;
 		case "daySummary":
 			gameInitialized = false;
 			renderDaySummary(store, state, app);
@@ -120,6 +125,7 @@ function renderHeader(state: GameState) {
 /** Updates the action slot or point indicators. */
 function renderSlots(state: GameState) {
 	const weekend = isWeekend(state);
+	const slotsContainer = document.querySelector(`.${appStyles.slots}`);
 
 	if (weekend) {
 		// Weekend: show remaining points
@@ -127,12 +133,26 @@ function renderSlots(state: GameState) {
 		if (pointsEl) {
 			pointsEl.textContent = `${state.weekendPointsRemaining} points`;
 		}
+	} else if (state.inExtendedNight) {
+		// Extended night: hide slot count, just show text
+		if (slotsContainer) {
+			slotsContainer.innerHTML = `<span class="${appStyles.lateNight}">Late Night</span>`;
+		}
 	} else {
-		// Weekday: show slot indicators
+		// Normal weekday: show slot indicators
+		// Rebuild slots if coming back from extended night
 		const slots = document.querySelectorAll(`.${appStyles.slot}`);
+		if (slots.length !== 3 && slotsContainer) {
+			slotsContainer.innerHTML = `
+				<span class="${appStyles.slot}"></span>
+				<span class="${appStyles.slot}"></span>
+				<span class="${appStyles.slot}"></span>
+			`;
+		}
+		const currentSlots = document.querySelectorAll(`.${appStyles.slot}`);
 		const used = 3 - state.slotsRemaining;
 
-		slots.forEach((slot, i) => {
+		currentSlots.forEach((slot, i) => {
 			slot.classList.toggle(appStyles.slotUsed, i < used);
 		});
 	}

@@ -1,6 +1,7 @@
 declare const styles: {
 	readonly footer: string;
 	readonly header: string;
+	readonly lateNight: string;
 	readonly main: string;
 	readonly phoneBtn: string;
 	readonly points: string;

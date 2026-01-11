@@ -46,7 +46,7 @@ export interface Task {
 	succeededToday: boolean;
 }
 
-export type Screen = "game" | "daySummary" | "weekComplete";
+export type Screen = "game" | "nightChoice" | "daySummary" | "weekComplete";
 
 export interface GameState {
 	day: Day;
@@ -65,6 +65,10 @@ export interface GameState {
 
 	// Dog state
 	dogFailedYesterday: boolean; // true if dog wasn't walked previous day
+
+	// All-nighter state
+	pushedThroughLastNight: boolean; // true if pulled all-nighter last night (blocks consecutive)
+	inExtendedNight: boolean; // true if currently in extended night from pushing through
 }
 
 /** Returns true if the current day is Saturday or Sunday. */
@@ -90,6 +94,8 @@ export function createInitialState(): GameState {
 		momentum: 0.5,
 		runSeed: Math.floor(Math.random() * 2147483647),
 		dogFailedYesterday: false,
+		pushedThroughLastNight: false,
+		inExtendedNight: false,
 	};
 }
 

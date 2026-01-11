@@ -1,0 +1,66 @@
+/* Night choice screen styles */
+
+.choice {
+	display: flex;
+	flex-direction: column;
+	align-items: center;
+	justify-content: center;
+	min-height: 60vh;
+	text-align: center;
+	gap: 1rem;
+}
+
+.title {
+	font-size: 2rem;
+	font-weight: 600;
+	background: var(--title-background);
+	-webkit-background-clip: text;
+	-webkit-text-fill-color: var(--title-text-fill);
+	background-clip: text;
+}
+
+.prompt {
+	font-size: 1.125rem;
+	max-width: 400px;
+	line-height: 1.6;
+}
+
+.info {
+	font-size: 1rem;
+	color: var(--muted);
+}
+
+.buttons {
+	display: flex;
+	gap: 1rem;
+	margin-top: 1rem;
+}
+
+.sleepBtn,
+.pushThroughBtn {
+	padding: 0.75rem 2rem;
+	border-radius: var(--attempt-btn-radius);
+	cursor: pointer;
+	font-size: 1rem;
+}
+
+.sleepBtn {
+	background: transparent;
+	color: var(--fg);
+	border: 1px solid var(--border);
+}
+
+.sleepBtn:hover {
+	border-color: var(--accent);
+	color: var(--accent);
+}
+
+.pushThroughBtn {
+	background: var(--attempt-btn-background);
+	color: var(--attempt-btn-color);
+	border: var(--attempt-btn-border);
+}
+
+.pushThroughBtn:hover {
+	opacity: 0.9;
+}

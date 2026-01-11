@@ -1,5 +1,5 @@
 import { continueToNextDay } from "../actions/time";
-import type { GameState } from "../state";
+import { DAYS, type GameState } from "../state";
 import type { Store } from "../store";
 import { capitalize } from "../utils/string";
 import styles from "./DaySummary.module.css";
@@ -16,13 +16,21 @@ export function renderDaySummary(
 	const attempted = tasks.filter((t) => t.attemptedToday);
 	const succeeded = tasks.filter((t) => t.succeededToday);
 
+	const pulledAllNighter = state.inExtendedNight;
 	const tone = determineTone(attempted.length, succeeded.length);
-	const narrative = generateNarrative(tone);
+	const narrative = pulledAllNighter
+		? generateAllNighterNarrative(state)
+		: generateNarrative(tone);
 	const dogNote = getDogNote(state);
+
+	// Title shows the bleed-over if all-nighter
+	const title = pulledAllNighter
+		? getAllNighterTitle(state)
+		: capitalize(state.day);
 
 	container.innerHTML = `
 		<div class="${styles.summary}">
-			<h2 class="${styles.day}">${capitalize(state.day)}</h2>
+			<h2 class="${styles.day}">${title}</h2>
 			<p class="${styles.stats}">
 				${succeeded.length} of ${attempted.length} attempts worked
 			</p>
@@ -58,6 +66,22 @@ function generateNarrative(tone: Tone): string {
 		default:
 			return "Some things happened. Some didn't. That's a day.";
 	}
+}
+
+/** Gets title showing day bleed-over for all-nighter. */
+function getAllNighterTitle(state: GameState): string {
+	const nextDay = DAYS[state.dayIndex + 1];
+	if (!nextDay) {
+		return `${capitalize(state.day)} (late)`;
+	}
+	return `${capitalize(state.day)} / ${capitalize(nextDay)}`;
+}
+
+/** Generates narrative for when player pushed through the night. */
+function generateAllNighterNarrative(state: GameState): string {
+	const nextDay = DAYS[state.dayIndex + 1];
+	const nextDayName = nextDay ? capitalize(nextDay) : "the next day";
+	return `${capitalize(state.day)} bled into ${nextDayName}. You pushed through. At some point you stopped.`;
 }
 
 /** Returns a note about the dog's state for the day. */

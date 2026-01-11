@@ -31,6 +31,8 @@ function makeState(overrides: Partial<GameState> = {}): GameState {
 		momentum: 0.5,
 		runSeed: 12345,
 		dogFailedYesterday: false,
+		pushedThroughLastNight: false,
+		inExtendedNight: false,
 		...overrides,
 	};
 }
