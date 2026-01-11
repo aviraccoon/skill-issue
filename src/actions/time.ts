@@ -28,6 +28,8 @@ export function skipTimeBlock(store: Store<GameState>) {
 		// Move to next time block
 		store.set("timeBlock", nextBlock);
 		store.set("slotsRemaining", 3);
+		// Clear selection - task may not be available in new block
+		store.set("selectedTaskId", null);
 	} else {
 		// End of day - show summary
 		showDaySummary(store);
@@ -124,4 +126,10 @@ export function continueToNextDay(store: Store<GameState>) {
 			succeededToday: false,
 		})),
 	);
+
+	// Reset friend rescue availability for new day
+	store.set("friendRescueUsedToday", false);
+
+	// Clear task selection for new day
+	store.set("selectedTaskId", null);
 }

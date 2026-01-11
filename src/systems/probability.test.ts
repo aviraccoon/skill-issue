@@ -1,11 +1,11 @@
 import { describe, expect, test } from "bun:test";
-import type { GameState, Task } from "../state";
+import { createInitialState, type GameState, type Task } from "../state";
 import { calculateSuccessProbability } from "./probability";
 
 /** Creates a minimal task for testing. */
 function makeTask(baseRate: number): Task {
 	return {
-		id: "test",
+		id: "dishes",
 		name: "Test Task",
 		category: "chores",
 		baseRate,
@@ -16,23 +16,12 @@ function makeTask(baseRate: number): Task {
 	};
 }
 
-/** Creates a minimal game state for testing. */
+/** Creates a game state for testing with sensible defaults. */
 function makeState(overrides: Partial<GameState> = {}): GameState {
 	return {
-		day: "monday",
-		dayIndex: 0,
-		timeBlock: "morning",
-		slotsRemaining: 3,
-		weekendPointsRemaining: 8,
-		tasks: [],
-		selectedTaskId: null,
-		screen: "game",
+		...createInitialState(),
 		energy: 0.5,
 		momentum: 0.5,
-		runSeed: 12345,
-		dogFailedYesterday: false,
-		pushedThroughLastNight: false,
-		inExtendedNight: false,
 		...overrides,
 	};
 }

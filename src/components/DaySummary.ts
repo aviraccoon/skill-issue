@@ -32,7 +32,7 @@ export function renderDaySummary(
 		<div class="${styles.summary}">
 			<h2 class="${styles.day}">${title}</h2>
 			<p class="${styles.stats}">
-				${succeeded.length} of ${attempted.length} attempts worked
+				${succeeded.length} of ${attempted.length} tasks
 			</p>
 			<p class="${styles.narrative}">${narrative}</p>
 			${dogNote ? `<p class="${styles.dogNote}">${dogNote}</p>` : ""}

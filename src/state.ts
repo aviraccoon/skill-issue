@@ -21,18 +21,12 @@ export interface TaskEvolution {
 	resigned: string[];
 }
 
+import type { TaskCategory, TaskId } from "./data/tasks";
+
 export interface Task {
-	id: string;
+	id: TaskId;
 	name: string;
-	category:
-		| "hygiene"
-		| "food"
-		| "chores"
-		| "dog"
-		| "work"
-		| "creative"
-		| "selfcare"
-		| "social";
+	category: TaskCategory;
 	baseRate: number; // 0-1, base success probability
 	minimalVariant?: {
 		name: string;
@@ -46,7 +40,12 @@ export interface Task {
 	succeededToday: boolean;
 }
 
-export type Screen = "game" | "nightChoice" | "daySummary" | "weekComplete";
+export type Screen =
+	| "game"
+	| "nightChoice"
+	| "daySummary"
+	| "weekComplete"
+	| "friendRescue";
 
 export interface GameState {
 	day: Day;
@@ -69,6 +68,10 @@ export interface GameState {
 	// All-nighter state
 	pushedThroughLastNight: boolean; // true if pulled all-nighter last night (blocks consecutive)
 	inExtendedNight: boolean; // true if currently in extended night from pushing through
+
+	// Friend rescue state
+	consecutiveFailures: number; // resets on success or rescue, triggers check at 3+
+	friendRescueUsedToday: boolean; // limits to 1 rescue per day
 }
 
 /** Returns true if the current day is Saturday or Sunday. */
@@ -96,6 +99,8 @@ export function createInitialState(): GameState {
 		dogFailedYesterday: false,
 		pushedThroughLastNight: false,
 		inExtendedNight: false,
+		consecutiveFailures: 0,
+		friendRescueUsedToday: false,
 	};
 }
 

@@ -1,6 +1,30 @@
-import type { Task } from "../state";
+import type { Task, TaskEvolution, TimeBlock } from "../state";
 
-export const initialTasks: Task[] = [
+/** Task category for grouping and modifiers. */
+export type TaskCategory =
+	| "hygiene"
+	| "food"
+	| "chores"
+	| "dog"
+	| "work"
+	| "creative"
+	| "selfcare"
+	| "social";
+
+/** Base task definition shape for type checking the const array. */
+interface TaskDefinitionBase {
+	id: string;
+	name: string;
+	category: TaskCategory;
+	baseRate: number;
+	minimalVariant?: { name: string; baseRate: number };
+	availableBlocks: readonly TimeBlock[];
+	weekendCost?: number;
+	evolution?: TaskEvolution;
+}
+
+/** Task definitions as const to preserve literal ID types. */
+const taskDefinitions = [
 	{
 		id: "shower",
 		name: "Shower",
@@ -25,9 +49,6 @@ export const initialTasks: Task[] = [
 				"Cleanliness is next to... what was it?",
 			],
 		},
-		failureCount: 0,
-		attemptedToday: false,
-		succeededToday: false,
 	},
 	{
 		id: "brush-teeth-morning",
@@ -52,9 +73,6 @@ export const initialTasks: Task[] = [
 				"Dentists recommend. You... consider.",
 			],
 		},
-		failureCount: 0,
-		attemptedToday: false,
-		succeededToday: false,
 	},
 	{
 		id: "brush-teeth-evening",
@@ -79,9 +97,6 @@ export const initialTasks: Task[] = [
 				"Bed soon. Teeth still unbrushed. Classic.",
 			],
 		},
-		failureCount: 0,
-		attemptedToday: false,
-		succeededToday: false,
 	},
 	{
 		id: "cook",
@@ -107,9 +122,6 @@ export const initialTasks: Task[] = [
 				"Recipes exist. Motivation doesn't.",
 			],
 		},
-		failureCount: 0,
-		attemptedToday: false,
-		succeededToday: false,
 	},
 	{
 		id: "delivery",
@@ -130,9 +142,6 @@ export const initialTasks: Task[] = [
 				"Eating counts. Method optional.",
 			],
 		},
-		failureCount: 0,
-		attemptedToday: false,
-		succeededToday: false,
 	},
 	{
 		id: "dishes",
@@ -154,9 +163,6 @@ export const initialTasks: Task[] = [
 				"You will run out of forks eventually.",
 			],
 		},
-		failureCount: 0,
-		attemptedToday: false,
-		succeededToday: false,
 	},
 	{
 		id: "walk-dog",
@@ -181,9 +187,6 @@ export const initialTasks: Task[] = [
 				"Outside exists. The dog knows this.",
 			],
 		},
-		failureCount: 0,
-		attemptedToday: false,
-		succeededToday: false,
 	},
 	{
 		id: "work",
@@ -208,9 +211,6 @@ export const initialTasks: Task[] = [
 				"Capitalism requires participation. Unfortunately.",
 			],
 		},
-		failureCount: 0,
-		attemptedToday: false,
-		succeededToday: false,
 	},
 	{
 		id: "practice-music",
@@ -235,9 +235,6 @@ export const initialTasks: Task[] = [
 				"The guitar collects dust. The dust is impressive.",
 			],
 		},
-		failureCount: 0,
-		attemptedToday: false,
-		succeededToday: false,
 	},
 	{
 		id: "shopping",
@@ -263,9 +260,6 @@ export const initialTasks: Task[] = [
 				"Commerce requires leaving. A flaw in the system.",
 			],
 		},
-		failureCount: 0,
-		attemptedToday: false,
-		succeededToday: false,
 	},
 	{
 		id: "social-event",
@@ -291,9 +285,6 @@ export const initialTasks: Task[] = [
 				"You like your friends. You also like your couch.",
 			],
 		},
-		failureCount: 0,
-		attemptedToday: false,
-		succeededToday: false,
 	},
 	{
 		id: "go-outside",
@@ -318,8 +309,17 @@ export const initialTasks: Task[] = [
 				"Vitamin D won't synthesize itself.",
 			],
 		},
-		failureCount: 0,
-		attemptedToday: false,
-		succeededToday: false,
 	},
-];
+] as const satisfies readonly TaskDefinitionBase[];
+
+/** Type-safe task ID derived from task definitions. */
+export type TaskId = (typeof taskDefinitions)[number]["id"];
+
+/** Initial tasks with runtime state fields added. */
+export const initialTasks: Task[] = taskDefinitions.map((def) => ({
+	...def,
+	availableBlocks: [...def.availableBlocks], // Convert readonly to mutable
+	failureCount: 0,
+	attemptedToday: false,
+	succeededToday: false,
+}));

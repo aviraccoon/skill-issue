@@ -1,0 +1,81 @@
+/* Friend rescue screen styles */
+
+.rescue {
+	display: flex;
+	flex-direction: column;
+	align-items: center;
+	justify-content: center;
+	min-height: 60vh;
+	text-align: center;
+	gap: 1rem;
+}
+
+.message {
+	font-size: 1.25rem;
+	font-style: italic;
+	max-width: 400px;
+	line-height: 1.6;
+}
+
+.activities {
+	display: flex;
+	flex-direction: column;
+	gap: 0.75rem;
+	margin-top: 1rem;
+	width: 100%;
+	max-width: 300px;
+}
+
+.activity {
+	padding: 0.75rem 1.5rem;
+	border-radius: var(--attempt-btn-radius);
+	cursor: pointer;
+	font-size: 1rem;
+	background: var(--attempt-btn-background);
+	color: var(--attempt-btn-color);
+	border: var(--attempt-btn-border);
+	text-align: left;
+}
+
+.activity:hover {
+	opacity: 0.9;
+}
+
+.activityName {
+	font-weight: 600;
+}
+
+.activityDesc {
+	font-size: 0.875rem;
+	opacity: 0.8;
+	margin-top: 0.25rem;
+}
+
+.declineBtn {
+	padding: 0.75rem 2rem;
+	border-radius: var(--attempt-btn-radius);
+	cursor: pointer;
+	font-size: 1rem;
+	background: transparent;
+	color: var(--fg);
+	border: 1px solid var(--border);
+	margin-top: 0.5rem;
+}
+
+.declineBtn:hover {
+	border-color: var(--accent);
+	color: var(--accent);
+}
+
+.hint {
+	font-size: 0.875rem;
+	color: var(--muted);
+	max-width: 350px;
+	line-height: 1.5;
+	margin-top: 1rem;
+}
+
+.cost {
+	font-size: 0.875rem;
+	color: var(--muted);
+}

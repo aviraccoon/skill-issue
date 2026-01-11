@@ -8,6 +8,7 @@ import { getEvolvedDescription } from "../systems/evolution";
 import { seededShuffle } from "../utils/random";
 import appStyles from "./App.module.css";
 import { renderDaySummary } from "./DaySummary";
+import { renderFriendRescue } from "./FriendRescue";
 import { renderNightChoice } from "./NightChoice";
 import panelStyles from "./Panel.module.css";
 import taskStyles from "./Task.module.css";
@@ -31,6 +32,10 @@ export function renderApp(store: Store<GameState>) {
 		case "nightChoice":
 			gameInitialized = false;
 			renderNightChoice(store, state, app);
+			break;
+		case "friendRescue":
+			gameInitialized = false;
+			renderFriendRescue(store, state, app);
 			break;
 		case "daySummary":
 			gameInitialized = false;

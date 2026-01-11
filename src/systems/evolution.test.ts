@@ -4,11 +4,11 @@ import { getEvolutionStage, getEvolvedDescription } from "./evolution";
 
 function makeTask(
 	failureCount: number,
-	options: { id?: string; hasEvolution?: boolean } = {},
+	options: { hasEvolution?: boolean } = {},
 ): Task {
-	const { id = "test", hasEvolution = true } = options;
+	const { hasEvolution = true } = options;
 	return {
-		id,
+		id: "dishes",
 		name: "Test Task",
 		category: "chores",
 		baseRate: 0.5,
@@ -92,15 +92,15 @@ describe("getEvolvedDescription", () => {
 	});
 
 	test("returns same variant for same task id and seed (deterministic)", () => {
-		const task1 = makeTask(4, { id: "consistent-task" });
-		const task2 = makeTask(4, { id: "consistent-task" });
+		const task1 = makeTask(4);
+		const task2 = makeTask(4);
 		expect(getEvolvedDescription(task1, seed)).toBe(
 			getEvolvedDescription(task2, seed),
 		);
 	});
 
 	test("different seeds can produce different variants", () => {
-		const task = makeTask(4, { id: "test-task" });
+		const task = makeTask(4);
 		const results = new Set<string>();
 		for (let i = 0; i < 20; i++) {
 			results.add(getEvolvedDescription(task, i * 1000));

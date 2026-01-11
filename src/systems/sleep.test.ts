@@ -1,11 +1,11 @@
 import { describe, expect, test } from "bun:test";
-import type { GameState, Task } from "../state";
+import { createInitialState, type GameState, type Task } from "../state";
 import { calculateSleepQuality } from "./sleep";
 
 /** Creates a minimal task for testing. */
 function makeTask(overrides: Partial<Task> = {}): Task {
 	return {
-		id: "test",
+		id: "dishes",
 		name: "Test Task",
 		category: "chores",
 		baseRate: 0.5,
@@ -17,23 +17,12 @@ function makeTask(overrides: Partial<Task> = {}): Task {
 	};
 }
 
-/** Creates a minimal game state for testing. */
+/** Creates a game state for testing with sensible defaults. */
 function makeState(tasks: Task[], momentum = 0.5): GameState {
 	return {
-		day: "monday",
-		dayIndex: 0,
-		timeBlock: "morning",
-		slotsRemaining: 3,
-		weekendPointsRemaining: 8,
+		...createInitialState(),
 		tasks,
-		selectedTaskId: null,
-		screen: "game",
-		energy: 0.5,
 		momentum,
-		runSeed: 12345,
-		dogFailedYesterday: false,
-		pushedThroughLastNight: false,
-		inExtendedNight: false,
 	};
 }
 
@@ -95,9 +84,9 @@ describe("calculateSleepQuality", () => {
 
 	test("multiple successes give momentum boost", () => {
 		const tasks = [
-			makeTask({ id: "task1", succeededToday: true }),
-			makeTask({ id: "task2", succeededToday: true }),
-			makeTask({ id: "task3", succeededToday: true }),
+			makeTask({ id: "dishes", succeededToday: true }),
+			makeTask({ id: "shower", succeededToday: true }),
+			makeTask({ id: "work", succeededToday: true }),
 		];
 		const state = makeState(tasks);
 

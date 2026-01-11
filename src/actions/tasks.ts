@@ -1,6 +1,7 @@
 import { panelStyles, taskStyles } from "../components/App";
 import { type GameState, isWeekend } from "../state";
 import type { Store } from "../store";
+import { shouldTriggerFriendRescue } from "../systems/friend";
 import { calculateSuccessProbability } from "../systems/probability";
 
 /**
@@ -53,9 +54,10 @@ export function attemptTask(store: Store<GameState>, taskId: string) {
 		store.update("slotsRemaining", (s) => s - 1);
 	}
 
-	// Update momentum based on outcome
+	// Update momentum and consecutive failures based on outcome
 	if (succeeded) {
 		store.update("momentum", (m) => Math.min(m + 0.05, 1));
+		store.set("consecutiveFailures", 0);
 
 		// Walk Dog auto-satisfies Go Outside
 		if (taskId === "walk-dog") {
@@ -73,9 +75,17 @@ export function attemptTask(store: Store<GameState>, taskId: string) {
 		}
 	} else {
 		store.update("momentum", (m) => Math.max(m - 0.03, 0));
+		store.update("consecutiveFailures", (c) => c + 1);
+
 		// Trigger failure animations on both task and attempt button
 		playFailureAnimation(taskId);
 		playAttemptButtonFailure();
+
+		// Check if friend rescue should trigger
+		const updatedState = store.getState();
+		if (shouldTriggerFriendRescue(updatedState)) {
+			store.set("screen", "friendRescue");
+		}
 	}
 }
 
