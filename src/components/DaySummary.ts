@@ -1,6 +1,7 @@
 import { continueToNextDay } from "../actions/time";
 import type { GameState } from "../state";
 import type { Store } from "../store";
+import { capitalize } from "../utils/string";
 import styles from "./DaySummary.module.css";
 
 /**
@@ -55,8 +56,4 @@ function generateNarrative(tone: Tone): string {
 		default:
 			return "Some things happened. Some didn't. That's a day.";
 	}
-}
-
-function capitalize(str: string): string {
-	return str.charAt(0).toUpperCase() + str.slice(1);
 }

@@ -8,6 +8,19 @@ export type Day =
 	| "saturday"
 	| "sunday";
 
+/**
+ * Evolved descriptions shown as failure count increases.
+ * Arrays allow variety across playthroughs - one is picked randomly.
+ * - aware (2-3 failures): self-aware acknowledgment
+ * - honest (4-5 failures): more real, less pretense
+ * - resigned (6+ failures): dark humor acceptance
+ */
+export interface TaskEvolution {
+	aware: string[];
+	honest: string[];
+	resigned: string[];
+}
+
 export interface Task {
 	id: string;
 	name: string;
@@ -27,6 +40,7 @@ export interface Task {
 	};
 	availableBlocks: TimeBlock[]; // when this task can appear
 	weekendCost?: number; // action points on weekend (default 1)
+	evolution?: TaskEvolution; // evolved descriptions at higher failure counts
 	failureCount: number; // how many times failed this week
 	attemptedToday: boolean;
 	succeededToday: boolean;
@@ -47,6 +61,7 @@ export interface GameState {
 	// Hidden from player
 	energy: number; // 0-1
 	momentum: number; // 0-1, starts at 0.5
+	runSeed: number; // seed for this run, affects randomization (evolution text, etc.)
 }
 
 /** Returns true if the current day is Saturday or Sunday. */
@@ -54,136 +69,27 @@ export function isWeekend(state: GameState): boolean {
 	return state.dayIndex >= 5;
 }
 
-export const initialTasks: Task[] = [
-	{
-		id: "shower",
-		name: "Shower",
-		category: "hygiene",
-		baseRate: 0.35,
-		minimalVariant: { name: "Splash face with water", baseRate: 0.7 },
-		availableBlocks: ["morning", "evening"],
-		failureCount: 0,
-		attemptedToday: false,
-		succeededToday: false,
-	},
-	{
-		id: "brush-teeth-morning",
-		name: "Brush Teeth",
-		category: "hygiene",
-		baseRate: 0.35,
-		availableBlocks: ["morning"],
-		failureCount: 0,
-		attemptedToday: false,
-		succeededToday: false,
-	},
-	{
-		id: "brush-teeth-evening",
-		name: "Brush Teeth",
-		category: "hygiene",
-		baseRate: 0.2,
-		availableBlocks: ["evening", "night"],
-		failureCount: 0,
-		attemptedToday: false,
-		succeededToday: false,
-	},
-	{
-		id: "cook",
-		name: "Cook Meal",
-		category: "food",
-		baseRate: 0.1,
-		minimalVariant: { name: "Microwave something", baseRate: 0.5 },
-		availableBlocks: ["morning", "afternoon", "evening"],
-		failureCount: 0,
-		attemptedToday: false,
-		succeededToday: false,
-	},
-	{
-		id: "delivery",
-		name: "Order Delivery",
-		category: "food",
-		baseRate: 0.75,
-		availableBlocks: ["afternoon", "evening", "night"],
-		failureCount: 0,
-		attemptedToday: false,
-		succeededToday: false,
-	},
-	{
-		id: "dishes",
-		name: "Do Dishes",
-		category: "chores",
-		baseRate: 0.25,
-		minimalVariant: { name: "Wash one dish", baseRate: 0.55 },
-		availableBlocks: ["morning", "afternoon", "evening"],
-		failureCount: 0,
-		attemptedToday: false,
-		succeededToday: false,
-	},
-	{
-		id: "walk-dog",
-		name: "Walk Dog",
-		category: "dog",
-		baseRate: 0.85,
-		availableBlocks: ["morning", "afternoon", "evening", "night"],
-		failureCount: 0,
-		attemptedToday: false,
-		succeededToday: false,
-	},
-	{
-		id: "work",
-		name: "Work Task",
-		category: "work",
-		baseRate: 0.4,
-		availableBlocks: ["morning", "afternoon"],
-		failureCount: 0,
-		attemptedToday: false,
-		succeededToday: false,
-	},
-	{
-		id: "practice-music",
-		name: "Practice Music",
-		category: "creative",
-		baseRate: 0.05,
-		availableBlocks: ["afternoon", "evening", "night"],
-		failureCount: 0,
-		attemptedToday: false,
-		succeededToday: false,
-	},
-	{
-		id: "shopping",
-		name: "Go Shopping",
-		category: "chores",
-		baseRate: 0.3,
-		availableBlocks: ["morning", "afternoon", "evening"],
-		weekendCost: 2,
-		failureCount: 0,
-		attemptedToday: false,
-		succeededToday: false,
-	},
-	{
-		id: "social-event",
-		name: "Social Event",
-		category: "social",
-		baseRate: 0.35,
-		availableBlocks: ["afternoon", "evening"],
-		weekendCost: 3,
-		failureCount: 0,
-		attemptedToday: false,
-		succeededToday: false,
-	},
-];
+import { initialTasks } from "./data/tasks";
+export { initialTasks };
 
-export const initialState: GameState = {
-	day: "monday",
-	dayIndex: 0,
-	timeBlock: "morning",
-	slotsRemaining: 3,
-	weekendPointsRemaining: 8,
-	tasks: initialTasks,
-	selectedTaskId: null,
-	screen: "game",
-	energy: 0.6,
-	momentum: 0.5,
-};
+/** Generates a fresh initial state with a new random seed. */
+export function createInitialState(): GameState {
+	return {
+		day: "monday",
+		dayIndex: 0,
+		timeBlock: "morning",
+		slotsRemaining: 3,
+		weekendPointsRemaining: 8,
+		tasks: structuredClone(initialTasks),
+		selectedTaskId: null,
+		screen: "game",
+		energy: 0.6,
+		momentum: 0.5,
+		runSeed: Math.floor(Math.random() * 2147483647),
+	};
+}
+
+export const initialState: GameState = createInitialState();
 
 export const DAYS: Day[] = [
 	"monday",

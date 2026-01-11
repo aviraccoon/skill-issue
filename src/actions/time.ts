@@ -1,6 +1,7 @@
 import { DAYS, type GameState, TIME_BLOCKS } from "../state";
 import type { Store } from "../store";
 import { calculateSleepQuality } from "../systems/sleep";
+import { clamp } from "../utils/math";
 
 /** Momentum decay per time block advance. */
 const MOMENTUM_DECAY_PER_BLOCK = 0.02;
@@ -39,13 +40,6 @@ export function endWeekendDay(store: Store<GameState>) {
 /** Shows the end-of-day summary screen. */
 function showDaySummary(store: Store<GameState>) {
 	store.set("screen", "daySummary");
-}
-
-/**
- * Clamps a value between min and max.
- */
-function clamp(value: number, min: number, max: number): number {
-	return Math.max(min, Math.min(max, value));
 }
 
 /**

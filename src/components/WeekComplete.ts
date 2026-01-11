@@ -1,5 +1,5 @@
 import type { GameState } from "../state";
-import { initialState } from "../state";
+import { createInitialState } from "../state";
 import type { Store } from "../store";
 import { clearSave } from "../systems/persistence";
 import styles from "./WeekComplete.module.css";
@@ -34,24 +34,18 @@ export function renderWeekComplete(
 		.querySelector(`.${styles.restartBtn}`)
 		?.addEventListener("click", () => {
 			clearSave();
-			// Reset to initial state
-			store.set("day", initialState.day);
-			store.set("dayIndex", initialState.dayIndex);
-			store.set("timeBlock", initialState.timeBlock);
-			store.set("slotsRemaining", initialState.slotsRemaining);
-			store.set("weekendPointsRemaining", initialState.weekendPointsRemaining);
+			const fresh = createInitialState();
+			store.set("day", fresh.day);
+			store.set("dayIndex", fresh.dayIndex);
+			store.set("timeBlock", fresh.timeBlock);
+			store.set("slotsRemaining", fresh.slotsRemaining);
+			store.set("weekendPointsRemaining", fresh.weekendPointsRemaining);
 			store.set("selectedTaskId", null);
 			store.set("screen", "game");
-			store.set("energy", initialState.energy);
-			store.set("momentum", initialState.momentum);
-			store.update("tasks", () =>
-				initialState.tasks.map((t) => ({
-					...t,
-					failureCount: 0,
-					attemptedToday: false,
-					succeededToday: false,
-				})),
-			);
+			store.set("energy", fresh.energy);
+			store.set("momentum", fresh.momentum);
+			store.set("runSeed", fresh.runSeed);
+			store.set("tasks", fresh.tasks);
 		});
 }
 

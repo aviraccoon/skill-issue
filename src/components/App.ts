@@ -3,6 +3,8 @@ import { attemptTask, selectTask } from "../actions/tasks";
 import { endWeekendDay, skipTimeBlock } from "../actions/time";
 import { type GameState, isWeekend, type Task, TIME_BLOCKS } from "../state";
 import type { Store } from "../store";
+import { getEvolvedDescription } from "../systems/evolution";
+import { seededShuffle } from "../utils/random";
 import appStyles from "./App.module.css";
 import { renderDaySummary } from "./DaySummary";
 import panelStyles from "./Panel.module.css";
@@ -143,11 +145,17 @@ function renderTaskList(state: GameState, store: Store<GameState>) {
 	const weekend = isWeekend(state);
 
 	// Weekend: show all tasks. Weekday: filter by time block.
-	const availableTasks = weekend
+	let availableTasks = weekend
 		? state.tasks
 		: state.tasks.filter((task) =>
 				task.availableBlocks.includes(state.timeBlock),
 			);
+
+	// Shuffle based on seed + day for variety (order changes each day)
+	availableTasks = seededShuffle(
+		availableTasks,
+		state.runSeed + state.dayIndex,
+	);
 
 	list.innerHTML = "";
 
@@ -224,8 +232,10 @@ function renderTaskPanel(state: GameState, store: Store<GameState>) {
 			? `<p class="${panelStyles.cost}">${cost} points</p>`
 			: "";
 
+	const displayName = getEvolvedDescription(selectedTask, state.runSeed);
+
 	panel.innerHTML = `
-		<p class="${panelStyles.taskName}">${selectedTask.name}</p>
+		<p class="${panelStyles.taskName}">${displayName}</p>
 		<p class="${panelStyles.stats}">
 			Failed ${selectedTask.failureCount} time${selectedTask.failureCount === 1 ? "" : "s"} this week
 		</p>

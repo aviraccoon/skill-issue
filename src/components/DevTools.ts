@@ -1,5 +1,5 @@
 import type { GameState, Task } from "../state";
-import { initialState, isWeekend, TIME_BLOCKS } from "../state";
+import { createInitialState, isWeekend, TIME_BLOCKS } from "../state";
 import type { Store } from "../store";
 import { clearSave } from "../systems/persistence";
 import {
@@ -123,14 +123,13 @@ export function initDevTools(store: Store<GameState>) {
 				localStorage.setItem(DEV_TOOLS_COLLAPSED_KEY, String(collapsed));
 				break;
 			}
-			case "reset":
-				for (const key of Object.keys(initialState)) {
-					store.set(
-						key as keyof GameState,
-						initialState[key as keyof GameState],
-					);
+			case "reset": {
+				const fresh = createInitialState();
+				for (const key of Object.keys(fresh)) {
+					store.set(key as keyof GameState, fresh[key as keyof GameState]);
 				}
 				break;
+			}
 			case "energy-up":
 				store.update("energy", (e) => Math.min(e + 0.1, 1));
 				break;
@@ -260,6 +259,10 @@ function renderDevState(state: GameState) {
 		<div class="${styles.row}">
 			<span class="${styles.key}">Momentum</span>
 			<span class="${styles.valueHidden}">${(state.momentum * 100).toFixed(0)}%</span>
+		</div>
+		<div class="${styles.row}">
+			<span class="${styles.key}">Seed</span>
+			<span class="${styles.value}">${state.runSeed}</span>
 		</div>
 
 		${probabilitySection}
