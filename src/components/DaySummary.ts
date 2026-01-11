@@ -18,6 +18,7 @@ export function renderDaySummary(
 
 	const tone = determineTone(attempted.length, succeeded.length);
 	const narrative = generateNarrative(tone);
+	const dogNote = getDogNote(state);
 
 	container.innerHTML = `
 		<div class="${styles.summary}">
@@ -26,6 +27,7 @@ export function renderDaySummary(
 				${succeeded.length} of ${attempted.length} attempts worked
 			</p>
 			<p class="${styles.narrative}">${narrative}</p>
+			${dogNote ? `<p class="${styles.dogNote}">${dogNote}</p>` : ""}
 			<button class="${styles.continueBtn}">Continue</button>
 		</div>
 	`;
@@ -56,4 +58,22 @@ function generateNarrative(tone: Tone): string {
 		default:
 			return "Some things happened. Some didn't. That's a day.";
 	}
+}
+
+/** Returns a note about the dog's state for the day. */
+function getDogNote(state: GameState): string | null {
+	const walkDog = state.tasks.find((t) => t.id === "walk-dog");
+	if (!walkDog) return null;
+
+	if (walkDog.succeededToday) {
+		return "Azor got his walk. He's happy.";
+	}
+
+	if (walkDog.attemptedToday) {
+		// Attempted but failed
+		return "You tried to walk Azor. Stood outside briefly. He's disappointed but understands.";
+	}
+
+	// Didn't even attempt - forced minimal
+	return "You stood outside with Azor for a minute. It's not a walk, but it's something. He looks at you.";
 }

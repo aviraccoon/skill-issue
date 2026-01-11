@@ -30,6 +30,14 @@
 	line-height: 1.6;
 }
 
+.dogNote {
+	font-size: 0.9375rem;
+	max-width: 400px;
+	line-height: 1.5;
+	color: var(--muted);
+	font-style: italic;
+}
+
 .continueBtn {
 	margin-top: 1rem;
 	padding: 0.75rem 2rem;

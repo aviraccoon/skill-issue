@@ -31,6 +31,25 @@
 	margin-bottom: 1rem;
 }
 
+.urgency {
+	font-size: 0.875rem;
+	margin-bottom: 0.5rem;
+}
+
+.urgency[data-urgency="waiting"] {
+	color: var(--warning, #b5890a);
+}
+
+.urgency[data-urgency="urgent"] {
+	color: var(--warning, #b5890a);
+	font-weight: 500;
+}
+
+.urgency[data-urgency="critical"] {
+	color: var(--error, #c75050);
+	font-weight: 600;
+}
+
 .attemptBtn {
 	width: 100%;
 	padding: 0.5rem 1rem;

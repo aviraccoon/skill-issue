@@ -62,6 +62,9 @@ export interface GameState {
 	energy: number; // 0-1
 	momentum: number; // 0-1, starts at 0.5
 	runSeed: number; // seed for this run, affects randomization (evolution text, etc.)
+
+	// Dog state
+	dogFailedYesterday: boolean; // true if dog wasn't walked previous day
 }
 
 /** Returns true if the current day is Saturday or Sunday. */
@@ -86,6 +89,7 @@ export function createInitialState(): GameState {
 		energy: 0.6,
 		momentum: 0.5,
 		runSeed: Math.floor(Math.random() * 2147483647),
+		dogFailedYesterday: false,
 	};
 }
 

@@ -30,6 +30,7 @@ function makeState(overrides: Partial<GameState> = {}): GameState {
 		energy: 0.5,
 		momentum: 0.5,
 		runSeed: 12345,
+		dogFailedYesterday: false,
 		...overrides,
 	};
 }

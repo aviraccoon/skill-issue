@@ -57,6 +57,16 @@ export function attemptTask(store: Store<GameState>, taskId: string) {
 	if (succeeded) {
 		store.update("momentum", (m) => Math.min(m + 0.05, 1));
 
+		// Walk Dog auto-satisfies Go Outside
+		if (taskId === "walk-dog") {
+			store.update("tasks", (tasks) =>
+				tasks.map((t) => {
+					if (t.id !== "go-outside") return t;
+					return { ...t, succeededToday: true };
+				}),
+			);
+		}
+
 		// Saturday work penalty: drains energy for Sunday
 		if (weekend && task.category === "work" && state.day === "saturday") {
 			store.update("energy", (e) => Math.max(e - 0.1, 0));

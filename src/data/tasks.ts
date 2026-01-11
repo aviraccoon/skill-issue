@@ -295,4 +295,31 @@ export const initialTasks: Task[] = [
 		attemptedToday: false,
 		succeededToday: false,
 	},
+	{
+		id: "go-outside",
+		name: "Go Outside",
+		category: "selfcare",
+		baseRate: 0.4,
+		availableBlocks: ["morning", "afternoon", "evening"],
+		evolution: {
+			aware: [
+				"Go Outside - Fresh air exists",
+				"Go Outside - The sun is out there",
+				"Go Outside - Your body needs it",
+			],
+			honest: [
+				"Leave The Building",
+				"Experience Outdoors",
+				"Touch Grass (Literally)",
+			],
+			resigned: [
+				"Outside exists. You could be there. Theoretically.",
+				"The door is right there. It's not that far.",
+				"Vitamin D won't synthesize itself.",
+			],
+		},
+		failureCount: 0,
+		attemptedToday: false,
+		succeededToday: false,
+	},
 ];

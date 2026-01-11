@@ -31,6 +31,7 @@ function makeState(tasks: Task[], momentum = 0.5): GameState {
 		energy: 0.5,
 		momentum,
 		runSeed: 12345,
+		dogFailedYesterday: false,
 	};
 }
 

@@ -1,5 +1,6 @@
 import { DAYS, type GameState, TIME_BLOCKS } from "../state";
 import type { Store } from "../store";
+import { wasDogWalkedToday } from "../systems/dog";
 import { calculateSleepQuality } from "../systems/sleep";
 import { clamp } from "../utils/math";
 
@@ -37,8 +38,14 @@ export function endWeekendDay(store: Store<GameState>) {
 	showDaySummary(store);
 }
 
-/** Shows the end-of-day summary screen. */
+/** Shows the end-of-day summary screen. Handles dog walk failure state. */
 function showDaySummary(store: Store<GameState>) {
+	const state = store.getState();
+
+	// Track if dog wasn't walked (affects next day urgency)
+	const dogWalked = wasDogWalkedToday(state);
+	store.set("dogFailedYesterday", !dogWalked);
+
 	store.set("screen", "daySummary");
 }
 

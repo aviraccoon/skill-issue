@@ -3,6 +3,7 @@ import { attemptTask, selectTask } from "../actions/tasks";
 import { endWeekendDay, skipTimeBlock } from "../actions/time";
 import { type GameState, isWeekend, type Task, TIME_BLOCKS } from "../state";
 import type { Store } from "../store";
+import { getDogUrgency, URGENCY_DISPLAY } from "../systems/dog";
 import { getEvolvedDescription } from "../systems/evolution";
 import { seededShuffle } from "../utils/random";
 import appStyles from "./App.module.css";
@@ -232,6 +233,15 @@ function renderTaskPanel(state: GameState, store: Store<GameState>) {
 			? `<p class="${panelStyles.cost}">${cost} points</p>`
 			: "";
 
+	// Show urgency for Walk Dog
+	let urgencyDisplay = "";
+	if (selectedTask.id === "walk-dog" && !selectedTask.succeededToday) {
+		const urgency = getDogUrgency(state);
+		if (urgency !== "normal") {
+			urgencyDisplay = `<p class="${panelStyles.urgency}" data-urgency="${urgency}">${URGENCY_DISPLAY[urgency]}</p>`;
+		}
+	}
+
 	const displayName = getEvolvedDescription(selectedTask, state.runSeed);
 
 	panel.innerHTML = `
@@ -239,6 +249,7 @@ function renderTaskPanel(state: GameState, store: Store<GameState>) {
 		<p class="${panelStyles.stats}">
 			Failed ${selectedTask.failureCount} time${selectedTask.failureCount === 1 ? "" : "s"} this week
 		</p>
+		${urgencyDisplay}
 		${costDisplay}
 		<button class="${panelStyles.attemptBtn}" ${canAttempt ? "" : "disabled"}>
 			${selectedTask.succeededToday ? "Done" : "Attempt"}

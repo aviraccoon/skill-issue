@@ -7,5 +7,6 @@ declare const styles: {
 	readonly panel: string;
 	readonly stats: string;
 	readonly taskName: string;
+	readonly urgency: string;
 };
 export default styles;
