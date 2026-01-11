@@ -1,5 +1,5 @@
 import { panelStyles, taskStyles } from "../components/App";
-import type { GameState } from "../state";
+import { type GameState, isWeekend } from "../state";
 import type { Store } from "../store";
 import { calculateSuccessProbability } from "../systems/probability";
 
@@ -13,12 +13,21 @@ export function selectTask(store: Store<GameState>, taskId: string) {
 /**
  * Attempts to complete a task. Success is probabilistic based on
  * hidden state (energy, momentum) and time of day.
- * Consumes an action slot regardless of outcome.
+ * Consumes action slots (weekday) or points (weekend) regardless of outcome.
  */
 export function attemptTask(store: Store<GameState>, taskId: string) {
 	const state = store.getState();
 	const task = state.tasks.find((t) => t.id === taskId);
-	if (!task || state.slotsRemaining <= 0 || task.succeededToday) return;
+	if (!task || task.succeededToday) return;
+
+	// Check resource availability based on day type
+	const weekend = isWeekend(state);
+	if (weekend) {
+		const cost = task.weekendCost ?? 1;
+		if (state.weekendPointsRemaining < cost) return;
+	} else {
+		if (state.slotsRemaining <= 0) return;
+	}
 
 	const probability = calculateSuccessProbability(task, state);
 	const succeeded = Math.random() < probability;
@@ -36,12 +45,22 @@ export function attemptTask(store: Store<GameState>, taskId: string) {
 		}),
 	);
 
-	// Consume action slot
-	store.update("slotsRemaining", (s) => s - 1);
+	// Consume resource based on day type
+	if (weekend) {
+		const cost = task.weekendCost ?? 1;
+		store.update("weekendPointsRemaining", (p) => p - cost);
+	} else {
+		store.update("slotsRemaining", (s) => s - 1);
+	}
 
 	// Update momentum based on outcome
 	if (succeeded) {
 		store.update("momentum", (m) => Math.min(m + 0.05, 1));
+
+		// Saturday work penalty: drains energy for Sunday
+		if (weekend && task.category === "work" && state.day === "saturday") {
+			store.update("energy", (e) => Math.max(e - 0.1, 0));
+		}
 	} else {
 		store.update("momentum", (m) => Math.max(m - 0.03, 0));
 		// Trigger failure animations on both task and attempt button

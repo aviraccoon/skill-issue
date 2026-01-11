@@ -80,3 +80,23 @@
 	border-color: var(--fg);
 	color: var(--fg);
 }
+
+.phoneBtn {
+	padding: 0.5rem 1rem;
+	background: transparent;
+	border: 1px solid var(--border);
+	border-radius: 0.25rem;
+	cursor: pointer;
+	color: var(--muted);
+	margin-right: 0.5rem;
+}
+
+.phoneBtn:hover {
+	border-color: var(--fg);
+	color: var(--fg);
+}
+
+.points {
+	color: var(--muted);
+	font-size: 0.875rem;
+}

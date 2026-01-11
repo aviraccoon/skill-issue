@@ -34,9 +34,9 @@ export function initThemeSwitcher() {
 
 	document.body.appendChild(switcher);
 
-	// Load saved theme or default to light
+	// Load saved theme or default to vapor
 	const savedTheme = localStorage.getItem(THEME_STORAGE_KEY) as Theme | null;
-	setTheme(savedTheme || "light");
+	setTheme(savedTheme || "vapor");
 
 	// Handle theme changes
 	switcher.addEventListener("click", (e) => {

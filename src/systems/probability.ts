@@ -1,4 +1,4 @@
-import type { GameState, Task, TimeBlock } from "../state";
+import { type GameState, isWeekend, type Task, type TimeBlock } from "../state";
 
 /**
  * Calculates the success probability for a task attempt.
@@ -20,6 +20,9 @@ export function calculateSuccessProbability(
 	// Apply energy modifier (-20% to +20%)
 	probability *= getEnergyModifier(state.energy);
 
+	// Apply weekend work penalty
+	probability *= getWeekendWorkModifier(task, state);
+
 	// Clamp to valid probability range
 	return Math.max(0, Math.min(1, probability));
 }
@@ -28,7 +31,7 @@ export function calculateSuccessProbability(
  * Returns multiplier based on time of day.
  * Night has the 2am productivity spike bonus.
  */
-function getTimeModifier(timeBlock: TimeBlock): number {
+export function getTimeModifier(timeBlock: TimeBlock): number {
 	switch (timeBlock) {
 		case "morning":
 			return 1.1; // Slight morning boost
@@ -45,7 +48,7 @@ function getTimeModifier(timeBlock: TimeBlock): number {
  * Returns multiplier based on momentum (0-1).
  * Maps to -30% to +30% modifier.
  */
-function getMomentumModifier(momentum: number): number {
+export function getMomentumModifier(momentum: number): number {
 	// momentum 0 = 0.7x, momentum 0.5 = 1.0x, momentum 1 = 1.3x
 	return 0.7 + momentum * 0.6;
 }
@@ -54,7 +57,19 @@ function getMomentumModifier(momentum: number): number {
  * Returns multiplier based on energy (0-1).
  * Maps to -20% to +20% modifier.
  */
-function getEnergyModifier(energy: number): number {
+export function getEnergyModifier(energy: number): number {
 	// energy 0 = 0.8x, energy 0.5 = 1.0x, energy 1 = 1.2x
 	return 0.8 + energy * 0.4;
+}
+
+/**
+ * Returns penalty multiplier for working on weekends.
+ * Your brain knows you shouldn't be doing this.
+ */
+export function getWeekendWorkModifier(task: Task, state: GameState): number {
+	if (task.category !== "work" || !isWeekend(state)) {
+		return 1.0;
+	}
+	// 25% penalty for working on weekends
+	return 0.75;
 }

@@ -2,6 +2,8 @@ declare const styles: {
 	readonly footer: string;
 	readonly header: string;
 	readonly main: string;
+	readonly phoneBtn: string;
+	readonly points: string;
 	readonly skipBtn: string;
 	readonly slot: string;
 	readonly slotUsed: string;

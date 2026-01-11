@@ -3,11 +3,12 @@ import "./styles/themes.css";
 import { renderApp } from "./components/App";
 import { initDevTools } from "./components/DevTools";
 import { initThemeSwitcher } from "./components/ThemeSwitcher";
-import { type GameState, initialState } from "./state";
+import type { GameState } from "./state";
 import { createStore } from "./store";
+import { loadGame, saveGame } from "./systems/persistence";
 
-// Initialize store with starting state
-const store = createStore<GameState>(initialState);
+// Initialize store with saved state (or initial if no save)
+const store = createStore<GameState>(loadGame());
 
 // Initialize theme switcher
 initThemeSwitcher();
@@ -18,8 +19,11 @@ initDevToolsIfEnabled();
 // Initial render
 renderApp(store);
 
-// Subscribe to state changes for re-renders
-store.subscribe(() => renderApp(store));
+// Subscribe to state changes for re-renders and auto-save
+store.subscribe((state) => {
+	renderApp(store);
+	saveGame(state);
+});
 
 /** Fetches config and initializes dev tools if enabled. */
 async function initDevToolsIfEnabled() {

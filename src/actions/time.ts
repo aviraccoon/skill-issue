@@ -1,13 +1,20 @@
-import type { GameState } from "../state";
-import { DAYS, TIME_BLOCKS } from "../state";
+import { DAYS, type GameState, TIME_BLOCKS } from "../state";
 import type { Store } from "../store";
+import { calculateSleepQuality } from "../systems/sleep";
+
+/** Momentum decay per time block advance. */
+const MOMENTUM_DECAY_PER_BLOCK = 0.02;
 
 /**
  * Advances to the next time block. Resets action slots.
- * If at night, advances to next day.
+ * If at night, shows day summary. Applies momentum decay.
  */
 export function skipTimeBlock(store: Store<GameState>) {
 	const state = store.getState();
+
+	// Decay momentum on time block advance
+	store.update("momentum", (m) => Math.max(m - MOMENTUM_DECAY_PER_BLOCK, 0));
+
 	const currentIndex = TIME_BLOCKS.indexOf(state.timeBlock);
 	const nextBlock = TIME_BLOCKS[currentIndex + 1];
 
@@ -16,30 +23,65 @@ export function skipTimeBlock(store: Store<GameState>) {
 		store.set("timeBlock", nextBlock);
 		store.set("slotsRemaining", 3);
 	} else {
-		// End of day - advance to next day
-		advanceDay(store);
+		// End of day - show summary
+		showDaySummary(store);
 	}
 }
 
 /**
- * Advances to the next day. Resets time block to morning,
- * resets action slots, and clears daily task flags.
+ * Ends the weekend day. Called when player chooses to end their day
+ * or runs out of action points.
  */
-function advanceDay(store: Store<GameState>) {
+export function endWeekendDay(store: Store<GameState>) {
+	showDaySummary(store);
+}
+
+/** Shows the end-of-day summary screen. */
+function showDaySummary(store: Store<GameState>) {
+	store.set("screen", "daySummary");
+}
+
+/**
+ * Clamps a value between min and max.
+ */
+function clamp(value: number, min: number, max: number): number {
+	return Math.max(min, Math.min(max, value));
+}
+
+/**
+ * Continues to the next day after viewing the summary.
+ * Applies sleep quality modifiers and resets day state.
+ */
+export function continueToNextDay(store: Store<GameState>) {
 	const state = store.getState();
 	const nextDayIndex = state.dayIndex + 1;
-
 	const nextDay = DAYS[nextDayIndex];
+
 	if (!nextDay) {
-		// Week complete - TODO: show summary
-		console.log("Week complete!");
+		// Week complete
+		store.set("screen", "weekComplete");
 		return;
 	}
 
+	// Calculate and apply sleep quality effects
+	const sleepMod = calculateSleepQuality(state);
+	store.update("energy", (e) => clamp(e + sleepMod.energy, 0, 1));
+	store.update("momentum", (m) => clamp(m + sleepMod.momentum, 0, 1));
+
+	// Advance to next day
 	store.set("day", nextDay);
 	store.set("dayIndex", nextDayIndex);
-	store.set("timeBlock", "morning");
-	store.set("slotsRemaining", 3);
+	store.set("screen", "game");
+
+	// Reset based on day type
+	if (nextDayIndex >= 5) {
+		// Weekend - 8 action points, no time blocks
+		store.set("weekendPointsRemaining", 8);
+	} else {
+		// Weekday - morning with 3 slots
+		store.set("timeBlock", "morning");
+		store.set("slotsRemaining", 3);
+	}
 
 	// Reset daily flags on tasks
 	store.update("tasks", (tasks) =>

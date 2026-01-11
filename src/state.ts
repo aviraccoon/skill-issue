@@ -18,29 +18,40 @@ export interface Task {
 		| "dog"
 		| "work"
 		| "creative"
-		| "selfcare";
+		| "selfcare"
+		| "social";
 	baseRate: number; // 0-1, base success probability
 	minimalVariant?: {
 		name: string;
 		baseRate: number;
 	};
 	availableBlocks: TimeBlock[]; // when this task can appear
+	weekendCost?: number; // action points on weekend (default 1)
 	failureCount: number; // how many times failed this week
 	attemptedToday: boolean;
 	succeededToday: boolean;
 }
 
+export type Screen = "game" | "daySummary" | "weekComplete";
+
 export interface GameState {
 	day: Day;
 	dayIndex: number; // 0-6
 	timeBlock: TimeBlock;
-	slotsRemaining: number;
+	slotsRemaining: number; // weekday action slots per time block
+	weekendPointsRemaining: number; // weekend action points (8 total)
 	tasks: Task[];
 	selectedTaskId: string | null;
+	screen: Screen;
 
 	// Hidden from player
 	energy: number; // 0-1
 	momentum: number; // 0-1, starts at 0.5
+}
+
+/** Returns true if the current day is Saturday or Sunday. */
+export function isWeekend(state: GameState): boolean {
+	return state.dayIndex >= 5;
 }
 
 export const initialTasks: Task[] = [
@@ -137,6 +148,28 @@ export const initialTasks: Task[] = [
 		attemptedToday: false,
 		succeededToday: false,
 	},
+	{
+		id: "shopping",
+		name: "Go Shopping",
+		category: "chores",
+		baseRate: 0.3,
+		availableBlocks: ["morning", "afternoon", "evening"],
+		weekendCost: 2,
+		failureCount: 0,
+		attemptedToday: false,
+		succeededToday: false,
+	},
+	{
+		id: "social-event",
+		name: "Social Event",
+		category: "social",
+		baseRate: 0.35,
+		availableBlocks: ["afternoon", "evening"],
+		weekendCost: 3,
+		failureCount: 0,
+		attemptedToday: false,
+		succeededToday: false,
+	},
 ];
 
 export const initialState: GameState = {
@@ -144,8 +177,10 @@ export const initialState: GameState = {
 	dayIndex: 0,
 	timeBlock: "morning",
 	slotsRemaining: 3,
+	weekendPointsRemaining: 8,
 	tasks: initialTasks,
 	selectedTaskId: null,
+	screen: "game",
 	energy: 0.6,
 	momentum: 0.5,
 };
