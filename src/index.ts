@@ -25,8 +25,21 @@ store.subscribe((state) => {
 	saveGame(state);
 });
 
-/** Fetches config and initializes dev tools if enabled. */
+/** Initializes dev tools if enabled via env var or query param. */
 async function initDevToolsIfEnabled() {
+	const urlParams = new URLSearchParams(window.location.search);
+	const devParam = urlParams.get("dev");
+
+	// Query param is authoritative when present
+	if (devParam === "1") {
+		initDevTools(store);
+		return;
+	}
+	if (devParam === "0") {
+		return;
+	}
+
+	// Fall back to env var via dev server config
 	try {
 		const res = await fetch("/api/config");
 		const config = await res.json();
@@ -34,6 +47,6 @@ async function initDevToolsIfEnabled() {
 			initDevTools(store);
 		}
 	} catch {
-		// In production or if config fails, skip dev tools
+		// In production without query param, skip dev tools
 	}
 }
