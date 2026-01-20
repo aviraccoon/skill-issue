@@ -1,9 +1,32 @@
 import { type GameState, isWeekend } from "../state";
+import { seededVariation } from "../utils/random";
+import { calculateFriendRescueEnergyEffect } from "./energy";
+
+const SALT_RESCUE_CHANCE = 5001;
 
 /** Minimum consecutive failures before friend rescue can trigger. */
 export const FRIEND_RESCUE_THRESHOLD = 3;
 
-/** Probability of friend reaching out when threshold met. */
+/**
+ * Base probability of friend reaching out.
+ * Varies by seed: 35-45%.
+ */
+export const FRIEND_RESCUE_CHANCE_BASE = 0.4;
+export const FRIEND_RESCUE_CHANCE_VARIANCE = 0.05;
+
+/**
+ * Returns the friend rescue probability for this run (35-45%).
+ */
+export function getFriendRescueChance(seed: number): number {
+	return seededVariation(
+		seed,
+		FRIEND_RESCUE_CHANCE_BASE,
+		FRIEND_RESCUE_CHANCE_VARIANCE,
+		SALT_RESCUE_CHANCE,
+	);
+}
+
+/** @deprecated Use getFriendRescueChance(seed) instead. Kept for test compatibility. */
 export const FRIEND_RESCUE_CHANCE = 0.4;
 
 /** Cost in action slots (weekday) or points (weekend). */
@@ -41,17 +64,14 @@ export const ACTIVITIES: Activity[] = [
 	},
 ];
 
-/** Effects when player picks correct tier (energy >= threshold). */
-export const CORRECT_TIER_EFFECTS = {
-	momentum: 0.1,
-	energy: 0.1,
-};
+/** Momentum effect when player picks correct tier. */
+export const CORRECT_TIER_MOMENTUM = 0.1;
 
-/** Effects when player picks wrong tier (energy < threshold). */
-export const WRONG_TIER_EFFECTS = {
-	momentum: 0.03,
-	energy: -0.08,
-};
+/** Momentum effect when player picks wrong tier. */
+export const WRONG_TIER_MOMENTUM = 0.03;
+
+/** Extra energy penalty when picking wrong tier (stacks with personality effect). */
+export const WRONG_TIER_ENERGY_PENALTY = 0.08;
 
 /** Messages the friend sends when reaching out. */
 export const RESCUE_MESSAGES = [
@@ -77,8 +97,9 @@ export function shouldTriggerFriendRescue(state: GameState): boolean {
 	// Check if player can afford it (no point offering if they can't accept)
 	if (!canAffordRescue(state)) return false;
 
-	// Roll the dice
-	return Math.random() < FRIEND_RESCUE_CHANCE;
+	// Roll the dice (chance varies by seed)
+	const chance = getFriendRescueChance(state.runSeed);
+	return Math.random() < chance;
 }
 
 /**
@@ -108,16 +129,28 @@ export function isCorrectTier(activity: Activity, energy: number): boolean {
 }
 
 /**
- * Gets the effects of choosing an activity based on energy level.
+ * Gets the effects of choosing an activity.
+ * Energy effect is personality-aware, with extra penalty for wrong tier.
  */
 export function getActivityEffects(
 	activity: Activity,
-	energy: number,
+	state: GameState,
 ): { momentum: number; energy: number } {
-	if (isCorrectTier(activity, energy)) {
-		return CORRECT_TIER_EFFECTS;
+	// Base energy effect from personality
+	const energyEffect = calculateFriendRescueEnergyEffect(state);
+
+	if (isCorrectTier(activity, state.energy)) {
+		return {
+			momentum: CORRECT_TIER_MOMENTUM,
+			energy: energyEffect,
+		};
 	}
-	return WRONG_TIER_EFFECTS;
+
+	// Wrong tier: reduced momentum + extra energy penalty
+	return {
+		momentum: WRONG_TIER_MOMENTUM,
+		energy: energyEffect - WRONG_TIER_ENERGY_PENALTY,
+	};
 }
 
 /**

@@ -22,6 +22,8 @@ function makeState(overrides: Partial<GameState> = {}): GameState {
 		...createInitialState(),
 		energy: 0.5,
 		momentum: 0.5,
+		// Use neutral personality for predictable test results
+		personality: { time: "neutral", social: "neutral" },
 		...overrides,
 	};
 }
@@ -47,9 +49,9 @@ describe("calculateSuccessProbability", () => {
 
 		const probability = calculateSuccessProbability(task, state);
 
-		// night = 1.25x
-		expect(probability).toBeGreaterThan(0.5);
-		expect(probability).toBeCloseTo(0.5 * 1.25, 2);
+		// neutral night bonus varies by seed: 1.20 to 1.30
+		expect(probability).toBeGreaterThanOrEqual(0.5 * 1.2);
+		expect(probability).toBeLessThanOrEqual(0.5 * 1.3);
 	});
 
 	test("applies morning boost", () => {

@@ -22,6 +22,7 @@ export interface TaskEvolution {
 }
 
 import type { TaskCategory, TaskId } from "./data/tasks";
+import type { Personality } from "./systems/personality";
 
 export interface Task {
 	id: TaskId;
@@ -35,6 +36,10 @@ export interface Task {
 	availableBlocks: TimeBlock[]; // when this task can appear
 	weekendCost?: number; // action points on weekend (default 1)
 	evolution?: TaskEvolution; // evolved descriptions at higher failure counts
+	energyEffect?: {
+		success?: number; // energy change on success (default: 0)
+		failure?: number; // energy change on failure (default: -0.02)
+	};
 	failureCount: number; // how many times failed this week
 	attemptedToday: boolean;
 	succeededToday: boolean;
@@ -58,9 +63,10 @@ export interface GameState {
 	screen: Screen;
 
 	// Hidden from player
-	energy: number; // 0-1
-	momentum: number; // 0-1, starts at 0.5
+	energy: number; // 0-1, seed-based starting value (55-65%)
+	momentum: number; // 0-1, seed-based starting value (45-55%)
 	runSeed: number; // seed for this run, affects randomization (evolution text, etc.)
+	personality: Personality; // seed-determined, affects time modifiers and energy effects
 
 	// Dog state
 	dogFailedYesterday: boolean; // true if dog wasn't walked previous day
@@ -80,10 +86,16 @@ export function isWeekend(state: GameState): boolean {
 }
 
 import { initialTasks } from "./data/tasks";
+import {
+	getPersonalityFromSeed,
+	getStartingEnergyFromSeed,
+	getStartingMomentumFromSeed,
+} from "./systems/personality";
 export { initialTasks };
 
 /** Generates a fresh initial state with a new random seed. */
 export function createInitialState(): GameState {
+	const runSeed = Math.floor(Math.random() * 2147483647);
 	return {
 		day: "monday",
 		dayIndex: 0,
@@ -93,9 +105,10 @@ export function createInitialState(): GameState {
 		tasks: structuredClone(initialTasks),
 		selectedTaskId: null,
 		screen: "game",
-		energy: 0.6,
-		momentum: 0.5,
-		runSeed: Math.floor(Math.random() * 2147483647),
+		energy: getStartingEnergyFromSeed(runSeed),
+		momentum: getStartingMomentumFromSeed(runSeed),
+		runSeed,
+		personality: getPersonalityFromSeed(runSeed),
 		dogFailedYesterday: false,
 		pushedThroughLastNight: false,
 		inExtendedNight: false,

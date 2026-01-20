@@ -1,7 +1,16 @@
 import { panelStyles, taskStyles } from "../components/App";
 import { type GameState, isWeekend } from "../state";
 import type { Store } from "../store";
+import {
+	applyEnergyChange,
+	calculateTaskEnergyEffect,
+	getSaturdayWorkPenalty,
+} from "../systems/energy";
 import { shouldTriggerFriendRescue } from "../systems/friend";
+import {
+	getMomentumFailurePenalty,
+	getMomentumSuccessBonus,
+} from "../systems/momentum";
 import { calculateSuccessProbability } from "../systems/probability";
 
 /**
@@ -54,9 +63,14 @@ export function attemptTask(store: Store<GameState>, taskId: string) {
 		store.update("slotsRemaining", (s) => s - 1);
 	}
 
+	// Apply energy effect from task attempt (personality-aware)
+	const energyEffect = calculateTaskEnergyEffect(task, succeeded, state);
+	store.update("energy", (e) => applyEnergyChange(e, energyEffect));
+
 	// Update momentum and consecutive failures based on outcome
 	if (succeeded) {
-		store.update("momentum", (m) => Math.min(m + 0.05, 1));
+		const bonus = getMomentumSuccessBonus(state.runSeed);
+		store.update("momentum", (m) => Math.min(m + bonus, 1));
 		store.set("consecutiveFailures", 0);
 
 		// Walk Dog auto-satisfies Go Outside
@@ -69,12 +83,14 @@ export function attemptTask(store: Store<GameState>, taskId: string) {
 			);
 		}
 
-		// Saturday work penalty: drains energy for Sunday
+		// Saturday work penalty: drains energy for Sunday (varies by seed)
 		if (weekend && task.category === "work" && state.day === "saturday") {
-			store.update("energy", (e) => Math.max(e - 0.1, 0));
+			const penalty = getSaturdayWorkPenalty(state.runSeed);
+			store.update("energy", (e) => Math.max(e - penalty, 0));
 		}
 	} else {
-		store.update("momentum", (m) => Math.max(m - 0.03, 0));
+		const penalty = getMomentumFailurePenalty(state.runSeed);
+		store.update("momentum", (m) => Math.max(m - penalty, 0));
 		store.update("consecutiveFailures", (c) => c + 1);
 
 		// Trigger failure animations on both task and attempt button

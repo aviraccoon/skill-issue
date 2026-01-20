@@ -1,6 +1,28 @@
 import { type GameState, isWeekend } from "../state";
+import { seededVariation } from "../utils/random";
 
-/** Energy penalty applied after pushing through the night. */
+const SALT_ALL_NIGHTER_PENALTY = 4001;
+
+/**
+ * Base energy penalty after pushing through the night.
+ * Varies by seed: 20-30%.
+ */
+export const ALL_NIGHTER_PENALTY_BASE = 0.25;
+export const ALL_NIGHTER_PENALTY_VARIANCE = 0.05;
+
+/**
+ * Returns the energy penalty for all-nighter this run (20-30%).
+ */
+export function getAllNighterPenalty(seed: number): number {
+	return seededVariation(
+		seed,
+		ALL_NIGHTER_PENALTY_BASE,
+		ALL_NIGHTER_PENALTY_VARIANCE,
+		SALT_ALL_NIGHTER_PENALTY,
+	);
+}
+
+/** @deprecated Use getAllNighterPenalty(seed) instead. Kept for test compatibility. */
 export const ALL_NIGHTER_ENERGY_PENALTY = 0.25;
 
 /**

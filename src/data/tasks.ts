@@ -11,6 +11,15 @@ export type TaskCategory =
 	| "selfcare"
 	| "social";
 
+/**
+ * Energy effect from completing a task.
+ * If not specified, defaults to 0 on success, -0.02 on failure.
+ */
+interface TaskEnergyEffect {
+	success?: number; // energy change on success (default: 0)
+	failure?: number; // energy change on failure (default: -0.02)
+}
+
 /** Base task definition shape for type checking the const array. */
 interface TaskDefinitionBase {
 	id: string;
@@ -21,6 +30,7 @@ interface TaskDefinitionBase {
 	availableBlocks: readonly TimeBlock[];
 	weekendCost?: number;
 	evolution?: TaskEvolution;
+	energyEffect?: TaskEnergyEffect;
 }
 
 /** Task definitions as const to preserve literal ID types. */
@@ -105,6 +115,7 @@ const taskDefinitions = [
 		baseRate: 0.1,
 		minimalVariant: { name: "Microwave something", baseRate: 0.5 },
 		availableBlocks: ["morning", "afternoon", "evening"],
+		energyEffect: { success: -0.02 }, // cooking takes effort even when successful
 		evolution: {
 			aware: [
 				"Cook Meal - Theoretically possible",
@@ -170,6 +181,7 @@ const taskDefinitions = [
 		category: "dog",
 		baseRate: 0.85,
 		availableBlocks: ["morning", "afternoon", "evening", "night"],
+		energyEffect: { success: 0.04 }, // movement + external accountability energizes
 		evolution: {
 			aware: [
 				"Walk Dog - He's waiting",
@@ -218,6 +230,7 @@ const taskDefinitions = [
 		category: "creative",
 		baseRate: 0.05,
 		availableBlocks: ["afternoon", "evening", "night"],
+		energyEffect: { success: 0.05 }, // beating the odds on creative work feels great
 		evolution: {
 			aware: [
 				"Practice Music - Remember music?",

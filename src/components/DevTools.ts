@@ -1,7 +1,21 @@
 import type { GameState, Task } from "../state";
 import { createInitialState, isWeekend, TIME_BLOCKS } from "../state";
 import type { Store } from "../store";
-import { calculateExtendedNightSlots } from "../systems/allnighter";
+import {
+	calculateExtendedNightSlots,
+	getAllNighterPenalty,
+} from "../systems/allnighter";
+import {
+	getEnergyDecayPerBlock,
+	getScrollTrapEnergyCost,
+} from "../systems/energy";
+import { getFriendRescueChance } from "../systems/friend";
+import {
+	getMomentumDecayPerBlock,
+	getMomentumFailurePenalty,
+	getMomentumSuccessBonus,
+	getScrollTrapMomentumRange,
+} from "../systems/momentum";
 import { clearSave } from "../systems/persistence";
 import {
 	calculateSuccessProbability,
@@ -169,7 +183,7 @@ function renderDevState(state: GameState) {
 	if (!container) return;
 
 	// Calculate modifiers for display
-	const timeMod = getTimeModifier(state.timeBlock);
+	const timeMod = getTimeModifier(state);
 	const momentumMod = getMomentumModifier(state.momentum);
 	const energyMod = getEnergyModifier(state.energy);
 
@@ -264,6 +278,43 @@ function renderDevState(state: GameState) {
 		<div class="${styles.row}">
 			<span class="${styles.key}">Seed</span>
 			<span class="${styles.value}">${state.runSeed}</span>
+		</div>
+		<div class="${styles.row}">
+			<span class="${styles.key}">Personality</span>
+			<span class="${styles.valueHidden}">${state.personality.time} + ${state.personality.social}</span>
+		</div>
+		<h4>Seeded Values</h4>
+		<div class="${styles.row}">
+			<span class="${styles.key}">E Decay/Block</span>
+			<span class="${styles.valueHidden}">-${(getEnergyDecayPerBlock(state.runSeed) * 100).toFixed(1)}%</span>
+		</div>
+		<div class="${styles.row}">
+			<span class="${styles.key}">M Decay/Block</span>
+			<span class="${styles.valueHidden}">-${(getMomentumDecayPerBlock(state.runSeed) * 100).toFixed(1)}%</span>
+		</div>
+		<div class="${styles.row}">
+			<span class="${styles.key}">Success Bonus</span>
+			<span class="${styles.valueHidden}">+${(getMomentumSuccessBonus(state.runSeed) * 100).toFixed(1)}%</span>
+		</div>
+		<div class="${styles.row}">
+			<span class="${styles.key}">Fail Penalty</span>
+			<span class="${styles.valueHidden}">-${(getMomentumFailurePenalty(state.runSeed) * 100).toFixed(1)}%</span>
+		</div>
+		<div class="${styles.row}">
+			<span class="${styles.key}">Scroll M</span>
+			<span class="${styles.valueHidden}">-${(getScrollTrapMomentumRange(state.runSeed)[0] * 100).toFixed(0)}-${(getScrollTrapMomentumRange(state.runSeed)[1] * 100).toFixed(0)}%</span>
+		</div>
+		<div class="${styles.row}">
+			<span class="${styles.key}">Scroll E</span>
+			<span class="${styles.valueHidden}">-${(getScrollTrapEnergyCost(state.runSeed) * 100).toFixed(1)}%</span>
+		</div>
+		<div class="${styles.row}">
+			<span class="${styles.key}">All-Nighter</span>
+			<span class="${styles.valueHidden}">-${(getAllNighterPenalty(state.runSeed) * 100).toFixed(0)}%</span>
+		</div>
+		<div class="${styles.row}">
+			<span class="${styles.key}">Rescue %</span>
+			<span class="${styles.valueHidden}">${(getFriendRescueChance(state.runSeed) * 100).toFixed(0)}%</span>
 		</div>
 
 		${probabilitySection}

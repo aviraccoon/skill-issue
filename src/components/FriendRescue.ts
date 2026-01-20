@@ -69,7 +69,7 @@ export function renderFriendRescue(
  */
 function acceptRescue(store: Store<GameState>, activity: Activity) {
 	const state = store.getState();
-	const effects = getActivityEffects(activity, state.energy);
+	const effects = getActivityEffects(activity, state);
 	const correct = isCorrectTier(activity, state.energy);
 
 	// Apply effects

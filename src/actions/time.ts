@@ -1,15 +1,11 @@
 import { DAYS, type GameState, TIME_BLOCKS } from "../state";
 import type { Store } from "../store";
-import {
-	ALL_NIGHTER_ENERGY_PENALTY,
-	canPushThrough,
-} from "../systems/allnighter";
+import { canPushThrough, getAllNighterPenalty } from "../systems/allnighter";
 import { wasDogWalkedToday } from "../systems/dog";
+import { getEnergyDecayPerBlock } from "../systems/energy";
+import { getMomentumDecayPerBlock } from "../systems/momentum";
 import { calculateSleepQuality } from "../systems/sleep";
 import { clamp } from "../utils/math";
-
-/** Momentum decay per time block advance. */
-const MOMENTUM_DECAY_PER_BLOCK = 0.02;
 
 /**
  * Advances to the next time block. Resets action slots.
@@ -18,8 +14,11 @@ const MOMENTUM_DECAY_PER_BLOCK = 0.02;
 export function skipTimeBlock(store: Store<GameState>) {
 	const state = store.getState();
 
-	// Decay momentum on time block advance
-	store.update("momentum", (m) => Math.max(m - MOMENTUM_DECAY_PER_BLOCK, 0));
+	// Decay momentum and energy on time block advance (both vary by seed)
+	const momentumDecay = getMomentumDecayPerBlock(state.runSeed);
+	store.update("momentum", (m) => Math.max(m - momentumDecay, 0));
+	const energyDecay = getEnergyDecayPerBlock(state.runSeed);
+	store.update("energy", (e) => Math.max(e - energyDecay, 0));
 
 	const currentIndex = TIME_BLOCKS.indexOf(state.timeBlock);
 	const nextBlock = TIME_BLOCKS[currentIndex + 1];
@@ -89,9 +88,10 @@ export function continueToNextDay(store: Store<GameState>) {
 	store.update("energy", (e) => clamp(e + sleepMod.energy, 0, 1));
 	store.update("momentum", (m) => clamp(m + sleepMod.momentum, 0, 1));
 
-	// Apply all-nighter penalty if player pushed through
+	// Apply all-nighter penalty if player pushed through (varies by seed)
 	if (pulledAllNighter) {
-		store.update("energy", (e) => clamp(e - ALL_NIGHTER_ENERGY_PENALTY, 0, 1));
+		const penalty = getAllNighterPenalty(state.runSeed);
+		store.update("energy", (e) => clamp(e - penalty, 0, 1));
 	}
 
 	// Advance to next day

@@ -1,4 +1,5 @@
-import { type GameState, isWeekend, type Task, type TimeBlock } from "../state";
+import { type GameState, isWeekend, type Task } from "../state";
+import { getPersonalityTimeModifier } from "./personality";
 
 /**
  * Calculates the success probability for a task attempt.
@@ -11,8 +12,8 @@ export function calculateSuccessProbability(
 ): number {
 	let probability = task.baseRate;
 
-	// Apply time of day modifier
-	probability *= getTimeModifier(state.timeBlock);
+	// Apply time of day modifier (personality-aware)
+	probability *= getTimeModifier(state);
 
 	// Apply momentum modifier (-30% to +30%)
 	probability *= getMomentumModifier(state.momentum);
@@ -28,20 +29,16 @@ export function calculateSuccessProbability(
 }
 
 /**
- * Returns multiplier based on time of day.
- * Night has the 2am productivity spike bonus.
+ * Returns multiplier based on time of day and personality.
+ * Night Owls get bigger night bonus, Early Birds get morning bonus.
+ * Values vary by seed - some runs have stronger 2am spikes.
  */
-export function getTimeModifier(timeBlock: TimeBlock): number {
-	switch (timeBlock) {
-		case "morning":
-			return 1.1; // Slight morning boost
-		case "afternoon":
-			return 0.9; // Afternoon slump
-		case "evening":
-			return 1.0; // Neutral
-		case "night":
-			return 1.25; // 2am productivity spike
-	}
+export function getTimeModifier(state: GameState): number {
+	return getPersonalityTimeModifier(
+		state.personality,
+		state.timeBlock,
+		state.runSeed,
+	);
 }
 
 /**

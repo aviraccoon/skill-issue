@@ -2,8 +2,11 @@ import { describe, expect, test } from "bun:test";
 import { createInitialState, type GameState } from "../state";
 import {
 	ALL_NIGHTER_ENERGY_PENALTY,
+	ALL_NIGHTER_PENALTY_BASE,
+	ALL_NIGHTER_PENALTY_VARIANCE,
 	calculateExtendedNightSlots,
 	canPushThrough,
+	getAllNighterPenalty,
 	getExtendedNightDescription,
 } from "./allnighter";
 
@@ -121,5 +124,28 @@ describe("ALL_NIGHTER_ENERGY_PENALTY", () => {
 	test("is a reasonable penalty value", () => {
 		expect(ALL_NIGHTER_ENERGY_PENALTY).toBeGreaterThan(0);
 		expect(ALL_NIGHTER_ENERGY_PENALTY).toBeLessThanOrEqual(0.5);
+	});
+});
+
+describe("getAllNighterPenalty", () => {
+	test("varies by seed within range (20-30%)", () => {
+		const minPenalty = ALL_NIGHTER_PENALTY_BASE - ALL_NIGHTER_PENALTY_VARIANCE;
+		const maxPenalty = ALL_NIGHTER_PENALTY_BASE + ALL_NIGHTER_PENALTY_VARIANCE;
+		for (let i = 0; i < 100; i++) {
+			const penalty = getAllNighterPenalty(i * 12345);
+			expect(penalty).toBeGreaterThanOrEqual(minPenalty);
+			expect(penalty).toBeLessThanOrEqual(maxPenalty);
+		}
+	});
+
+	test("same seed gives same penalty", () => {
+		const p1 = getAllNighterPenalty(42);
+		const p2 = getAllNighterPenalty(42);
+		expect(p1).toBe(p2);
+	});
+
+	test("base and variance are correct", () => {
+		expect(ALL_NIGHTER_PENALTY_BASE).toBe(0.25);
+		expect(ALL_NIGHTER_PENALTY_VARIANCE).toBe(0.05);
 	});
 });

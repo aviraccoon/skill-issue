@@ -2,19 +2,23 @@ import { describe, expect, test } from "bun:test";
 import { createInitialState, type GameState } from "../state";
 import {
 	ACTIVITIES,
-	CORRECT_TIER_EFFECTS,
+	CORRECT_TIER_MOMENTUM,
 	canAffordRescue,
 	FRIEND_RESCUE_CHANCE,
+	FRIEND_RESCUE_CHANCE_BASE,
+	FRIEND_RESCUE_CHANCE_VARIANCE,
 	FRIEND_RESCUE_COST_WEEKDAY,
 	FRIEND_RESCUE_COST_WEEKEND,
 	FRIEND_RESCUE_THRESHOLD,
 	getActivityEffects,
+	getFriendRescueChance,
 	getRandomRescueMessage,
 	getRescueCost,
 	isCorrectTier,
 	RESCUE_MESSAGES,
 	shouldTriggerFriendRescue,
-	WRONG_TIER_EFFECTS,
+	WRONG_TIER_ENERGY_PENALTY,
+	WRONG_TIER_MOMENTUM,
 } from "./friend";
 
 function createTestState(overrides: Partial<GameState> = {}): GameState {
@@ -170,18 +174,63 @@ describe("getActivityEffects", () => {
 		return activity;
 	}
 
-	test("correct tier gives positive effects", () => {
-		const effects = getActivityEffects(getActivity("low"), 0.5);
-		expect(effects).toEqual(CORRECT_TIER_EFFECTS);
-		expect(effects.momentum).toBe(0.1);
-		expect(effects.energy).toBe(0.1);
+	test("correct tier with neutral personality gives +10% energy", () => {
+		const state = createTestState({
+			energy: 0.5,
+			personality: { time: "neutral", social: "neutral" },
+		});
+		const effects = getActivityEffects(getActivity("low"), state);
+		expect(effects.momentum).toBe(CORRECT_TIER_MOMENTUM);
+		expect(effects.energy).toBe(0.1); // Neutral social = +10%
 	});
 
-	test("wrong tier gives reduced/negative effects", () => {
-		const effects = getActivityEffects(getActivity("high"), 0.3);
-		expect(effects).toEqual(WRONG_TIER_EFFECTS);
-		expect(effects.momentum).toBe(0.03);
-		expect(effects.energy).toBe(-0.08);
+	test("correct tier with socialBattery gives +12% energy", () => {
+		const state = createTestState({
+			energy: 0.5,
+			personality: { time: "neutral", social: "socialBattery" },
+		});
+		const effects = getActivityEffects(getActivity("low"), state);
+		expect(effects.momentum).toBe(CORRECT_TIER_MOMENTUM);
+		expect(effects.energy).toBe(0.12); // Social Battery = +12%
+	});
+
+	test("correct tier with hermit costs -3% energy", () => {
+		const state = createTestState({
+			energy: 0.5,
+			personality: { time: "neutral", social: "hermit" },
+		});
+		const effects = getActivityEffects(getActivity("low"), state);
+		expect(effects.momentum).toBe(CORRECT_TIER_MOMENTUM);
+		expect(effects.energy).toBe(-0.03); // Hermit = -3%
+	});
+
+	test("wrong tier gives reduced momentum", () => {
+		const state = createTestState({
+			energy: 0.3,
+			personality: { time: "neutral", social: "neutral" },
+		});
+		const effects = getActivityEffects(getActivity("high"), state);
+		expect(effects.momentum).toBe(WRONG_TIER_MOMENTUM);
+	});
+
+	test("wrong tier with neutral personality gives base - penalty energy", () => {
+		const state = createTestState({
+			energy: 0.3,
+			personality: { time: "neutral", social: "neutral" },
+		});
+		const effects = getActivityEffects(getActivity("high"), state);
+		// Neutral base +10% minus wrong tier penalty -8% = +2%
+		expect(effects.energy).toBeCloseTo(0.1 - WRONG_TIER_ENERGY_PENALTY);
+	});
+
+	test("wrong tier with hermit stacks penalties", () => {
+		const state = createTestState({
+			energy: 0.3,
+			personality: { time: "neutral", social: "hermit" },
+		});
+		const effects = getActivityEffects(getActivity("high"), state);
+		// Hermit base -3% minus wrong tier penalty -8% = -11%
+		expect(effects.energy).toBeCloseTo(-0.03 - WRONG_TIER_ENERGY_PENALTY);
 	});
 });
 
@@ -204,5 +253,28 @@ describe("getRandomRescueMessage", () => {
 		}
 		// Should hit at least a few different messages
 		expect(messages.size).toBeGreaterThan(1);
+	});
+});
+
+describe("getFriendRescueChance", () => {
+	test("varies by seed within range (35-45%)", () => {
+		const minChance = FRIEND_RESCUE_CHANCE_BASE - FRIEND_RESCUE_CHANCE_VARIANCE;
+		const maxChance = FRIEND_RESCUE_CHANCE_BASE + FRIEND_RESCUE_CHANCE_VARIANCE;
+		for (let i = 0; i < 100; i++) {
+			const chance = getFriendRescueChance(i * 12345);
+			expect(chance).toBeGreaterThanOrEqual(minChance);
+			expect(chance).toBeLessThanOrEqual(maxChance);
+		}
+	});
+
+	test("same seed gives same chance", () => {
+		const c1 = getFriendRescueChance(42);
+		const c2 = getFriendRescueChance(42);
+		expect(c1).toBe(c2);
+	});
+
+	test("base and variance are correct", () => {
+		expect(FRIEND_RESCUE_CHANCE_BASE).toBe(0.4);
+		expect(FRIEND_RESCUE_CHANCE_VARIANCE).toBe(0.05);
 	});
 });
