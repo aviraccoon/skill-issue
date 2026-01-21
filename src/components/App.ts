@@ -1,5 +1,9 @@
 import { checkPhone } from "../actions/phone";
-import { attemptTask, selectTask } from "../actions/tasks";
+import {
+	type AttemptCallbacks,
+	attemptTask,
+	selectTask,
+} from "../actions/tasks";
 import { endWeekendDay, skipTimeBlock } from "../actions/time";
 import { type GameState, isWeekend, type Task, TIME_BLOCKS } from "../state";
 import type { Store } from "../store";
@@ -16,6 +20,40 @@ import { renderWeekComplete } from "./WeekComplete";
 
 /** Re-export styles for use in actions that need animation class references. */
 export { taskStyles, panelStyles };
+
+/**
+ * Browser-specific callbacks for task attempt animations.
+ * Plays visual feedback when tasks fail.
+ */
+const browserAttemptCallbacks: AttemptCallbacks = {
+	onFailure: (taskId: string) => {
+		// Task button animation
+		const taskButton = document.querySelector(`[data-id="${taskId}"]`);
+		if (taskButton) {
+			taskButton.classList.add(taskStyles.failing);
+			taskButton.addEventListener(
+				"animationend",
+				() => {
+					taskButton.classList.remove(taskStyles.failing);
+				},
+				{ once: true },
+			);
+		}
+
+		// Attempt button animation
+		const attemptButton = document.querySelector(`.${panelStyles.attemptBtn}`);
+		if (attemptButton) {
+			attemptButton.classList.add(panelStyles.attemptFailed);
+			attemptButton.addEventListener(
+				"animationend",
+				() => {
+					attemptButton.classList.remove(panelStyles.attemptFailed);
+				},
+				{ once: true },
+			);
+		}
+	},
+};
 
 /** Tracks whether we've initialized the DOM structure for game screen. */
 let gameInitialized = false;
@@ -285,7 +323,7 @@ function renderTaskPanel(state: GameState, store: Store<GameState>) {
 	const attemptBtn = panel.querySelector(`.${panelStyles.attemptBtn}`);
 	if (attemptBtn && canAttempt) {
 		attemptBtn.addEventListener("click", () => {
-			attemptTask(store, selectedTask.id);
+			attemptTask(store, selectedTask.id, browserAttemptCallbacks);
 		});
 	}
 

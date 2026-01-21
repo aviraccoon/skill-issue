@@ -1,5 +1,6 @@
 import { type GameState, isWeekend } from "../state";
-import { seededVariation } from "../utils/random";
+import type { Store } from "../store";
+import { nextRoll, seededVariation } from "../utils/random";
 import { calculateFriendRescueEnergyEffect } from "./energy";
 
 const SALT_RESCUE_CHANCE = 5001;
@@ -87,7 +88,9 @@ export const RESCUE_MESSAGES = [
  * Checks if the friend rescue should trigger.
  * Called after a failed task attempt.
  */
-export function shouldTriggerFriendRescue(state: GameState): boolean {
+export function shouldTriggerFriendRescue(store: Store<GameState>): boolean {
+	const state = store.getState();
+
 	// Already used today
 	if (state.friendRescueUsedToday) return false;
 
@@ -99,7 +102,7 @@ export function shouldTriggerFriendRescue(state: GameState): boolean {
 
 	// Roll the dice (chance varies by seed)
 	const chance = getFriendRescueChance(state.runSeed);
-	return Math.random() < chance;
+	return nextRoll(store) < chance;
 }
 
 /**

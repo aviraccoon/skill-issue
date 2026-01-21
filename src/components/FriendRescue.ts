@@ -1,15 +1,13 @@
-import { type GameState, isWeekend } from "../state";
-import type { Store } from "../store";
 import {
 	ACTIVITIES,
 	type Activity,
-	getActivityEffects,
-	getRandomRescueMessage,
-	getRescueCost,
-	isCorrectTier,
-} from "../systems/friend";
+	acceptFriendRescue,
+	declineFriendRescue,
+} from "../actions/friend";
+import { type GameState, isWeekend } from "../state";
+import type { Store } from "../store";
+import { getRandomRescueMessage, getRescueCost } from "../systems/friend";
 import { getPatternHint } from "../systems/patternHints";
-import { clamp } from "../utils/math";
 import styles from "./FriendRescue.module.css";
 
 /**
@@ -68,29 +66,10 @@ export function renderFriendRescue(
  * Handles accepting the friend rescue with chosen activity.
  */
 function acceptRescue(store: Store<GameState>, activity: Activity) {
-	const state = store.getState();
-	const effects = getActivityEffects(activity, state);
-	const correct = isCorrectTier(activity, state.energy);
-
-	// Apply effects
-	store.update("momentum", (m) => clamp(m + effects.momentum, 0, 1));
-	store.update("energy", (e) => clamp(e + effects.energy, 0, 1));
-
-	// Consume cost
-	if (isWeekend(state)) {
-		store.update("weekendPointsRemaining", (p) => p - getRescueCost(state));
-	} else {
-		store.update("slotsRemaining", (s) => s - getRescueCost(state));
-	}
-
-	// Mark rescue as used today
-	store.set("friendRescueUsedToday", true);
-
-	// Reset consecutive failures
-	store.set("consecutiveFailures", 0);
+	const result = acceptFriendRescue(store, activity);
 
 	// Show brief result with pattern hint, then return to game
-	showRescueResult(store, correct);
+	showRescueResult(store, result.correct);
 }
 
 /**
@@ -125,11 +104,7 @@ function showRescueResult(store: Store<GameState>, correctTier: boolean) {
  * Handles declining the friend rescue.
  */
 function declineRescue(store: Store<GameState>) {
-	// Reset consecutive failures (friend checked in, that counts for something)
-	store.set("consecutiveFailures", 0);
-
-	// Mark as used today (they won't ask again)
-	store.set("friendRescueUsedToday", true);
+	declineFriendRescue(store);
 
 	// Return to game
 	store.set("screen", "game");

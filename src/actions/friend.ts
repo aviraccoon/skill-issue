@@ -1,0 +1,78 @@
+import { type GameState, isWeekend } from "../state";
+import type { Store } from "../store";
+import {
+	type Activity,
+	getActivityEffects,
+	getRescueCost,
+	isCorrectTier,
+} from "../systems/friend";
+import { clamp } from "../utils/math";
+
+/**
+ * Result of accepting a friend rescue.
+ */
+export interface AcceptRescueResult {
+	/** Whether the player chose the correct activity tier for their energy. */
+	correct: boolean;
+	/** Momentum change applied. */
+	momentumChange: number;
+	/** Energy change applied. */
+	energyChange: number;
+}
+
+/**
+ * Accepts the friend rescue with a chosen activity.
+ * Updates state and returns the result for UI or logging.
+ */
+export function acceptFriendRescue(
+	store: Store<GameState>,
+	activity: Activity,
+): AcceptRescueResult {
+	const state = store.getState();
+	const effects = getActivityEffects(activity, state);
+	const correct = isCorrectTier(activity, state.energy);
+
+	// Apply effects
+	store.update("momentum", (m) => clamp(m + effects.momentum, 0, 1));
+	store.update("energy", (e) => clamp(e + effects.energy, 0, 1));
+
+	// Consume cost
+	if (isWeekend(state)) {
+		store.update("weekendPointsRemaining", (p) => p - getRescueCost(state));
+	} else {
+		store.update("slotsRemaining", (s) => s - getRescueCost(state));
+	}
+
+	// Mark rescue as used today
+	store.set("friendRescueUsedToday", true);
+
+	// Reset consecutive failures
+	store.set("consecutiveFailures", 0);
+
+	return {
+		correct,
+		momentumChange: effects.momentum,
+		energyChange: effects.energy,
+	};
+}
+
+/**
+ * Declines the friend rescue.
+ * The friend checked in, which counts for something - resets consecutive failures.
+ */
+export function declineFriendRescue(store: Store<GameState>): void {
+	// Reset consecutive failures (friend checked in, that counts for something)
+	store.set("consecutiveFailures", 0);
+
+	// Mark as used today (they won't ask again)
+	store.set("friendRescueUsedToday", true);
+}
+
+/**
+ * Helper to get an activity by tier ID.
+ */
+export {
+	ACTIVITIES,
+	type Activity,
+	type ActivityTier,
+} from "../systems/friend";

@@ -9,7 +9,8 @@
 		"check": "biome check && tsc --noEmit",
 		"format": "biome check --write",
 		"test": "bun test",
-		"gen:css-types": "bun scripts/gen-css-types.ts"
+		"gen:css-types": "bun scripts/gen-css-types.ts",
+		"cli": "bun run src/cli/index.ts"
 	},
 	"devDependencies": {
 		"@biomejs/biome": "^2.3.11",

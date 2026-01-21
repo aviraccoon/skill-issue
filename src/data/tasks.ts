@@ -12,6 +12,21 @@ export type TaskCategory =
 	| "social";
 
 /**
+ * Priority weights by category for simulation strategies.
+ * Higher = more important. Used by realistic strategy to decide task order.
+ */
+export const CATEGORY_PRIORITIES: Record<TaskCategory, number> = {
+	dog: 100, // Dog comes first - external accountability
+	work: 90, // Work is important for survival
+	food: 80, // Need to eat
+	hygiene: 70, // Self-care matters
+	selfcare: 40, // Good but not urgent
+	chores: 30, // Can wait
+	social: 20, // Optional
+	creative: 10, // Aspirational, low priority
+};
+
+/**
  * Energy effect from completing a task.
  * If not specified, defaults to 0 on success, -0.02 on failure.
  */
@@ -31,6 +46,8 @@ interface TaskDefinitionBase {
 	weekendCost?: number;
 	evolution?: TaskEvolution;
 	energyEffect?: TaskEnergyEffect;
+	/** When this task succeeds, also mark another task as succeeded. */
+	autoSatisfies?: string;
 }
 
 /** Task definitions as const to preserve literal ID types. */
@@ -182,6 +199,7 @@ const taskDefinitions = [
 		baseRate: 0.85,
 		availableBlocks: ["morning", "afternoon", "evening", "night"],
 		energyEffect: { success: 0.04 }, // movement + external accountability energizes
+		autoSatisfies: "go-outside", // walking the dog counts as going outside
 		evolution: {
 			aware: [
 				"Walk Dog - He's waiting",

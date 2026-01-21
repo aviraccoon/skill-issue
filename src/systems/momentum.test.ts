@@ -1,4 +1,6 @@
 import { describe, expect, test } from "bun:test";
+import { createInitialState } from "../state";
+import { createStore } from "../store";
 import {
 	DECAY_PER_BLOCK_BASE,
 	DECAY_PER_BLOCK_VARIANCE,
@@ -97,8 +99,11 @@ describe("scroll trap momentum", () => {
 	test("penalty falls within seeded range", () => {
 		const seed = 42;
 		const [min, max] = getScrollTrapMomentumRange(seed);
+		// Create store with specific seed
+		const state = { ...createInitialState(), runSeed: seed, rollCount: 0 };
+		const store = createStore(state);
 		for (let i = 0; i < 50; i++) {
-			const penalty = getScrollTrapMomentumPenalty(seed);
+			const penalty = getScrollTrapMomentumPenalty(store);
 			expect(penalty).toBeGreaterThanOrEqual(min);
 			expect(penalty).toBeLessThanOrEqual(max);
 		}

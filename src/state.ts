@@ -40,6 +40,7 @@ export interface Task {
 		success?: number; // energy change on success (default: 0)
 		failure?: number; // energy change on failure (default: -0.02)
 	};
+	autoSatisfies?: string; // when this task succeeds, also mark another task as succeeded
 	failureCount: number; // how many times failed this week
 	attemptedToday: boolean;
 	succeededToday: boolean;
@@ -78,6 +79,9 @@ export interface GameState {
 	// Friend rescue state
 	consecutiveFailures: number; // resets on success or rescue, triggers check at 3+
 	friendRescueUsedToday: boolean; // limits to 1 rescue per day
+
+	// Deterministic randomness
+	rollCount: number; // increments with each random roll for reproducibility
 }
 
 /** Returns true if the current day is Saturday or Sunday. */
@@ -114,6 +118,7 @@ export function createInitialState(): GameState {
 		inExtendedNight: false,
 		consecutiveFailures: 0,
 		friendRescueUsedToday: false,
+		rollCount: 0,
 	};
 }
 

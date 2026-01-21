@@ -8,6 +8,24 @@ export function hashString(str: string): number {
 	return Math.abs(hash);
 }
 
+/** Minimal store interface for nextRoll. */
+interface RollStore {
+	getState(): { runSeed: number; rollCount: number };
+	set(key: "rollCount", value: number): void;
+}
+
+/**
+ * Gets the next deterministic random value and increments rollCount.
+ * Uses the run seed + current roll count to generate reproducible values.
+ * Same seed + same sequence of calls = same random values.
+ */
+export function nextRoll(store: RollStore): number {
+	const state = store.getState();
+	const value = seededRandom(state.runSeed, state.rollCount);
+	store.set("rollCount", state.rollCount + 1);
+	return value;
+}
+
 /** Seeded shuffle using Fisher-Yates algorithm. */
 export function seededShuffle<T>(array: T[], seed: number): T[] {
 	const result = [...array];

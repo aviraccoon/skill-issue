@@ -10,8 +10,8 @@ import { getScrollTrapMomentumPenalty } from "../systems/momentum";
 export function checkPhone(store: Store<GameState>) {
 	const state = store.getState();
 
-	// Momentum penalty (15-20% base, shifted by seed, random within range)
-	const momentumPenalty = getScrollTrapMomentumPenalty(state.runSeed);
+	// Momentum penalty (15-20% base, shifted by seed, deterministic within range)
+	const momentumPenalty = getScrollTrapMomentumPenalty(store);
 	store.update("momentum", (m) => Math.max(m - momentumPenalty, 0));
 
 	// Energy drain - the hidden cost of scrolling (varies by seed)

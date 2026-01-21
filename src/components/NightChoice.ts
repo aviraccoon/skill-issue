@@ -1,9 +1,7 @@
+import { chooseSleep, pushThrough } from "../actions/night";
 import type { GameState } from "../state";
 import type { Store } from "../store";
-import {
-	calculateExtendedNightSlots,
-	getExtendedNightDescription,
-} from "../systems/allnighter";
+import { getExtendedNightDescription } from "../systems/allnighter";
 import { capitalize } from "../utils/string";
 import styles from "./NightChoice.module.css";
 
@@ -16,7 +14,6 @@ export function renderNightChoice(
 	state: GameState,
 	container: HTMLElement,
 ) {
-	const slots = calculateExtendedNightSlots(state.energy);
 	const description = getExtendedNightDescription(state.energy);
 
 	container.innerHTML = `
@@ -34,16 +31,12 @@ export function renderNightChoice(
 	container
 		.querySelector(`.${styles.sleepBtn}`)
 		?.addEventListener("click", () => {
-			// Go to normal day summary
-			store.set("screen", "daySummary");
+			chooseSleep(store);
 		});
 
 	container
 		.querySelector(`.${styles.pushThroughBtn}`)
 		?.addEventListener("click", () => {
-			// Enter extended night
-			store.set("inExtendedNight", true);
-			store.set("slotsRemaining", slots);
-			store.set("screen", "game");
+			pushThrough(store);
 		});
 }

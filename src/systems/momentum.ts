@@ -1,4 +1,4 @@
-import { seededVariation } from "../utils/random";
+import { nextRoll, seededVariation } from "../utils/random";
 
 // Salt values for independent variation of each constant
 const SALT_SUCCESS_BONUS = 3001;
@@ -86,10 +86,17 @@ export function getScrollTrapMomentumRange(seed: number): [number, number] {
 	return [SCROLL_TRAP_MIN_BASE + shift, SCROLL_TRAP_MAX_BASE + shift];
 }
 
+/** Minimal store interface for scroll trap. */
+interface RollStore {
+	getState(): { runSeed: number; rollCount: number };
+	set(key: "rollCount", value: number): void;
+}
+
 /**
- * Calculates a random scroll trap penalty within the seeded range.
+ * Calculates a deterministic scroll trap penalty within the seeded range.
  */
-export function getScrollTrapMomentumPenalty(seed: number): number {
+export function getScrollTrapMomentumPenalty(store: RollStore): number {
+	const seed = store.getState().runSeed;
 	const [min, max] = getScrollTrapMomentumRange(seed);
-	return min + Math.random() * (max - min);
+	return min + nextRoll(store) * (max - min);
 }

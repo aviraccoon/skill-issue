@@ -1,5 +1,6 @@
 import { describe, expect, test } from "bun:test";
 import { createInitialState, type GameState } from "../state";
+import { createStore } from "../store";
 import {
 	ACTIVITIES,
 	CORRECT_TIER_MOMENTUM,
@@ -28,6 +29,10 @@ function createTestState(overrides: Partial<GameState> = {}): GameState {
 	};
 }
 
+function createTestStore(overrides: Partial<GameState> = {}) {
+	return createStore(createTestState(overrides));
+}
+
 describe("friend rescue trigger", () => {
 	test("does not trigger below threshold", () => {
 		const state = createTestState({
@@ -40,21 +45,21 @@ describe("friend rescue trigger", () => {
 	});
 
 	test("does not trigger if already used today", () => {
-		const state = createTestState({
+		const store = createTestStore({
 			consecutiveFailures: 5,
 			friendRescueUsedToday: true,
 			slotsRemaining: 3,
 		});
-		expect(shouldTriggerFriendRescue(state)).toBe(false);
+		expect(shouldTriggerFriendRescue(store)).toBe(false);
 	});
 
 	test("does not trigger if cannot afford", () => {
-		const state = createTestState({
+		const store = createTestStore({
 			consecutiveFailures: 5,
 			friendRescueUsedToday: false,
 			slotsRemaining: 0,
 		});
-		expect(shouldTriggerFriendRescue(state)).toBe(false);
+		expect(shouldTriggerFriendRescue(store)).toBe(false);
 	});
 
 	test("threshold constant is 3", () => {

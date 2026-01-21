@@ -1,4 +1,3 @@
-import { panelStyles, taskStyles } from "../components/App";
 import { type GameState, isWeekend } from "../state";
 import type { Store } from "../store";
 import {
@@ -12,6 +11,27 @@ import {
 	getMomentumSuccessBonus,
 } from "../systems/momentum";
 import { calculateSuccessProbability } from "../systems/probability";
+import { nextRoll } from "../utils/random";
+
+/**
+ * Callbacks for visual feedback during task attempts.
+ * Optional - only provided in browser context.
+ */
+export interface AttemptCallbacks {
+	onFailure?: (taskId: string) => void;
+}
+
+/**
+ * Result of a task attempt.
+ */
+export interface AttemptResult {
+	/** Whether the task attempt succeeded. */
+	succeeded: boolean;
+	/** The probability that was used for the roll. */
+	probability: number;
+	/** Whether the friend rescue screen was triggered. */
+	friendRescueTriggered: boolean;
+}
 
 /**
  * Selects a task to view its details in the panel.
@@ -24,23 +44,31 @@ export function selectTask(store: Store<GameState>, taskId: string) {
  * Attempts to complete a task. Success is probabilistic based on
  * hidden state (energy, momentum) and time of day.
  * Consumes action slots (weekday) or points (weekend) regardless of outcome.
+ *
+ * @param callbacks Optional callbacks for visual feedback (browser only)
+ * @returns Result of the attempt, or undefined if task cannot be attempted
  */
-export function attemptTask(store: Store<GameState>, taskId: string) {
+export function attemptTask(
+	store: Store<GameState>,
+	taskId: string,
+	callbacks?: AttemptCallbacks,
+): AttemptResult | undefined {
 	const state = store.getState();
 	const task = state.tasks.find((t) => t.id === taskId);
-	if (!task || task.succeededToday) return;
+	if (!task || task.succeededToday) return undefined;
 
 	// Check resource availability based on day type
 	const weekend = isWeekend(state);
 	if (weekend) {
 		const cost = task.weekendCost ?? 1;
-		if (state.weekendPointsRemaining < cost) return;
+		if (state.weekendPointsRemaining < cost) return undefined;
 	} else {
-		if (state.slotsRemaining <= 0) return;
+		if (state.slotsRemaining <= 0) return undefined;
 	}
 
 	const probability = calculateSuccessProbability(task, state);
-	const succeeded = Math.random() < probability;
+	const succeeded = nextRoll(store) < probability;
+	let friendRescueTriggered = false;
 
 	// Update task state
 	store.update("tasks", (tasks) =>
@@ -73,11 +101,12 @@ export function attemptTask(store: Store<GameState>, taskId: string) {
 		store.update("momentum", (m) => Math.min(m + bonus, 1));
 		store.set("consecutiveFailures", 0);
 
-		// Walk Dog auto-satisfies Go Outside
-		if (taskId === "walk-dog") {
+		// Auto-satisfy linked task if defined (e.g., walk-dog -> go-outside)
+		if (task.autoSatisfies) {
+			const targetId = task.autoSatisfies;
 			store.update("tasks", (tasks) =>
 				tasks.map((t) => {
-					if (t.id !== "go-outside") return t;
+					if (t.id !== targetId) return t;
 					return { ...t, succeededToday: true };
 				}),
 			);
@@ -93,49 +122,15 @@ export function attemptTask(store: Store<GameState>, taskId: string) {
 		store.update("momentum", (m) => Math.max(m - penalty, 0));
 		store.update("consecutiveFailures", (c) => c + 1);
 
-		// Trigger failure animations on both task and attempt button
-		playFailureAnimation(taskId);
-		playAttemptButtonFailure();
+		// Trigger failure callback if provided (browser animations)
+		callbacks?.onFailure?.(taskId);
 
 		// Check if friend rescue should trigger
-		const updatedState = store.getState();
-		if (shouldTriggerFriendRescue(updatedState)) {
+		if (shouldTriggerFriendRescue(store)) {
 			store.set("screen", "friendRescue");
+			friendRescueTriggered = true;
 		}
 	}
-}
 
-/**
- * Plays the "almost" animation on a task button to indicate
- * the click didn't work. No error message - just the feeling.
- */
-function playFailureAnimation(taskId: string) {
-	const button = document.querySelector(`[data-id="${taskId}"]`);
-	if (!button) return;
-
-	button.classList.add(taskStyles.failing);
-	button.addEventListener(
-		"animationend",
-		() => {
-			button.classList.remove(taskStyles.failing);
-		},
-		{ once: true },
-	);
-}
-
-/**
- * Plays a subtle shake on the Attempt button when task fails.
- */
-function playAttemptButtonFailure() {
-	const button = document.querySelector(`.${panelStyles.attemptBtn}`);
-	if (!button) return;
-
-	button.classList.add(panelStyles.attemptFailed);
-	button.addEventListener(
-		"animationend",
-		() => {
-			button.classList.remove(panelStyles.attemptFailed);
-		},
-		{ once: true },
-	);
+	return { succeeded, probability, friendRescueTriggered };
 }

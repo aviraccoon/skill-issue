@@ -1,5 +1,5 @@
 import { describe, expect, test } from "bun:test";
-import { hashString, seededShuffle } from "./random";
+import { hashString, nextRoll, seededShuffle } from "./random";
 
 describe("hashString", () => {
 	test("returns same hash for same string", () => {
@@ -59,5 +59,85 @@ describe("seededShuffle", () => {
 
 	test("handles single element", () => {
 		expect(seededShuffle([1], 123)).toEqual([1]);
+	});
+});
+
+describe("nextRoll", () => {
+	function createMockStore(seed: number, rollCount = 0) {
+		let state = { runSeed: seed, rollCount };
+		return {
+			getState: () => state,
+			set: (key: "rollCount", value: number) => {
+				state = { ...state, [key]: value };
+			},
+		};
+	}
+
+	test("returns value in [0, 1) range", () => {
+		const store = createMockStore(12345);
+		for (let i = 0; i < 100; i++) {
+			const value = nextRoll(store);
+			expect(value).toBeGreaterThanOrEqual(0);
+			expect(value).toBeLessThan(1);
+		}
+	});
+
+	test("increments rollCount each call", () => {
+		const store = createMockStore(12345);
+		expect(store.getState().rollCount).toBe(0);
+
+		nextRoll(store);
+		expect(store.getState().rollCount).toBe(1);
+
+		nextRoll(store);
+		expect(store.getState().rollCount).toBe(2);
+
+		nextRoll(store);
+		expect(store.getState().rollCount).toBe(3);
+	});
+
+	test("same seed + same rollCount gives same value", () => {
+		const store1 = createMockStore(42, 5);
+		const store2 = createMockStore(42, 5);
+
+		expect(nextRoll(store1)).toBe(nextRoll(store2));
+	});
+
+	test("same seed + different rollCount gives different values", () => {
+		const store = createMockStore(42);
+		const values: number[] = [];
+		for (let i = 0; i < 10; i++) {
+			values.push(nextRoll(store));
+		}
+		// All values should be unique
+		const unique = new Set(values);
+		expect(unique.size).toBe(10);
+	});
+
+	test("different seeds give different sequences", () => {
+		const store1 = createMockStore(100);
+		const store2 = createMockStore(200);
+
+		const seq1 = [nextRoll(store1), nextRoll(store1), nextRoll(store1)];
+		const seq2 = [nextRoll(store2), nextRoll(store2), nextRoll(store2)];
+
+		expect(seq1).not.toEqual(seq2);
+	});
+
+	test("deterministic across fresh stores with same initial state", () => {
+		// Simulate what happens in CLI: create store, run simulation, recreate store, run again
+		const runSimulation = (seed: number) => {
+			const store = createMockStore(seed);
+			const rolls: number[] = [];
+			for (let i = 0; i < 5; i++) {
+				rolls.push(nextRoll(store));
+			}
+			return rolls;
+		};
+
+		const run1 = runSimulation(12345);
+		const run2 = runSimulation(12345);
+
+		expect(run1).toEqual(run2);
 	});
 });
