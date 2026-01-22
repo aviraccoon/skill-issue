@@ -132,7 +132,7 @@ bun run cli play --seed 12345
 ```
 src/cli/
   index.ts           Entry point, argument parsing
-  engine.ts          Simulation engine, state machine
+  engine.ts          Simulation loop (uses core/controller.ts)
   strategies.ts      Decision-making strategies
   stats.ts           Aggregation and grouping
   output.ts          Formatting and display
@@ -143,6 +143,10 @@ src/cli/
     compare.ts       Strategy comparison command
     find-seed.ts     Seed search command
     interactive.ts   Interactive play mode
+
+src/core/
+  controller.ts      Shared game controller (Decision, executeDecision)
+  screenInfo.ts      Screen rendering data (used by browser, available to CLI)
 ```
 
 ## Exploration Ideas

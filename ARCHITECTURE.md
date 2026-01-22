@@ -36,24 +36,54 @@ store.subscribe('momentum', updateVisualMessiness)
 
 The store is ~50 lines. State changes trigger targeted re-renders.
 
+### Shared Controller
+
+Both browser and CLI use a shared game controller (`core/controller.ts`):
+
+```ts
+// Decision type covers all player actions
+type Decision =
+  | { type: 'attempt'; taskId: string }
+  | { type: 'skip' }
+  | { type: 'checkPhone' }
+  | { type: 'sleep' }
+  | { type: 'pushThrough' }
+  // ...
+
+// Get available decisions for current screen
+const decisions = getAvailableDecisions(state)
+
+// Execute a decision
+const result = executeDecision(store, decision, callbacks?)
+```
+
+Screen rendering data is computed by `getScreenInfo(state)`, which returns a discriminated union of info types for each screen (GameScreenInfo, NightChoiceInfo, etc.).
+
 ### Components
 
 Components are functions that:
-1. Receive state (or state slices)
-2. Return DOM elements or update existing ones
-3. Attach event handlers that dispatch actions
+1. Receive ScreenInfo with all display data precomputed
+2. Render DOM based on that data
+3. Call `onDecision(decision)` when user interacts
 
 ```ts
-function TaskItem(task: Task): HTMLElement {
-  const el = createElement('button', {
-    class: 'task',
-    'data-failures': task.failureCount,
-    onclick: () => attemptTask(task.id)
+function renderNightChoice(
+  screenInfo: NightChoiceInfo,
+  container: HTMLElement,
+  onDecision: (decision: Decision) => void
+) {
+  container.innerHTML = `
+    <h2>${screenInfo.dayCapitalized} Night</h2>
+    <p>${screenInfo.description}</p>
+    <button class="sleep">Sleep</button>
+  `
+  container.querySelector('.sleep')?.addEventListener('click', () => {
+    onDecision({ type: 'sleep' })
   })
-  el.textContent = getTaskDescription(task)
-  return el
 }
 ```
+
+The browser's `App.ts` creates a `handleDecision` callback that wraps `executeDecision` with animation callbacks.
 
 ### Actions
 
@@ -109,44 +139,63 @@ Visual states are driven by data attributes, not JS:
 
 ```
 src/
-  index.ts          # Entry point
+  index.ts          # Browser entry point
   server.ts         # Dev server (Bun.serve)
   store.ts          # Reactive store implementation
   state.ts          # GameState type, initial state, state helpers
+
+  core/
+    controller.ts   # Shared game controller (Decision, executeDecision)
+    screenInfo.ts   # Screen rendering data (ScreenInfo, getScreenInfo)
 
   actions/
     tasks.ts        # attemptTask, selectTask
     time.ts         # advanceTimeBlock, skipToNext
     phone.ts        # checkPhone (scroll trap)
+    friend.ts       # Friend rescue mechanics
+    night.ts        # Sleep/push through choices
 
   components/
-    App.ts                      # Main game UI
+    App.ts                      # Main game UI, screen routing
     App.module.css              # Layout styles
     App.module.css.d.ts         # Auto-generated types
+    NightChoice.ts              # Night choice screen
+    FriendRescue.ts             # Friend rescue screen
+    DaySummary.ts               # End-of-day summary screen
+    WeekComplete.ts             # Week complete screen
     Task.module.css             # Task button styles
     Panel.module.css            # Task panel styles
     ThemeSwitcher.ts
-    ThemeSwitcher.module.css
     DevTools.ts
-    DevTools.module.css
 
   systems/
     probability.ts  # Success rate calculations
     momentum.ts     # Momentum decay, modifiers
     energy.ts       # Hidden energy state
     evolution.ts    # Task description evolution
+    dog.ts          # Dog urgency system
+    friend.ts       # Friend rescue triggers
+    allnighter.ts   # All-nighter mechanics
+    personality.ts  # Seed-based personality
 
   data/
-    tasks.ts        # Task definitions, variants
-    descriptions.ts # Evolved description text
+    tasks.ts        # Task definitions
+    daySummary.ts   # Day summary narrative text
+    scrollTrap.ts   # Phone check flavor text
 
   styles/
     base.css        # Reset, CSS variables, time theming
     themes.css      # Theme variable overrides
 
   utils/
-    dom.ts          # createElement, etc.
     random.ts       # Seeded random for reproducibility
+    math.ts         # Clamp, lerp utilities
+    string.ts       # capitalize, etc.
+
+  cli/              # CLI simulation tool (see src/cli/README.md)
+    index.ts        # Entry point
+    engine.ts       # Simulation loop, strategies
+    commands/       # Command implementations
 
 scripts/
   gen-css-types.ts  # Generates .d.ts files for CSS modules
