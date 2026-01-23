@@ -8,6 +8,9 @@ const SALT_RESCUE_CHANCE = 5001;
 /** Minimum consecutive failures before friend rescue can trigger. */
 export const FRIEND_RESCUE_THRESHOLD = 3;
 
+/** Minimum consecutive failures for phone buzz hint (before rescue threshold). */
+export const PHONE_BUZZ_THRESHOLD = 2;
+
 /**
  * Base probability of friend reaching out.
  * Varies by seed: 35-45%.
@@ -26,9 +29,6 @@ export function getFriendRescueChance(seed: number): number {
 		SALT_RESCUE_CHANCE,
 	);
 }
-
-/** @deprecated Use getFriendRescueChance(seed) instead. Kept for test compatibility. */
-export const FRIEND_RESCUE_CHANCE = 0.4;
 
 /** Cost in action slots (weekday) or points (weekend). */
 export const FRIEND_RESCUE_COST_WEEKDAY = 1;
@@ -73,16 +73,6 @@ export const WRONG_TIER_MOMENTUM = 0.03;
 
 /** Extra energy penalty when picking wrong tier (stacks with personality effect). */
 export const WRONG_TIER_ENERGY_PENALTY = 0.08;
-
-/** Messages the friend sends when reaching out. */
-export const RESCUE_MESSAGES = [
-	"Hey, you doing okay? Want to grab coffee?",
-	"I'm near your place anyway. Quick walk?",
-	"You seem off today. Bubble tea?",
-	"Free for a bit? Could use the company.",
-	"Hey. You around? I could use a break too.",
-	"Coffee? My treat.",
-];
 
 /**
  * Checks if the friend rescue should trigger.
@@ -154,12 +144,4 @@ export function getActivityEffects(
 		momentum: WRONG_TIER_MOMENTUM,
 		energy: energyEffect - WRONG_TIER_ENERGY_PENALTY,
 	};
-}
-
-/**
- * Gets a random rescue message.
- */
-export function getRandomRescueMessage(seed: number): string {
-	const index = Math.abs(seed) % RESCUE_MESSAGES.length;
-	return RESCUE_MESSAGES[index] as string;
 }

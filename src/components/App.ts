@@ -69,7 +69,12 @@ export function renderApp(store: Store<GameState>) {
 
 	// Create decision handler that wraps executeDecision
 	const handleDecision = (decision: Decision) => {
-		executeDecision(store, decision, browserAttemptCallbacks);
+		const result = executeDecision(store, decision, browserAttemptCallbacks);
+
+		// Show phone buzz notification if present
+		if (result.phoneBuzzText) {
+			showNotification(result.phoneBuzzText);
+		}
 	};
 
 	switch (screenInfo.type) {
@@ -141,6 +146,7 @@ function createAppStructure(screenInfo: GameScreenInfo): string {
 					}
 				</div>
 				<ul class="${appStyles.taskList}"></ul>
+				<div class="${appStyles.notification}" aria-live="polite"></div>
 			</section>
 
 			<aside class="${panelStyles.panel}">
@@ -153,6 +159,20 @@ function createAppStructure(screenInfo: GameScreenInfo): string {
 			<button class="${appStyles.skipBtn}">Skip to Afternoon</button>
 		</footer>
 	`;
+}
+
+/** Shows a brief notification message (e.g., phone buzz text). */
+function showNotification(text: string) {
+	const notification = document.querySelector(`.${appStyles.notification}`);
+	if (!notification) return;
+
+	notification.textContent = text;
+	notification.classList.add(appStyles.notificationVisible);
+
+	// Clear after a few seconds
+	setTimeout(() => {
+		notification.classList.remove(appStyles.notificationVisible);
+	}, 3000);
 }
 
 /** Updates the header with current day and time block. */

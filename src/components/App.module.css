@@ -106,3 +106,18 @@
 	font-size: 0.875rem;
 	font-style: italic;
 }
+
+/* Phone buzz notification */
+.notification {
+	font-size: 0.875rem;
+	color: var(--muted);
+	font-style: italic;
+	padding: 0.5rem 0;
+	opacity: 0;
+	transition: opacity 0.3s ease-out;
+	min-height: 1.5rem;
+}
+
+.notificationVisible {
+	opacity: 1;
+}

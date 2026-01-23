@@ -11,6 +11,7 @@ import {
 	getAllNighterTitle,
 	getDogNote,
 } from "../data/daySummary";
+import { getPatternHint, getRandomRescueMessage } from "../data/friendRescue";
 import type { GameState, Task, TimeBlock } from "../state";
 import { isWeekend, TIME_BLOCKS } from "../state";
 import { getExtendedNightDescription } from "../systems/allnighter";
@@ -20,8 +21,7 @@ import {
 	URGENCY_DISPLAY,
 } from "../systems/dog";
 import { getEvolvedDescription } from "../systems/evolution";
-import { getRandomRescueMessage, getRescueCost } from "../systems/friend";
-import { getPatternHint } from "../systems/patternHints";
+import { getRescueCost } from "../systems/friend";
 import { seededShuffle } from "../utils/random";
 import { capitalize } from "../utils/string";
 import type { Decision } from "./controller";
@@ -221,9 +221,7 @@ function getFriendRescueInfo(state: GameState): FriendRescueInfo {
 
 	return {
 		type: "friendRescue",
-		message: getRandomRescueMessage(
-			state.runSeed + state.dayIndex + state.consecutiveFailures,
-		),
+		message: getRandomRescueMessage(state),
 		cost,
 		costLabel: weekend ? `${cost} action points` : `${cost} action slot`,
 		activities: [...ACTIVITIES],

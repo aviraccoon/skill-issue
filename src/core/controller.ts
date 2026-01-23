@@ -38,6 +38,8 @@ export interface ActionResult {
 	succeeded?: boolean;
 	probability?: number;
 	friendRescueTriggered?: boolean;
+	/** Phone buzz flavor text (pre-rescue hint), if applicable. */
+	phoneBuzzText?: string;
 	energyBefore: number;
 	energyAfter: number;
 	momentumBefore: number;
@@ -130,6 +132,7 @@ export function executeDecision(
 	let succeeded: boolean | undefined;
 	let probability: number | undefined;
 	let friendRescueTriggered: boolean | undefined;
+	let phoneBuzzText: string | undefined;
 
 	switch (decision.type) {
 		case "attempt": {
@@ -138,6 +141,7 @@ export function executeDecision(
 				succeeded = result.succeeded;
 				probability = result.probability;
 				friendRescueTriggered = result.friendRescueTriggered;
+				phoneBuzzText = result.phoneBuzzText;
 			}
 			break;
 		}
@@ -184,6 +188,7 @@ export function executeDecision(
 		succeeded,
 		probability,
 		friendRescueTriggered,
+		phoneBuzzText,
 		energyBefore,
 		energyAfter: stateAfter.energy,
 		momentumBefore,

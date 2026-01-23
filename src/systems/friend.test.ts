@@ -1,11 +1,11 @@
 import { describe, expect, test } from "bun:test";
+import { getRandomRescueMessage, RESCUE_MESSAGES } from "../data/friendRescue";
 import { createInitialState, type GameState } from "../state";
 import { createStore } from "../store";
 import {
 	ACTIVITIES,
 	CORRECT_TIER_MOMENTUM,
 	canAffordRescue,
-	FRIEND_RESCUE_CHANCE,
 	FRIEND_RESCUE_CHANCE_BASE,
 	FRIEND_RESCUE_CHANCE_VARIANCE,
 	FRIEND_RESCUE_COST_WEEKDAY,
@@ -13,10 +13,8 @@ import {
 	FRIEND_RESCUE_THRESHOLD,
 	getActivityEffects,
 	getFriendRescueChance,
-	getRandomRescueMessage,
 	getRescueCost,
 	isCorrectTier,
-	RESCUE_MESSAGES,
 	shouldTriggerFriendRescue,
 	WRONG_TIER_ENERGY_PENALTY,
 	WRONG_TIER_MOMENTUM,
@@ -66,8 +64,8 @@ describe("friend rescue trigger", () => {
 		expect(FRIEND_RESCUE_THRESHOLD).toBe(3);
 	});
 
-	test("chance constant is 40%", () => {
-		expect(FRIEND_RESCUE_CHANCE).toBe(0.4);
+	test("base chance constant is 40%", () => {
+		expect(FRIEND_RESCUE_CHANCE_BASE).toBe(0.4);
 	});
 });
 
@@ -241,20 +239,23 @@ describe("getActivityEffects", () => {
 
 describe("getRandomRescueMessage", () => {
 	test("returns a message from the list", () => {
-		const message = getRandomRescueMessage(12345);
+		const state = createTestState({ runSeed: 12345 });
+		const message = getRandomRescueMessage(state);
 		expect(RESCUE_MESSAGES).toContain(message);
 	});
 
 	test("same seed gives same message", () => {
-		const msg1 = getRandomRescueMessage(42);
-		const msg2 = getRandomRescueMessage(42);
+		const state = createTestState({ runSeed: 42 });
+		const msg1 = getRandomRescueMessage(state);
+		const msg2 = getRandomRescueMessage(state);
 		expect(msg1).toBe(msg2);
 	});
 
 	test("different seeds can give different messages", () => {
 		const messages = new Set<string>();
 		for (let i = 0; i < 100; i++) {
-			messages.add(getRandomRescueMessage(i));
+			const state = createTestState({ runSeed: i });
+			messages.add(getRandomRescueMessage(state));
 		}
 		// Should hit at least a few different messages
 		expect(messages.size).toBeGreaterThan(1);

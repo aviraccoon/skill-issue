@@ -1,3 +1,4 @@
+import { getPhoneBuzzText, getPhoneIgnoredText } from "../data/friendRescue";
 import { type GameState, isWeekend } from "../state";
 import type { Store } from "../store";
 import {
@@ -5,7 +6,11 @@ import {
 	calculateTaskEnergyEffect,
 	getSaturdayWorkPenalty,
 } from "../systems/energy";
-import { shouldTriggerFriendRescue } from "../systems/friend";
+import {
+	FRIEND_RESCUE_THRESHOLD,
+	PHONE_BUZZ_THRESHOLD,
+	shouldTriggerFriendRescue,
+} from "../systems/friend";
 import {
 	getMomentumFailurePenalty,
 	getMomentumSuccessBonus,
@@ -31,6 +36,8 @@ export interface AttemptResult {
 	probability: number;
 	/** Whether the friend rescue screen was triggered. */
 	friendRescueTriggered: boolean;
+	/** Phone buzz flavor text (pre-rescue hint), if applicable. */
+	phoneBuzzText?: string;
 }
 
 /**
@@ -132,5 +139,20 @@ export function attemptTask(
 		}
 	}
 
-	return { succeeded, probability, friendRescueTriggered };
+	// Get phone buzz text based on updated state (after failure increment)
+	let phoneBuzzText: string | undefined;
+	if (!succeeded) {
+		const newState = store.getState();
+		const failures = newState.consecutiveFailures;
+
+		if (failures === PHONE_BUZZ_THRESHOLD) {
+			// First hint at 2 failures
+			phoneBuzzText = getPhoneBuzzText(newState);
+		} else if (failures >= FRIEND_RESCUE_THRESHOLD && !friendRescueTriggered) {
+			// Follow-up when rescue doesn't trigger
+			phoneBuzzText = getPhoneIgnoredText(newState);
+		}
+	}
+
+	return { succeeded, probability, friendRescueTriggered, phoneBuzzText };
 }

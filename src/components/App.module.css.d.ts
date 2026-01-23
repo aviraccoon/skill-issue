@@ -3,6 +3,8 @@ declare const styles: {
 	readonly header: string;
 	readonly lateNight: string;
 	readonly main: string;
+	readonly notification: string;
+	readonly notificationVisible: string;
 	readonly phoneBtn: string;
 	readonly points: string;
 	readonly skipBtn: string;

@@ -8,14 +8,17 @@ import {
 	getAllNighterTitle,
 	getDogNote,
 } from "../../data/daySummary";
+import {
+	getPatternHint,
+	getRandomRescueMessage,
+} from "../../data/friendRescue";
 import { getScrollTrapFlavor } from "../../data/scrollTrap";
 import type { GameState, Task } from "../../state";
 import { createStore } from "../../store";
 import { getExtendedNightDescription } from "../../systems/allnighter";
 import { getDogUrgency, URGENCY_DISPLAY } from "../../systems/dog";
 import { getEvolvedDescription } from "../../systems/evolution";
-import { getRandomRescueMessage, isCorrectTier } from "../../systems/friend";
-import { getPatternHint } from "../../systems/patternHints";
+import { isCorrectTier } from "../../systems/friend";
 import { nextRoll } from "../../utils/random";
 import {
 	createStateFromSeed,
@@ -102,9 +105,7 @@ export class InteractiveStrategy implements Strategy {
 		const weekend = state.dayIndex >= 5;
 
 		if (screen === "friendRescue") {
-			const message = getRandomRescueMessage(
-				state.runSeed + state.dayIndex + state.consecutiveFailures,
-			);
+			const message = getRandomRescueMessage(state);
 			console.log("FRIEND RESCUE");
 			console.log(`"${message}"`);
 		} else if (screen === "nightChoice") {
@@ -421,6 +422,10 @@ export async function runInteractive(seed: number): Promise<void> {
 					console.log("Success!");
 				} else {
 					console.log("Failed... the click just didn't work.");
+					// Show phone buzz hint if present
+					if (result.phoneBuzzText) {
+						console.log(result.phoneBuzzText);
+					}
 				}
 			} else if (decision.type === "checkPhone") {
 				console.log("");

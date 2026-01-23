@@ -112,6 +112,11 @@ const verboseObserver: SimulationObserver = {
 		}
 
 		console.log(line);
+
+		// Show phone buzz hint on separate line if present
+		if (result.phoneBuzzText) {
+			console.log(`    ${result.phoneBuzzText}`);
+		}
 	},
 
 	onDayEnd(_state: GameState, summary: DaySummary) {
