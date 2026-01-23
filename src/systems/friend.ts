@@ -1,3 +1,4 @@
+import { strings } from "../i18n";
 import { type GameState, isWeekend } from "../state";
 import type { Store } from "../store";
 import { nextRoll, seededVariation } from "../utils/random";
@@ -44,26 +45,32 @@ export interface Activity {
 	energyThreshold: number;
 }
 
-export const ACTIVITIES: Activity[] = [
-	{
-		id: "low",
-		name: "Coffee",
-		description: "Quick coffee, low pressure",
-		energyThreshold: 0.2,
-	},
-	{
-		id: "medium",
-		name: "Grab food",
-		description: "Get something to eat together",
-		energyThreshold: 0.45,
-	},
-	{
-		id: "high",
-		name: "Explore somewhere",
-		description: "Check out that new place",
-		energyThreshold: 0.7,
-	},
+/** Static activity data (game logic only). */
+const ACTIVITY_DATA: { id: ActivityTier; energyThreshold: number }[] = [
+	{ id: "low", energyThreshold: 0.2 },
+	{ id: "medium", energyThreshold: 0.45 },
+	{ id: "high", energyThreshold: 0.7 },
 ];
+
+/** Gets activities with localized display strings. */
+export function getLocalizedActivities(): Activity[] {
+	const s = strings();
+	return ACTIVITY_DATA.map((data) => ({
+		...data,
+		name: s.activities[data.id].name,
+		description: s.activities[data.id].description,
+	}));
+}
+
+/**
+ * Activities with static data for game logic.
+ * Use getLocalizedActivities() for display.
+ */
+export const ACTIVITIES: Activity[] = ACTIVITY_DATA.map((data) => ({
+	...data,
+	name: data.id, // Placeholder - use getLocalizedActivities() for display
+	description: "",
+}));
 
 /** Momentum effect when player picks correct tier. */
 export const CORRECT_TIER_MOMENTUM = 0.1;

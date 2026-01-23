@@ -1,3 +1,4 @@
+import { strings } from "../i18n";
 import { type GameState, isWeekend } from "../state";
 import { seededVariation } from "../utils/random";
 
@@ -64,15 +65,16 @@ export function canPushThrough(state: GameState): boolean {
  * Returns descriptive text for the extended night slots based on energy.
  */
 export function getExtendedNightDescription(energy: number): string {
+	const s = strings();
 	const slots = calculateExtendedNightSlots(energy);
 	if (slots >= 4) {
-		return "You're wired. This could be productive.";
+		return s.allnighter.wired;
 	}
 	if (slots >= 3) {
-		return "You've got some fuel left. Might be worth it.";
+		return s.allnighter.someFuel;
 	}
 	if (slots >= 2) {
-		return "You're running low, but there's something there.";
+		return s.allnighter.runningLow;
 	}
-	return "You're exhausted. One more attempt, maybe.";
+	return s.allnighter.exhausted;
 }

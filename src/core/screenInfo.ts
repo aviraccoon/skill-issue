@@ -3,7 +3,7 @@
  * Provides all content needed to render each screen type.
  */
 
-import { ACTIVITIES, type Activity } from "../actions/friend";
+import { type Activity, getLocalizedActivities } from "../actions/friend";
 import {
 	determineTone,
 	generateAllNighterNarrative,
@@ -12,18 +12,18 @@ import {
 	getDogNote,
 } from "../data/daySummary";
 import { getRandomRescueMessage } from "../data/friendRescue";
-import type { GameState, Task, TimeBlock } from "../state";
+import { strings } from "../i18n";
+import type { Day, GameState, Task, TimeBlock } from "../state";
 import { isWeekend, TIME_BLOCKS } from "../state";
 import { getExtendedNightDescription } from "../systems/allnighter";
 import {
 	type DogUrgency,
 	getDogUrgency,
-	URGENCY_DISPLAY,
+	getUrgencyDisplay,
 } from "../systems/dog";
 import { getEvolvedDescription } from "../systems/evolution";
 import { getRescueCost } from "../systems/friend";
 import { seededShuffle } from "../utils/random";
-import { capitalize } from "../utils/string";
 import type { Decision } from "./controller";
 import { getAvailableDecisions } from "./controller";
 
@@ -46,9 +46,13 @@ export interface TaskDisplay {
 /** Game screen info. */
 export interface GameScreenInfo {
 	type: "game";
-	day: string;
-	dayCapitalized: string;
+	/** Day key for template functions. */
+	day: Day;
+	/** Translated day name for display. */
+	dayDisplay: string;
 	timeBlock: TimeBlock;
+	/** Translated time block name for display. */
+	timeBlockDisplay: string;
 	isWeekend: boolean;
 	slotsRemaining: number;
 	weekendPointsRemaining: number;
@@ -56,15 +60,17 @@ export interface GameScreenInfo {
 	tasks: TaskDisplay[];
 	selectedTask: TaskDisplay | null;
 	decisions: Decision[];
-	/** Next time block label for skip button, or null if end of day. */
+	/** Next time block key, or null if end of day. */
 	nextTimeBlock: TimeBlock | null;
 }
 
 /** Night choice screen info. */
 export interface NightChoiceInfo {
 	type: "nightChoice";
-	day: string;
-	dayCapitalized: string;
+	/** Day key for template functions. */
+	day: Day;
+	/** Translated day name for display. */
+	dayDisplay: string;
 	description: string;
 	canPushThrough: boolean;
 	decisions: Decision[];
@@ -126,6 +132,7 @@ export function getScreenInfo(state: GameState): ScreenInfo {
 }
 
 function getGameScreenInfo(state: GameState): GameScreenInfo {
+	const s = strings();
 	const weekend = isWeekend(state);
 	const decisions = getAvailableDecisions(state);
 
@@ -154,8 +161,9 @@ function getGameScreenInfo(state: GameState): GameScreenInfo {
 	return {
 		type: "game",
 		day: state.day,
-		dayCapitalized: capitalize(state.day),
+		dayDisplay: s.days[state.day],
 		timeBlock: state.timeBlock,
+		timeBlockDisplay: s.timeBlocks[state.timeBlock],
 		isWeekend: weekend,
 		slotsRemaining: state.slotsRemaining,
 		weekendPointsRemaining: state.weekendPointsRemaining,
@@ -184,7 +192,7 @@ function buildTaskDisplay(
 	if (task.id === "walk-dog" && !task.succeededToday) {
 		const level = getDogUrgency(state);
 		if (level !== "normal") {
-			urgency = { level, text: URGENCY_DISPLAY[level] };
+			urgency = { level, text: getUrgencyDisplay(level) };
 		}
 	}
 
@@ -210,13 +218,14 @@ function buildTaskDisplay(
 }
 
 function getNightChoiceInfo(state: GameState): NightChoiceInfo {
+	const s = strings();
 	const decisions = getAvailableDecisions(state);
 	const canPush = decisions.some((d) => d.type === "pushThrough");
 
 	return {
 		type: "nightChoice",
 		day: state.day,
-		dayCapitalized: capitalize(state.day),
+		dayDisplay: s.days[state.day],
 		description: getExtendedNightDescription(state.energy),
 		canPushThrough: canPush,
 		decisions,
@@ -224,6 +233,7 @@ function getNightChoiceInfo(state: GameState): NightChoiceInfo {
 }
 
 function getFriendRescueInfo(state: GameState): FriendRescueInfo {
+	const s = strings();
 	const decisions = getAvailableDecisions(state);
 	const cost = getRescueCost(state);
 	const weekend = isWeekend(state);
@@ -232,13 +242,14 @@ function getFriendRescueInfo(state: GameState): FriendRescueInfo {
 		type: "friendRescue",
 		message: getRandomRescueMessage(state),
 		cost,
-		costLabel: weekend ? `${cost} action points` : `${cost} action slot`,
-		activities: [...ACTIVITIES],
+		costLabel: weekend ? s.friend.costPoints(cost) : s.friend.costSlot(cost),
+		activities: getLocalizedActivities(),
 		decisions,
 	};
 }
 
 function getDaySummaryInfo(state: GameState): DaySummaryInfo {
+	const s = strings();
 	const attempted = state.tasks.filter((t) => t.attemptedToday);
 	const succeeded = state.tasks.filter((t) => t.succeededToday);
 	const pulledAllNighter = state.inExtendedNight;
@@ -250,7 +261,7 @@ function getDaySummaryInfo(state: GameState): DaySummaryInfo {
 
 	const title = pulledAllNighter
 		? getAllNighterTitle(state)
-		: capitalize(state.day);
+		: s.days[state.day];
 
 	return {
 		type: "daySummary",
@@ -293,12 +304,6 @@ function determineWeekTone(successes: number, failures: number): WeekTone {
 }
 
 function generateWeekNarrative(tone: WeekTone): string {
-	switch (tone) {
-		case "good":
-			return "You made it through. The dog got walked. You ate food. Some tasks happened, some didn't. That's a week.";
-		case "rough":
-			return "You survived. Barely, some days. The dog still loves you. You fed yourself, even if it was delivery every time. You're still here.";
-		default:
-			return "A week of attempts. Some worked. Most didn't. You had that one good moment where things clicked. Normal week, really.";
-	}
+	const s = strings();
+	return s.weekNarrative[tone];
 }

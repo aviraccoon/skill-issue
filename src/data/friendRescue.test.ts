@@ -1,17 +1,7 @@
 import { describe, expect, test } from "bun:test";
+import { strings } from "../i18n";
 import { createInitialState, type GameState } from "../state";
-import {
-	CREATIVE_STRUGGLING,
-	DOG_ANCHOR,
-	EARLY_BIRD_THRIVING,
-	FALLBACK_HINTS,
-	getPatternHint,
-	HERMIT_SOCIAL_COST,
-	HIGH_MOMENTUM,
-	LOW_ENERGY,
-	NIGHT_OWL_THRIVING,
-	SOCIAL_BATTERY_BOOST,
-} from "./friendRescue";
+import { getPatternHint } from "./friendRescue";
 import { tasksWithVariants } from "./tasks";
 
 /**
@@ -37,7 +27,8 @@ describe("getPatternHint", () => {
 			momentum: 0.7,
 		});
 		const result = getPatternHint(state);
-		expect(NIGHT_OWL_THRIVING.messages).toContain(result.hint);
+		const s = strings();
+		expect(s.hints.nightOwlThriving).toContain(result.hint);
 	});
 
 	test("returns early bird hint when early bird in morning with high momentum", () => {
@@ -47,7 +38,8 @@ describe("getPatternHint", () => {
 			momentum: 0.7,
 		});
 		const result = getPatternHint(state);
-		expect(EARLY_BIRD_THRIVING.messages).toContain(result.hint);
+		const s = strings();
+		expect(s.hints.earlyBirdThriving).toContain(result.hint);
 	});
 
 	test("returns creative hint when creative task has many failures", () => {
@@ -56,7 +48,8 @@ describe("getPatternHint", () => {
 			t.category === "creative" ? { ...t, failureCount: 5 } : t,
 		);
 		const result = getPatternHint(state);
-		expect(CREATIVE_STRUGGLING.messages).toContain(result.hint);
+		const s = strings();
+		expect(s.hints.creativeStruggling).toContain(result.hint);
 	});
 
 	test("returns low energy hint when energy is low", () => {
@@ -64,7 +57,8 @@ describe("getPatternHint", () => {
 			energy: 0.2,
 		});
 		const result = getPatternHint(state);
-		expect(LOW_ENERGY.messages).toContain(result.hint);
+		const s = strings();
+		expect(s.hints.lowEnergy).toContain(result.hint);
 	});
 
 	test("returns high momentum hint when momentum is high", () => {
@@ -74,7 +68,8 @@ describe("getPatternHint", () => {
 			timeBlock: "afternoon", // Not night to avoid night hint
 		});
 		const result = getPatternHint(state);
-		expect(HIGH_MOMENTUM.messages).toContain(result.hint);
+		const s = strings();
+		expect(s.hints.highMomentum).toContain(result.hint);
 	});
 
 	test("returns dog hint when dog was walked today", () => {
@@ -87,7 +82,8 @@ describe("getPatternHint", () => {
 			t.id === "walk-dog" ? { ...t, succeededToday: true } : t,
 		);
 		const result = getPatternHint(state);
-		expect(DOG_ANCHOR.messages).toContain(result.hint);
+		const s = strings();
+		expect(s.hints.dogAnchor).toContain(result.hint);
 	});
 
 	test("returns hermit hint for hermit personality", () => {
@@ -98,7 +94,8 @@ describe("getPatternHint", () => {
 			timeBlock: "afternoon",
 		});
 		const result = getPatternHint(state);
-		expect(HERMIT_SOCIAL_COST.messages).toContain(result.hint);
+		const s = strings();
+		expect(s.hints.hermitSocialCost).toContain(result.hint);
 	});
 
 	test("returns social battery hint for social battery personality", () => {
@@ -109,7 +106,8 @@ describe("getPatternHint", () => {
 			timeBlock: "afternoon",
 		});
 		const result = getPatternHint(state);
-		expect(SOCIAL_BATTERY_BOOST.messages).toContain(result.hint);
+		const s = strings();
+		expect(s.hints.socialBatteryBoost).toContain(result.hint);
 	});
 
 	test("returns fallback when no conditions match", () => {
@@ -126,7 +124,8 @@ describe("getPatternHint", () => {
 			succeededToday: false,
 		}));
 		const result = getPatternHint(state);
-		expect(FALLBACK_HINTS).toContain(result.hint);
+		const s = strings();
+		expect(s.hints.fallback).toContain(result.hint);
 	});
 });
 

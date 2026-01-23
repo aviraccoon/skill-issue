@@ -2,6 +2,7 @@ import { type AcceptRescueResult, acceptFriendRescue } from "../actions/friend";
 import type { Decision } from "../core/controller";
 import type { FriendRescueInfo } from "../core/screenInfo";
 import { getRescueResultMessage } from "../data/friendRescue";
+import { strings } from "../i18n";
 import type { GameState } from "../state";
 import type { Store } from "../store";
 import styles from "./FriendRescue.module.css";
@@ -20,10 +21,12 @@ export function renderFriendRescue(
 	onDecision: (decision: Decision) => void,
 	store: Store<GameState>,
 ) {
+	const s = strings();
+
 	container.innerHTML = `
 		<div class="${styles.rescue}">
 			<p class="${styles.message}">"${screenInfo.message}"</p>
-			<p class="${styles.cost}">Meeting up will use ${screenInfo.costLabel}</p>
+			<p class="${styles.cost}">${s.game.rescueCost(screenInfo.costLabel)}</p>
 			<div class="${styles.activities}">
 				${screenInfo.activities
 					.map(
@@ -36,7 +39,7 @@ export function renderFriendRescue(
 					)
 					.join("")}
 			</div>
-			<button class="${styles.declineBtn}">Not right now</button>
+			<button class="${styles.declineBtn}">${s.game.rescueDecline}</button>
 		</div>
 	`;
 
@@ -67,13 +70,14 @@ function showRescueResult(store: Store<GameState>, result: AcceptRescueResult) {
 	const container = document.getElementById("app");
 	if (!container) return;
 
+	const s = strings();
 	const message = getRescueResultMessage(store.getState(), result.correct);
 
 	container.innerHTML = `
 		<div class="${styles.rescue}">
 			<p class="${styles.message}">${message}</p>
 			<p class="${styles.hint}">"${result.hint}"</p>
-			<button class="${styles.declineBtn}">Continue</button>
+			<button class="${styles.declineBtn}">${s.game.continue}</button>
 		</div>
 	`;
 

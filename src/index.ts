@@ -3,9 +3,13 @@ import "./styles/themes.css";
 import { renderApp } from "./components/App";
 import { initDevTools } from "./components/DevTools";
 import { initThemeSwitcher } from "./components/ThemeSwitcher";
+import { setLocale } from "./i18n";
 import type { GameState } from "./state";
 import { createStore } from "./store";
 import { loadGame, saveGame } from "./systems/persistence";
+
+// Initialize locale from query param or browser preference
+initLocale();
 
 // Initialize store with saved state (or initial if no save)
 const store = createStore<GameState>(loadGame());
@@ -24,6 +28,24 @@ store.subscribe((state) => {
 	renderApp(store);
 	saveGame(state);
 });
+
+/** Initializes locale from query param (?lang=cs) or browser preference. */
+function initLocale() {
+	const urlParams = new URLSearchParams(window.location.search);
+	const langParam = urlParams.get("lang");
+
+	// Query param is authoritative
+	if (langParam === "cs" || langParam === "en") {
+		setLocale(langParam);
+		return;
+	}
+
+	// Fall back to browser language
+	const browserLang = navigator.language.split("-")[0];
+	if (browserLang === "cs") {
+		setLocale("cs");
+	}
+}
 
 /** Initializes dev tools if enabled via env var or query param. */
 async function initDevToolsIfEnabled() {

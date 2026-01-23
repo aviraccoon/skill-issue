@@ -1,4 +1,5 @@
 import type { WeekCompleteInfo } from "../core/screenInfo";
+import { strings } from "../i18n";
 import type { GameState } from "../state";
 import { createInitialState } from "../state";
 import type { Store } from "../store";
@@ -13,11 +14,13 @@ export function renderWeekComplete(
 	container: HTMLElement,
 	store: Store<GameState>,
 ) {
+	const s = strings();
+
 	container.innerHTML = `
 		<div class="${styles.summary}">
-			<h2 class="${styles.title}">Week Complete</h2>
+			<h2 class="${styles.title}">${s.game.weekComplete}</h2>
 			<p class="${styles.narrative}">${screenInfo.narrative}</p>
-			<button class="${styles.restartBtn}">Start New Week</button>
+			<button class="${styles.restartBtn}">${s.game.startNewWeek}</button>
 		</div>
 	`;
 

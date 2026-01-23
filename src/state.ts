@@ -93,13 +93,12 @@ export function isWeekend(state: GameState): boolean {
 	return state.dayIndex >= 5;
 }
 
-import { initialTasks } from "./data/tasks";
+import { createInitialTasks } from "./data/tasks";
 import {
 	getPersonalityFromSeed,
 	getStartingEnergyFromSeed,
 	getStartingMomentumFromSeed,
 } from "./systems/personality";
-export { initialTasks };
 
 /** Generates a fresh initial state with a new random seed. */
 export function createInitialState(): GameState {
@@ -110,7 +109,7 @@ export function createInitialState(): GameState {
 		timeBlock: "morning",
 		slotsRemaining: 3,
 		weekendPointsRemaining: 8,
-		tasks: structuredClone(initialTasks),
+		tasks: createInitialTasks(), // Fresh tasks with current locale
 		selectedTaskId: null,
 		screen: "game",
 		energy: getStartingEnergyFromSeed(runSeed),

@@ -1,15 +1,13 @@
+import { strings } from "../i18n";
 import type { GameState, TimeBlock } from "../state";
 
 /** Urgency levels for dog walk, escalating through the day. */
 export type DogUrgency = "normal" | "waiting" | "urgent" | "critical";
 
-/** Maps urgency level to display text for the task panel. */
-export const URGENCY_DISPLAY: Record<DogUrgency, string> = {
-	normal: "Normal",
-	waiting: "Azor's been waiting",
-	urgent: "He really needs to go",
-	critical: "Critical - he's desperate",
-};
+/** Gets localized urgency display text. */
+export function getUrgencyDisplay(level: DogUrgency): string {
+	return strings().dog.urgency[level];
+}
 
 /** Base urgency by time block (0-3). */
 const TIME_BLOCK_URGENCY: Record<TimeBlock, number> = {

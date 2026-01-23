@@ -88,10 +88,11 @@ export function declineFriendRescue(store: Store<GameState>): void {
 }
 
 /**
- * Helper to get an activity by tier ID.
+ * Re-export activity types and functions.
  */
 export {
 	ACTIVITIES,
 	type Activity,
 	type ActivityTier,
+	getLocalizedActivities,
 } from "../systems/friend";

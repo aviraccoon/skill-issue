@@ -1,5 +1,6 @@
 import type { Decision } from "../core/controller";
 import type { NightChoiceInfo } from "../core/screenInfo";
+import { strings } from "../i18n";
 import styles from "./NightChoice.module.css";
 
 /**
@@ -11,14 +12,16 @@ export function renderNightChoice(
 	container: HTMLElement,
 	onDecision: (decision: Decision) => void,
 ) {
+	const s = strings();
+
 	container.innerHTML = `
 		<div class="${styles.choice}">
-			<h2 class="${styles.title}">${screenInfo.dayCapitalized} Night</h2>
-			<p class="${styles.prompt}">It's late. You could sleep. Or...</p>
+			<h2 class="${styles.title}">${s.game.nightTitle(screenInfo.day)}</h2>
+			<p class="${styles.prompt}">${s.game.nightPrompt}</p>
 			<p class="${styles.info}">${screenInfo.description}</p>
 			<div class="${styles.buttons}">
-				<button class="${styles.sleepBtn}">Sleep</button>
-				${screenInfo.canPushThrough ? `<button class="${styles.pushThroughBtn}">Push Through</button>` : ""}
+				<button class="${styles.sleepBtn}">${s.game.sleep}</button>
+				${screenInfo.canPushThrough ? `<button class="${styles.pushThroughBtn}">${s.game.pushThrough}</button>` : ""}
 			</div>
 		</div>
 	`;

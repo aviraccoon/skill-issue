@@ -5,9 +5,9 @@ import {
 	getScreenInfo,
 	type TaskDisplay,
 } from "../core/screenInfo";
+import { strings } from "../i18n";
 import type { GameState } from "../state";
 import type { Store } from "../store";
-import { capitalize } from "../utils/string";
 import appStyles from "./App.module.css";
 import { renderDaySummary } from "./DaySummary";
 import { renderFriendRescue } from "./FriendRescue";
@@ -126,6 +126,8 @@ function renderGameScreen(
 
 /** Creates the initial HTML structure for the app. */
 function createAppStructure(screenInfo: GameScreenInfo): string {
+	const s = strings();
+
 	return `
 		<header class="${appStyles.header}">
 			<h1 class="${appStyles.title}"></h1>
@@ -150,13 +152,13 @@ function createAppStructure(screenInfo: GameScreenInfo): string {
 			</section>
 
 			<aside class="${panelStyles.panel}">
-				<p class="${panelStyles.empty}">Select a task</p>
+				<p class="${panelStyles.empty}">${s.game.selectTask}</p>
 			</aside>
 		</main>
 
 		<footer class="${appStyles.footer}">
-			<button class="${appStyles.phoneBtn}">Check Phone</button>
-			<button class="${appStyles.skipBtn}">Skip to Afternoon</button>
+			<button class="${appStyles.phoneBtn}">${s.game.checkPhone}</button>
+			<button class="${appStyles.skipBtn}"></button>
 		</footer>
 	`;
 }
@@ -180,27 +182,30 @@ function renderHeader(screenInfo: GameScreenInfo) {
 	const title = document.querySelector(`.${appStyles.title}`);
 	const timeBlockEl = document.querySelector(`.${appStyles.timeBlock}`);
 
-	if (title) title.textContent = screenInfo.day;
+	if (title) title.textContent = screenInfo.dayDisplay;
 	if (timeBlockEl) {
 		// Hide time block on weekends
-		timeBlockEl.textContent = screenInfo.isWeekend ? "" : screenInfo.timeBlock;
+		timeBlockEl.textContent = screenInfo.isWeekend
+			? ""
+			: screenInfo.timeBlockDisplay;
 	}
 }
 
 /** Updates the action slot or point indicators. */
 function renderSlots(screenInfo: GameScreenInfo) {
+	const s = strings();
 	const slotsContainer = document.querySelector(`.${appStyles.slots}`);
 
 	if (screenInfo.isWeekend) {
 		// Weekend: show remaining points
 		const pointsEl = document.querySelector(`.${appStyles.points}`);
 		if (pointsEl) {
-			pointsEl.textContent = `${screenInfo.weekendPointsRemaining} points`;
+			pointsEl.textContent = s.game.points(screenInfo.weekendPointsRemaining);
 		}
 	} else if (screenInfo.inExtendedNight) {
 		// Extended night: hide slot count, just show text
 		if (slotsContainer) {
-			slotsContainer.innerHTML = `<span class="${appStyles.lateNight}">Late Night</span>`;
+			slotsContainer.innerHTML = `<span class="${appStyles.lateNight}">${s.game.lateNight}</span>`;
 		}
 	} else {
 		// Normal weekday: show slot indicators
@@ -255,6 +260,7 @@ function renderTaskPanel(
 	screenInfo: GameScreenInfo,
 	onDecision: (decision: Decision) => void,
 ) {
+	const s = strings();
 	const panel = document.querySelector(`.${panelStyles.panel}`);
 	if (!panel) return;
 
@@ -269,16 +275,16 @@ function renderTaskPanel(
 	let continueButtonHtml = "";
 	if (periodExhausted) {
 		const buttonText = screenInfo.isWeekend
-			? "End day"
+			? s.game.endDay
 			: screenInfo.nextTimeBlock
-				? `Continue to ${screenInfo.nextTimeBlock}`
-				: "End day";
+				? s.game.continueTo(screenInfo.nextTimeBlock)
+				: s.game.endDay;
 		continueButtonHtml = `<button class="${panelStyles.continueBtn}">${buttonText}</button>`;
 	}
 
 	if (!selectedTask) {
 		panel.innerHTML = `
-			<p class="${panelStyles.empty}">Select a task</p>
+			<p class="${panelStyles.empty}">${s.game.selectTask}</p>
 			${continueButtonHtml}
 		`;
 		attachContinueHandler(panel, screenInfo, onDecision);
@@ -288,7 +294,7 @@ function renderTaskPanel(
 	// Show cost on weekends if > 1
 	const costDisplay =
 		screenInfo.isWeekend && selectedTask.weekendCost > 1
-			? `<p class="${panelStyles.cost}">${selectedTask.weekendCost} points</p>`
+			? `<p class="${panelStyles.cost}">${s.game.costPoints(selectedTask.weekendCost)}</p>`
 			: "";
 
 	// Show urgency for Walk Dog
@@ -310,12 +316,12 @@ function renderTaskPanel(
 	panel.innerHTML = `
 		<p class="${panelStyles.taskName}">${selectedTask.evolvedName}</p>
 		<p class="${panelStyles.stats}">
-			Failed ${selectedTask.failureCount} time${selectedTask.failureCount === 1 ? "" : "s"} this week
+			${s.game.failedCount(selectedTask.failureCount)}
 		</p>
 		${urgencyDisplay}
 		${costDisplay}
 		<button class="${panelStyles.attemptBtn}" ${selectedTask.canAttempt ? "" : "disabled"}>
-			${selectedTask.succeededToday ? "Done" : "Attempt"}
+			${selectedTask.succeededToday ? s.game.done : s.game.attempt}
 		</button>
 		${variantDisplay}
 		${continueButtonHtml}
@@ -365,6 +371,7 @@ function renderFooter(
 	screenInfo: GameScreenInfo,
 	onDecision: (decision: Decision) => void,
 ) {
+	const s = strings();
 	const skipBtn = document.querySelector(`.${appStyles.skipBtn}`);
 	const phoneBtn = document.querySelector(`.${appStyles.phoneBtn}`);
 
@@ -385,7 +392,7 @@ function renderFooter(
 
 	if (screenInfo.isWeekend) {
 		// Weekend: single "End day" button
-		newBtn.textContent = "End day";
+		newBtn.textContent = s.game.endDay;
 		newBtn.disabled = false;
 		newBtn.addEventListener("click", () => {
 			onDecision({ type: "endDay" });
@@ -393,13 +400,13 @@ function renderFooter(
 	} else {
 		// Weekday: skip to next block or end day
 		if (screenInfo.nextTimeBlock) {
-			newBtn.textContent = `Skip to ${screenInfo.nextTimeBlock}`;
+			newBtn.textContent = s.game.skipTo(screenInfo.nextTimeBlock);
 			newBtn.disabled = false;
 			newBtn.addEventListener("click", () => {
 				onDecision({ type: "skip" });
 			});
 		} else {
-			newBtn.textContent = "End day";
+			newBtn.textContent = s.game.endDay;
 			newBtn.disabled = false;
 			newBtn.addEventListener("click", () => {
 				onDecision({ type: "skip" });
@@ -413,6 +420,7 @@ function renderFooter(
  * Adds time qualifier for time-specific tasks and point cost for expensive tasks.
  */
 function getTaskDisplayName(task: TaskDisplay, weekend: boolean): string {
+	const s = strings();
 	let name = task.name;
 
 	if (weekend) {
@@ -425,13 +433,13 @@ function getTaskDisplayName(task: TaskDisplay, weekend: boolean): string {
 			// Single block or morning+evening (like shower) - show primary block
 			const block = task.availableBlocks[0];
 			if (block) {
-				name = `${name} (${capitalize(block)})`;
+				name = s.game.taskWithTime(name, block);
 			}
 		}
 
 		// Add point cost for expensive tasks
 		if (task.weekendCost > 1) {
-			name = `${name} [${task.weekendCost}pt]`;
+			name = s.game.taskWithCost(name, task.weekendCost);
 		}
 	}
 

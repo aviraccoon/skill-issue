@@ -27,6 +27,7 @@
 - Use the reactive store pattern, don't add framework dependencies
 - Keep components as pure functions where possible
 - Write JSDoc comments for functions (types are in TypeScript, JSDoc is for descriptions)
+- Don't run `bun run dev` for manual testing - you can't interact with the browser. User will test manually.
 
 ## Project Context
 

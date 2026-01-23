@@ -1,5 +1,5 @@
 import * as readline from "node:readline";
-import { ACTIVITIES } from "../../actions/friend";
+import { getLocalizedActivities } from "../../actions/friend";
 import { continueToNextDay } from "../../actions/time";
 import {
 	determineTone,
@@ -16,7 +16,7 @@ import { getScrollTrapFlavor } from "../../data/scrollTrap";
 import type { GameState, Task } from "../../state";
 import { createStore } from "../../store";
 import { getExtendedNightDescription } from "../../systems/allnighter";
-import { getDogUrgency, URGENCY_DISPLAY } from "../../systems/dog";
+import { getDogUrgency, getUrgencyDisplay } from "../../systems/dog";
 import { getEvolvedDescription } from "../../systems/evolution";
 import { nextRoll } from "../../utils/random";
 import {
@@ -165,7 +165,7 @@ export class InteractiveStrategy implements Strategy {
 					!task.succeededToday &&
 					dogUrgency !== "normal"
 				) {
-					urgency = ` (${URGENCY_DISPLAY[dogUrgency]})`;
+					urgency = ` (${getUrgencyDisplay(dogUrgency)})`;
 				}
 
 				console.log(`  ${i + 1}. ${name}${cost}${urgency}${status}`);
@@ -205,7 +205,7 @@ export class InteractiveStrategy implements Strategy {
 		if (hasAcceptRescue) {
 			console.log("");
 			console.log("Friend activities:");
-			ACTIVITIES.forEach((a, _i) => {
+			getLocalizedActivities().forEach((a) => {
 				console.log(`  ${a.id} - ${a.name}: ${a.description}`);
 			});
 		}

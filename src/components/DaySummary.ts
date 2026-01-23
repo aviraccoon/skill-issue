@@ -1,5 +1,6 @@
 import { continueToNextDay } from "../actions/time";
 import type { DaySummaryInfo } from "../core/screenInfo";
+import { strings } from "../i18n";
 import type { GameState } from "../state";
 import type { Store } from "../store";
 import styles from "./DaySummary.module.css";
@@ -12,15 +13,17 @@ export function renderDaySummary(
 	container: HTMLElement,
 	store: Store<GameState>,
 ) {
+	const s = strings();
+
 	container.innerHTML = `
 		<div class="${styles.summary}">
 			<h2 class="${styles.day}">${screenInfo.title}</h2>
 			<p class="${styles.stats}">
-				${screenInfo.succeededCount} of ${screenInfo.attemptedCount} tasks
+				${s.game.taskStats(screenInfo.succeededCount, screenInfo.attemptedCount)}
 			</p>
 			<p class="${styles.narrative}">${screenInfo.narrative}</p>
 			${screenInfo.dogNote ? `<p class="${styles.dogNote}">${screenInfo.dogNote}</p>` : ""}
-			<button class="${styles.continueBtn}">Continue</button>
+			<button class="${styles.continueBtn}">${s.game.continue}</button>
 		</div>
 	`;
 

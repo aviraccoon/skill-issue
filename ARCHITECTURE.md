@@ -183,6 +183,11 @@ src/
     daySummary.ts   # Day summary narrative text
     scrollTrap.ts   # Phone check flavor text
 
+  i18n/
+    types.ts        # Strings type for translations
+    en.ts           # English strings (source of truth)
+    index.ts        # strings() accessor with fallback
+
   styles/
     base.css        # Reset, CSS variables, time theming
     themes.css      # Theme variable overrides
@@ -278,6 +283,57 @@ No cross-device sync. Accept this limitation.
 - `bun test` - Run tests
 
 Production build is static files, deployable anywhere.
+
+## Internationalization (i18n)
+
+Simple homegrown i18n without external dependencies.
+
+### Structure
+
+```
+src/i18n/
+  types.ts    # Strings type derived from English
+  en.ts       # English strings (source of truth)
+  index.ts    # strings() accessor with fallback
+  # cs.ts     # Czech (future)
+```
+
+### Usage
+
+```ts
+import { strings } from '../i18n'
+
+const s = strings()
+button.textContent = s.game.attempt
+slotsEl.textContent = s.game.slots(2)  // "2 slots remaining"
+liveRegion.textContent = s.a11y.taskSucceeded('Shower')
+```
+
+### Adding a Language
+
+1. Create `src/i18n/cs.ts` (or other locale)
+2. Use `satisfies Strings` to ensure all keys are present:
+   ```ts
+   import type { Strings } from './types'
+   export const cs = { ... } satisfies Strings
+   ```
+3. Add to `locales` object in `index.ts`
+4. TypeScript enforces matching structure and function signatures
+
+### Fallback Behavior
+
+If a translation is missing, the system:
+1. Falls back to English
+2. Logs a warning: `[i18n] Missing translation for "game.attempt" in locale "cs"`
+
+This allows incremental translation without breaking the game.
+
+### What Lives Where
+
+- **UI strings** (`src/i18n/`): Button labels, status text, accessibility labels
+- **Content/narrative** (`src/data/`): Task definitions, day summaries, scroll trap text, friend dialogue
+
+Content files may eventually need i18n, but are separate because they have their own structure (arrays of variants, weighted selection, etc.).
 
 ## Future: Single-File Executable
 

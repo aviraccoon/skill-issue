@@ -1,5 +1,6 @@
 import { describe, expect, test } from "bun:test";
-import { getRandomRescueMessage, RESCUE_MESSAGES } from "../data/friendRescue";
+import { getRandomRescueMessage } from "../data/friendRescue";
+import { strings } from "../i18n";
 import { createInitialState, type GameState } from "../state";
 import { createStore } from "../store";
 import {
@@ -241,7 +242,8 @@ describe("getRandomRescueMessage", () => {
 	test("returns a message from the list", () => {
 		const state = createTestState({ runSeed: 12345 });
 		const message = getRandomRescueMessage(state);
-		expect(RESCUE_MESSAGES).toContain(message);
+		const s = strings();
+		expect(s.friend.rescueMessages).toContain(message);
 	});
 
 	test("same seed gives same message", () => {
