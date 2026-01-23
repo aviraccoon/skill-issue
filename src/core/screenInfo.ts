@@ -11,7 +11,7 @@ import {
 	getAllNighterTitle,
 	getDogNote,
 } from "../data/daySummary";
-import { getPatternHint, getRandomRescueMessage } from "../data/friendRescue";
+import { getRandomRescueMessage } from "../data/friendRescue";
 import type { GameState, Task, TimeBlock } from "../state";
 import { isWeekend, TIME_BLOCKS } from "../state";
 import { getExtendedNightDescription } from "../systems/allnighter";
@@ -39,6 +39,8 @@ export interface TaskDisplay {
 	availableBlocks: TimeBlock[];
 	canAttempt: boolean;
 	urgency?: { level: DogUrgency; text: string };
+	/** Minimal variant info, if available and unlocked. */
+	variant?: { name: string };
 }
 
 /** Game screen info. */
@@ -186,6 +188,12 @@ function buildTaskDisplay(
 		}
 	}
 
+	// Build variant info if available and unlocked
+	let variant: TaskDisplay["variant"];
+	if (task.minimalVariant && state.variantsUnlocked.includes(task.category)) {
+		variant = { name: task.minimalVariant.name };
+	}
+
 	return {
 		id: task.id,
 		name: task.name,
@@ -197,6 +205,7 @@ function buildTaskDisplay(
 		availableBlocks: task.availableBlocks,
 		canAttempt,
 		urgency,
+		variant,
 	};
 }
 
@@ -292,20 +301,4 @@ function generateWeekNarrative(tone: WeekTone): string {
 		default:
 			return "A week of attempts. Some worked. Most didn't. You had that one good moment where things clicked. Normal week, really.";
 	}
-}
-
-/**
- * Gets the result info after accepting a friend rescue.
- * Call after executeDecision with acceptRescue to get display info.
- */
-export function getFriendRescueResultInfo(
-	state: GameState,
-	correctTier: boolean,
-): { message: string; hint: string } {
-	return {
-		message: correctTier
-			? "That was good. You feel better."
-			: "You pushed yourself a bit too much. Still, you saw your friend.",
-		hint: getPatternHint(state),
-	};
 }

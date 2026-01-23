@@ -38,9 +38,9 @@ export function runCompare(args: CliArgs): void {
 		// Table header
 		const nameWidth = Math.max(...strategies.map((s) => s.name.length), 8);
 		console.log(
-			`${"Strategy".padEnd(nameWidth)}  Result    Energy   Momentum  All-nighters  Phone`,
+			`${"Strategy".padEnd(nameWidth)}  Result    Energy   Momentum  All-nighters  Phone  Unlocks`,
 		);
-		console.log("-".repeat(nameWidth + 54));
+		console.log("-".repeat(nameWidth + 64));
 
 		// Run each strategy
 		for (const { name, strategy } of strategies) {
@@ -50,9 +50,13 @@ export function runCompare(args: CliArgs): void {
 			const momentum = formatPercent(result.stats.momentum.end).padStart(6);
 			const allNighters = String(result.stats.allNighters).padStart(5);
 			const phone = String(result.stats.phoneChecks).padStart(5);
+			const unlocks =
+				result.stats.variantsUnlocked.length > 0
+					? result.stats.variantsUnlocked.join(",")
+					: "-";
 
 			console.log(
-				`${name.padEnd(nameWidth)}  ${status}  ${energy}   ${momentum}  ${allNighters}         ${phone}`,
+				`${name.padEnd(nameWidth)}  ${status}  ${energy}   ${momentum}  ${allNighters}         ${phone}  ${unlocks}`,
 			);
 		}
 	} else {
@@ -70,6 +74,7 @@ export function runCompare(args: CliArgs): void {
 				momentum: number;
 				allNighters: number;
 				phone: number;
+				variantUnlocks: Record<string, number>;
 			}
 		> = {};
 
@@ -80,6 +85,7 @@ export function runCompare(args: CliArgs): void {
 				momentum: 0,
 				allNighters: 0,
 				phone: 0,
+				variantUnlocks: {},
 			};
 		}
 
@@ -104,6 +110,10 @@ export function runCompare(args: CliArgs): void {
 					stats.momentum += result.stats.momentum.end;
 					stats.allNighters += result.stats.allNighters;
 					stats.phone += result.stats.phoneChecks;
+					for (const category of result.stats.variantsUnlocked) {
+						stats.variantUnlocks[category] =
+							(stats.variantUnlocks[category] ?? 0) + 1;
+					}
 				}
 			}
 		}
@@ -129,6 +139,39 @@ export function runCompare(args: CliArgs): void {
 				console.log(
 					`${name.padEnd(nameWidth)}  ${survival}   ${energy}    ${momentum}       ${allNighters}  ${phone}`,
 				);
+			}
+		}
+
+		// Collect all variant categories across strategies
+		const allCategories = new Set<string>();
+		for (const { name } of strategies) {
+			const stats = resultsByStrategy[name];
+			if (stats) {
+				for (const category of Object.keys(stats.variantUnlocks)) {
+					allCategories.add(category);
+				}
+			}
+		}
+
+		// Output variant unlock rates if any unlocks occurred
+		if (allCategories.size > 0) {
+			console.log("");
+			console.log("Variant unlock rates:");
+			const categories = [...allCategories].sort();
+			const catHeader = categories.map((c) => c.padStart(8)).join("  ");
+			console.log(`${"Strategy".padEnd(nameWidth)}  ${catHeader}`);
+			console.log("-".repeat(nameWidth + 2 + categories.length * 10));
+
+			for (const { name } of strategies) {
+				const stats = resultsByStrategy[name];
+				if (stats) {
+					const n = args.runs;
+					const rates = categories
+						.map((c) => formatPercent((stats.variantUnlocks[c] ?? 0) / n))
+						.map((r) => r.padStart(8))
+						.join("  ");
+					console.log(`${name.padEnd(nameWidth)}  ${rates}`);
+				}
 			}
 		}
 	}

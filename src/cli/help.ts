@@ -75,6 +75,7 @@ export function printPlayHelp(): void {
 
 OPTIONS:
   --seed, -s <number>      Specific seed (default: random)
+  --debug, -d              Show hidden state (energy, momentum, unlocks)
 
 CONTROLS:
   1-9      Attempt task by number
@@ -134,10 +135,12 @@ CRITERIA OPTIONS:
   --min-allnighters <n>    Minimum all-nighters
   --min-energy <pct>       Minimum end energy (0-100)
   --max-energy <pct>       Maximum end energy (0-100)
+  --friend-unlocks <cat>   Require variant unlock (repeatable: hygiene, food, chores)
 
 EXAMPLES:
   bun run cli find-seed --failed --max-phone 0
   bun run cli find-seed -p nightOwl+hermit --survived --min-energy 80
   bun run cli find-seed --min-allnighters 2 --survived -l 5
+  bun run cli find-seed --friend-unlocks food --friend-unlocks hygiene
 `);
 }

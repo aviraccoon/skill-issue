@@ -35,13 +35,24 @@ interface TaskEnergyEffect {
 	failure?: number; // energy change on failure (default: -0.02)
 }
 
+/**
+ * Minimal variant of a task with higher success rate.
+ * Unlocked through friend hints during rescue.
+ */
+interface MinimalVariant {
+	name: string;
+	baseRate: number;
+	/** Friend hint messages that unlock this variant. One selected randomly. */
+	unlockHints: string[];
+}
+
 /** Base task definition shape for type checking the const array. */
 interface TaskDefinitionBase {
 	id: string;
 	name: string;
 	category: TaskCategory;
 	baseRate: number;
-	minimalVariant?: { name: string; baseRate: number };
+	minimalVariant?: MinimalVariant;
 	availableBlocks: readonly TimeBlock[];
 	weekendCost?: number;
 	evolution?: TaskEvolution;
@@ -57,7 +68,16 @@ const taskDefinitions = [
 		name: "Shower",
 		category: "hygiene",
 		baseRate: 0.35,
-		minimalVariant: { name: "Splash face with water", baseRate: 0.7 },
+		minimalVariant: {
+			name: "Splash face with water",
+			baseRate: 0.7,
+			unlockHints: [
+				"The full shower can wait. Water on face still counts.",
+				"You don't have to do the whole shower thing. Splash some water. It's something.",
+				"What if clean didn't have to mean shower? Face wash is still progress.",
+				"Shower's not happening today. What about just... water? Face? Quick?",
+			],
+		},
 		availableBlocks: ["morning", "evening"],
 		evolution: {
 			aware: [
@@ -130,7 +150,16 @@ const taskDefinitions = [
 		name: "Cook Meal",
 		category: "food",
 		baseRate: 0.1,
-		minimalVariant: { name: "Microwave something", baseRate: 0.5 },
+		minimalVariant: {
+			name: "Microwave something",
+			baseRate: 0.5,
+			unlockHints: [
+				"Cooking doesn't have to mean cooking. Microwave counts.",
+				"What if you made food... easier? Microwave still counts as feeding yourself.",
+				"The full cooking thing isn't happening. What about something simpler?",
+				"You don't have to cook cook. Microwave is still eating.",
+			],
+		},
 		availableBlocks: ["morning", "afternoon", "evening"],
 		energyEffect: { success: -0.02 }, // cooking takes effort even when successful
 		evolution: {
@@ -176,7 +205,16 @@ const taskDefinitions = [
 		name: "Do Dishes",
 		category: "chores",
 		baseRate: 0.25,
-		minimalVariant: { name: "Wash one dish", baseRate: 0.55 },
+		minimalVariant: {
+			name: "Wash one dish",
+			baseRate: 0.55,
+			unlockHints: [
+				"One dish. Just one. That's enough.",
+				"You don't have to do all the dishes. One is still progress.",
+				"What if dishes meant one dish? That counts.",
+				"The whole sink doesn't have to happen. One dish is a win.",
+			],
+		},
 		availableBlocks: ["morning", "afternoon", "evening"],
 		evolution: {
 			aware: [
@@ -354,3 +392,34 @@ export const initialTasks: Task[] = taskDefinitions.map((def) => ({
 	attemptedToday: false,
 	succeededToday: false,
 }));
+
+/** Info about a task with a variant, for friend rescue hint generation. */
+export interface TaskVariantInfo {
+	id: string;
+	category: TaskCategory;
+	minimalVariant: MinimalVariant;
+}
+
+/** Type helper for tasks with minimalVariant. */
+type TaskDefWithVariant = TaskDefinitionBase & {
+	minimalVariant: MinimalVariant;
+};
+
+/** Check if a task has a minimal variant (type guard). */
+function hasMinimalVariant(t: TaskDefinitionBase): t is TaskDefWithVariant {
+	return t.minimalVariant !== undefined;
+}
+
+/**
+ * Tasks that have minimal variants with unlock hints.
+ * Used by friend rescue to generate variant unlock hint groups.
+ */
+export const tasksWithVariants: TaskVariantInfo[] = (
+	taskDefinitions as readonly TaskDefinitionBase[]
+)
+	.filter(hasMinimalVariant)
+	.map((t) => ({
+		id: t.id,
+		category: t.category,
+		minimalVariant: t.minimalVariant,
+	}));

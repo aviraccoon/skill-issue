@@ -69,6 +69,10 @@ function tryParseArgs(): CliArgs {
 			"min-allnighters": { type: "string" },
 			"min-energy": { type: "string" },
 			"max-energy": { type: "string" },
+			"friend-unlocks": { type: "string", multiple: true },
+
+			// Debug
+			debug: { type: "boolean", short: "d", default: false },
 
 			// Help
 			help: { type: "boolean", short: "h", default: false },
@@ -124,9 +128,11 @@ function tryParseArgs(): CliArgs {
 			minAllNighters: parseNum(values["min-allnighters"]),
 			minEnergy: parseEnergy(values["min-energy"]),
 			maxEnergy: parseEnergy(values["max-energy"]),
+			friendUnlocks: values["friend-unlocks"] ?? [],
 		},
 		limit: Number.parseInt(values.limit, 10),
 		groupBy,
+		debug: values.debug,
 	};
 }
 /**
@@ -190,7 +196,7 @@ async function main(): Promise<void> {
 				printPlayHelp();
 			} else {
 				const seed = args.seed ?? Math.floor(Math.random() * 2147483647);
-				await runInteractive(seed);
+				await runInteractive(seed, args.debug);
 			}
 			break;
 	}

@@ -9,8 +9,8 @@ import {
 	getDogNote,
 } from "../../data/daySummary";
 import {
-	getPatternHint,
 	getRandomRescueMessage,
+	getRescueResultMessage,
 } from "../../data/friendRescue";
 import { getScrollTrapFlavor } from "../../data/scrollTrap";
 import type { GameState, Task } from "../../state";
@@ -18,7 +18,6 @@ import { createStore } from "../../store";
 import { getExtendedNightDescription } from "../../systems/allnighter";
 import { getDogUrgency, URGENCY_DISPLAY } from "../../systems/dog";
 import { getEvolvedDescription } from "../../systems/evolution";
-import { isCorrectTier } from "../../systems/friend";
 import { nextRoll } from "../../utils/random";
 import {
 	createStateFromSeed,
@@ -53,12 +52,14 @@ function getVisibleTasks(state: GameState): Task[] {
  */
 export class InteractiveStrategy implements Strategy {
 	private rl: readline.Interface;
+	private debug: boolean;
 
-	constructor() {
+	constructor(debug = false) {
 		this.rl = readline.createInterface({
 			input: process.stdin,
 			output: process.stdout,
 		});
+		this.debug = debug;
 	}
 
 	async prompt(question: string): Promise<string> {
@@ -123,8 +124,17 @@ export class InteractiveStrategy implements Strategy {
 			);
 		}
 
-		// Show hidden state for debugging (in interactive mode, why not)
-		console.log(`Energy: [hidden] | Momentum: [hidden]`);
+		// Show hidden state if debug mode
+		if (this.debug) {
+			const e = (state.energy * 100).toFixed(1);
+			const m = (state.momentum * 100).toFixed(1);
+			console.log(`Energy: ${e}% | Momentum: ${m}%`);
+			console.log(
+				`Variants unlocked: ${state.variantsUnlocked.join(", ") || "none"}`,
+			);
+		} else {
+			console.log(`Energy: [hidden] | Momentum: [hidden]`);
+		}
 		console.log("=".repeat(50));
 	}
 
@@ -159,6 +169,15 @@ export class InteractiveStrategy implements Strategy {
 				}
 
 				console.log(`  ${i + 1}. ${name}${cost}${urgency}${status}`);
+
+				// Show variant if unlocked for this task's category
+				if (
+					task.minimalVariant &&
+					state.variantsUnlocked.includes(task.category) &&
+					!task.succeededToday
+				) {
+					console.log(`  ${i + 1}v. ${task.minimalVariant.name}`);
+				}
 			});
 		} else if (!isSpecialScreen) {
 			console.log("");
@@ -198,15 +217,43 @@ export class InteractiveStrategy implements Strategy {
 	/**
 	 * Tries to find an attempt decision for a task.
 	 * Returns result if task matched, undefined to continue parsing other options.
+	 *
+	 * @param useVariant If true, attempt the minimal variant instead
+	 * @param state Game state for checking unlocked variants
 	 */
 	private tryAttemptTask(
 		task: Task,
 		decisions: Decision[],
+		useVariant: boolean,
+		state: GameState,
 	): ParseResult | undefined {
+		// Check if variant is requested but not available
+		if (useVariant) {
+			if (!task.minimalVariant) {
+				console.log(`${task.name} has no variant.`);
+				return { ok: false, handled: true };
+			}
+			if (!state.variantsUnlocked.includes(task.category)) {
+				console.log(`${task.name} variant is not unlocked yet.`);
+				return { ok: false, handled: true };
+			}
+		}
+
 		const decision = decisions.find(
 			(d) => d.type === "attempt" && d.taskId === task.id,
 		);
-		if (decision) {
+		if (decision && decision.type === "attempt") {
+			// Return with useVariant flag if requested
+			if (useVariant) {
+				return {
+					ok: true,
+					decision: {
+						type: "attempt",
+						taskId: decision.taskId,
+						useVariant: true,
+					},
+				};
+			}
 			return { ok: true, decision };
 		}
 
@@ -239,24 +286,45 @@ export class InteractiveStrategy implements Strategy {
 		// Get visible tasks for stable numbering
 		const visibleTasks = getVisibleTasks(state);
 
+		// Check for variant suffix (e.g., "1v", "2v")
+		const variantMatch = input.match(/^(\d+)v$/);
+		if (variantMatch) {
+			const num = Number.parseInt(variantMatch[1] as string, 10);
+			if (num > 0 && num <= visibleTasks.length) {
+				const task = visibleTasks[num - 1];
+				if (task) {
+					const result = this.tryAttemptTask(task, decisions, true, state);
+					if (result !== undefined) return result;
+				}
+			}
+		}
+
 		// Check for numbered task selection (using stable list)
 		const num = Number.parseInt(input, 10);
 		if (!Number.isNaN(num) && num > 0 && num <= visibleTasks.length) {
 			const task = visibleTasks[num - 1];
 			if (task) {
-				const result = this.tryAttemptTask(task, decisions);
+				const result = this.tryAttemptTask(task, decisions, false, state);
 				if (result !== undefined) return result;
 			}
 		}
 
-		// Check for task by partial name match
+		// Check for task by partial name match with optional "-v" suffix for variant
+		const variantSuffix = input.endsWith("-v");
+		const searchTerm = variantSuffix ? input.slice(0, -2) : input;
+
 		const matchingTask = visibleTasks.find(
 			(t) =>
-				t.name.toLowerCase().includes(input) ||
-				t.id.toLowerCase().includes(input),
+				t.name.toLowerCase().includes(searchTerm) ||
+				t.id.toLowerCase().includes(searchTerm),
 		);
 		if (matchingTask) {
-			const result = this.tryAttemptTask(matchingTask, decisions);
+			const result = this.tryAttemptTask(
+				matchingTask,
+				decisions,
+				variantSuffix,
+				state,
+			);
 			if (result !== undefined) return result;
 		}
 
@@ -345,10 +413,13 @@ export class InteractiveStrategy implements Strategy {
 /**
  * Runs the game in interactive mode.
  */
-export async function runInteractive(seed: number): Promise<void> {
+export async function runInteractive(
+	seed: number,
+	debug = false,
+): Promise<void> {
 	const initialState = createStateFromSeed(seed);
 	const store = createStore(initialState);
-	const strategy = new InteractiveStrategy();
+	const strategy = new InteractiveStrategy(debug);
 
 	console.log("");
 	console.log("SKILL ISSUE - Interactive Mode");
@@ -418,10 +489,11 @@ export async function runInteractive(seed: number): Promise<void> {
 			// Show result
 			if (decision.type === "attempt") {
 				console.log("");
+				const variantNote = decision.useVariant ? " (variant)" : "";
 				if (result.succeeded) {
-					console.log("Success!");
+					console.log(`Success!${variantNote}`);
 				} else {
-					console.log("Failed... the click just didn't work.");
+					console.log(`Failed${variantNote}... the click just didn't work.`);
 					// Show phone buzz hint if present
 					if (result.phoneBuzzText) {
 						console.log(result.phoneBuzzText);
@@ -431,17 +503,15 @@ export async function runInteractive(seed: number): Promise<void> {
 				console.log("");
 				console.log(getScrollTrapFlavor(store.getState().rollCount));
 			} else if (decision.type === "acceptRescue") {
-				const activity = ACTIVITIES.find((a) => a.id === decision.activity);
-				const correct = activity
-					? isCorrectTier(activity, result.energyBefore)
-					: false;
-				const resultMessage = correct
-					? "That was good. You feel better."
-					: "You pushed yourself a bit too much. Still, you saw your friend.";
-				const hint = getPatternHint(store.getState());
+				const resultMessage = getRescueResultMessage(
+					store.getState(),
+					result.rescueCorrect ?? false,
+				);
 				console.log("");
 				console.log(resultMessage);
-				console.log(`"${hint}"`);
+				if (result.rescueHint) {
+					console.log(`"${result.rescueHint}"`);
+				}
 			}
 		}
 

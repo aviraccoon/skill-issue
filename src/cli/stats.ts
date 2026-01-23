@@ -38,6 +38,8 @@ export interface RunStats {
 	};
 	allNighters: number;
 	phoneChecks: number;
+	/** Categories with unlocked variants at end of run. */
+	variantsUnlocked: string[];
 }
 
 /**
@@ -92,6 +94,8 @@ export interface BatchStats {
 	};
 	allNighterRate: number;
 	phoneChecksAvg: number;
+	/** Rate at which each variant category was unlocked (0-1). */
+	variantUnlockRates: Record<string, number>;
 }
 
 /**
@@ -204,6 +208,7 @@ export function aggregateStats(
 	let totalFriendRescuesAccepted = 0;
 	let totalAllNighters = 0;
 	let totalPhoneChecks = 0;
+	const variantUnlockCounts: Record<string, number> = {};
 
 	for (const result of results) {
 		energyEnds.push(result.stats.energy.end);
@@ -222,6 +227,11 @@ export function aggregateStats(
 		totalFriendRescuesAccepted += result.stats.friendRescues.accepted;
 		totalAllNighters += result.stats.allNighters;
 		totalPhoneChecks += result.stats.phoneChecks;
+
+		// Count variant unlocks by category
+		for (const category of result.stats.variantsUnlocked) {
+			variantUnlockCounts[category] = (variantUnlockCounts[category] ?? 0) + 1;
+		}
 	}
 
 	const n = results.length;
@@ -235,6 +245,12 @@ export function aggregateStats(
 			? (arr[mid] ?? 0)
 			: ((arr[mid - 1] ?? 0) + (arr[mid] ?? 0)) / 2;
 	};
+
+	// Convert counts to rates
+	const variantUnlockRates: Record<string, number> = {};
+	for (const [category, count] of Object.entries(variantUnlockCounts)) {
+		variantUnlockRates[category] = count / n;
+	}
 
 	return {
 		runs: n,
@@ -270,6 +286,7 @@ export function aggregateStats(
 		},
 		allNighterRate: totalAllNighters / n,
 		phoneChecksAvg: totalPhoneChecks / n,
+		variantUnlockRates,
 	};
 }
 
@@ -308,6 +325,7 @@ function emptyBatchStats(): BatchStats {
 		},
 		allNighterRate: 0,
 		phoneChecksAvg: 0,
+		variantUnlockRates: {},
 	};
 }
 

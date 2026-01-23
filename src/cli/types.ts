@@ -27,6 +27,8 @@ export interface SearchCriteria {
 	minAllNighters: number | null;
 	minEnergy: number | null;
 	maxEnergy: number | null;
+	/** Categories that must be unlocked via friend hints. */
+	friendUnlocks: string[];
 }
 
 /**
@@ -44,4 +46,5 @@ export interface CliArgs {
 	searchCriteria: SearchCriteria;
 	limit: number;
 	groupBy: GroupByDimension[];
+	debug: boolean;
 }

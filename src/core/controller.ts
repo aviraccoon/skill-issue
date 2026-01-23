@@ -21,7 +21,7 @@ import { canPushThrough } from "../systems/allnighter";
  * Possible decisions during gameplay.
  */
 export type Decision =
-	| { type: "attempt"; taskId: string }
+	| { type: "attempt"; taskId: string; useVariant?: boolean }
 	| { type: "skip" }
 	| { type: "checkPhone" }
 	| { type: "endDay" } // weekend only
@@ -40,6 +40,10 @@ export interface ActionResult {
 	friendRescueTriggered?: boolean;
 	/** Phone buzz flavor text (pre-rescue hint), if applicable. */
 	phoneBuzzText?: string;
+	/** Pattern hint from friend rescue, if applicable. */
+	rescueHint?: string;
+	/** Whether rescue tier was correct for energy level. */
+	rescueCorrect?: boolean;
 	energyBefore: number;
 	energyAfter: number;
 	momentumBefore: number;
@@ -133,10 +137,17 @@ export function executeDecision(
 	let probability: number | undefined;
 	let friendRescueTriggered: boolean | undefined;
 	let phoneBuzzText: string | undefined;
+	let rescueHint: string | undefined;
+	let rescueCorrect: boolean | undefined;
 
 	switch (decision.type) {
 		case "attempt": {
-			const result = attemptTask(store, decision.taskId, callbacks);
+			const result = attemptTask(
+				store,
+				decision.taskId,
+				callbacks,
+				decision.useVariant,
+			);
 			if (result) {
 				succeeded = result.succeeded;
 				probability = result.probability;
@@ -169,7 +180,9 @@ export function executeDecision(
 		case "acceptRescue": {
 			const activity = ACTIVITIES.find((a) => a.id === decision.activity);
 			if (activity) {
-				acceptFriendRescue(store, activity);
+				const result = acceptFriendRescue(store, activity);
+				rescueHint = result.hint;
+				rescueCorrect = result.correct;
 				store.set("screen", "game");
 			}
 			break;
@@ -189,6 +202,8 @@ export function executeDecision(
 		probability,
 		friendRescueTriggered,
 		phoneBuzzText,
+		rescueHint,
+		rescueCorrect,
 		energyBefore,
 		energyAfter: stateAfter.energy,
 		momentumBefore,

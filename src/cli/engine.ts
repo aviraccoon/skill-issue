@@ -108,6 +108,7 @@ export function createStateFromSeed(seed: number): GameState {
 		consecutiveFailures: 0,
 		friendRescueUsedToday: false,
 		rollCount: 0,
+		variantsUnlocked: [],
 	};
 }
 
@@ -338,5 +339,6 @@ function calculateRunStats(
 		},
 		allNighters: totalAllNighters,
 		phoneChecks: totalPhoneChecks,
+		variantsUnlocked: [...finalState.variantsUnlocked],
 	};
 }

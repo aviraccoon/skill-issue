@@ -32,6 +32,7 @@ export interface Task {
 	minimalVariant?: {
 		name: string;
 		baseRate: number;
+		unlockHints: string[]; // friend hint messages that unlock this variant
 	};
 	availableBlocks: TimeBlock[]; // when this task can appear
 	weekendCost?: number; // action points on weekend (default 1)
@@ -82,6 +83,9 @@ export interface GameState {
 
 	// Deterministic randomness
 	rollCount: number; // increments with each random roll for reproducibility
+
+	// Task variants (unlocked through friend hints)
+	variantsUnlocked: TaskCategory[]; // categories where minimal variants are visible
 }
 
 /** Returns true if the current day is Saturday or Sunday. */
@@ -119,6 +123,7 @@ export function createInitialState(): GameState {
 		consecutiveFailures: 0,
 		friendRescueUsedToday: false,
 		rollCount: 0,
+		variantsUnlocked: [],
 	};
 }
 

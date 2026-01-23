@@ -8,5 +8,6 @@ declare const styles: {
 	readonly stats: string;
 	readonly taskName: string;
 	readonly urgency: string;
+	readonly variantBtn: string;
 };
 export default styles;

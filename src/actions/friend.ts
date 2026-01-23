@@ -1,3 +1,4 @@
+import { getPatternHint } from "../data/friendRescue";
 import { type GameState, isWeekend } from "../state";
 import type { Store } from "../store";
 import {
@@ -18,6 +19,8 @@ export interface AcceptRescueResult {
 	momentumChange: number;
 	/** Energy change applied. */
 	energyChange: number;
+	/** Pattern hint from the friend. */
+	hint: string;
 }
 
 /**
@@ -31,6 +34,10 @@ export function acceptFriendRescue(
 	const state = store.getState();
 	const effects = getActivityEffects(activity, state);
 	const correct = isCorrectTier(activity, state.energy);
+
+	// Get pattern hint BEFORE applying effects - variant unlock bonuses
+	// depend on low energy/momentum which rescue is about to fix
+	const hintResult = getPatternHint(state);
 
 	// Apply effects
 	store.update("momentum", (m) => clamp(m + effects.momentum, 0, 1));
@@ -49,10 +56,22 @@ export function acceptFriendRescue(
 	// Reset consecutive failures
 	store.set("consecutiveFailures", 0);
 
+	// Unlock variant category if the hint unlocks one
+	if (hintResult.unlocksVariant) {
+		const currentUnlocked = store.getState().variantsUnlocked;
+		if (!currentUnlocked.includes(hintResult.unlocksVariant)) {
+			store.set("variantsUnlocked", [
+				...currentUnlocked,
+				hintResult.unlocksVariant,
+			]);
+		}
+	}
+
 	return {
 		correct,
 		momentumChange: effects.momentum,
 		energyChange: effects.energy,
+		hint: hintResult.hint,
 	};
 }
 

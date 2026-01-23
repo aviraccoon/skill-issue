@@ -261,6 +261,17 @@ export function outputBatchStats(stats: BatchStats): void {
 	);
 	console.log(`All-nighters: ${formatPercent(stats.allNighterRate)} of runs`);
 	console.log(`Avg phone checks: ${stats.phoneChecksAvg.toFixed(1)}`);
+
+	// Variant unlock rates
+	const variantCategories = Object.keys(stats.variantUnlockRates);
+	if (variantCategories.length > 0) {
+		console.log("");
+		console.log("Variant unlocks (friend hints):");
+		for (const category of variantCategories.sort()) {
+			const rate = stats.variantUnlockRates[category] ?? 0;
+			console.log(`  ${category}: ${formatPercent(rate)}`);
+		}
+	}
 }
 
 /**

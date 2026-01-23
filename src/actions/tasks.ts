@@ -53,12 +53,14 @@ export function selectTask(store: Store<GameState>, taskId: string) {
  * Consumes action slots (weekday) or points (weekend) regardless of outcome.
  *
  * @param callbacks Optional callbacks for visual feedback (browser only)
+ * @param useVariant If true, use the minimal variant's base rate instead
  * @returns Result of the attempt, or undefined if task cannot be attempted
  */
 export function attemptTask(
 	store: Store<GameState>,
 	taskId: string,
 	callbacks?: AttemptCallbacks,
+	useVariant?: boolean,
 ): AttemptResult | undefined {
 	const state = store.getState();
 	const task = state.tasks.find((t) => t.id === taskId);
@@ -73,7 +75,13 @@ export function attemptTask(
 		if (state.slotsRemaining <= 0) return undefined;
 	}
 
-	const probability = calculateSuccessProbability(task, state);
+	// Use variant's base rate if requested and available
+	const effectiveTask =
+		useVariant && task.minimalVariant
+			? { ...task, baseRate: task.minimalVariant.baseRate }
+			: task;
+
+	const probability = calculateSuccessProbability(effectiveTask, state);
 	const succeeded = nextRoll(store) < probability;
 	let friendRescueTriggered = false;
 

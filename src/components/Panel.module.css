@@ -71,6 +71,23 @@
 	cursor: not-allowed;
 }
 
+.variantBtn {
+	width: 100%;
+	padding: 0.5rem 1rem;
+	margin-top: 0.5rem;
+	background: transparent;
+	color: var(--muted);
+	border: 1px dashed var(--border);
+	border-radius: var(--attempt-btn-radius);
+	cursor: pointer;
+	font-size: 0.875rem;
+}
+
+.variantBtn:hover {
+	color: var(--fg);
+	border-color: var(--fg);
+}
+
 .continueBtn {
 	width: 100%;
 	padding: 0.5rem 1rem;

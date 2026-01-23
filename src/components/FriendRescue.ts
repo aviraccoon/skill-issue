@@ -1,9 +1,7 @@
-import { acceptFriendRescue } from "../actions/friend";
+import { type AcceptRescueResult, acceptFriendRescue } from "../actions/friend";
 import type { Decision } from "../core/controller";
-import {
-	type FriendRescueInfo,
-	getFriendRescueResultInfo,
-} from "../core/screenInfo";
+import type { FriendRescueInfo } from "../core/screenInfo";
+import { getRescueResultMessage } from "../data/friendRescue";
 import type { GameState } from "../state";
 import type { Store } from "../store";
 import styles from "./FriendRescue.module.css";
@@ -49,7 +47,7 @@ export function renderFriendRescue(
 			?.addEventListener("click", () => {
 				// Call action directly to get result for intermediate screen
 				const result = acceptFriendRescue(store, activity);
-				showRescueResult(store, result.correct);
+				showRescueResult(store, result);
 			});
 	}
 
@@ -65,16 +63,16 @@ export function renderFriendRescue(
  * Shows the result of the rescue with a pattern hint.
  * Browser-only intermediate screen before returning to game.
  */
-function showRescueResult(store: Store<GameState>, correctTier: boolean) {
-	const state = store.getState();
-	const resultInfo = getFriendRescueResultInfo(state, correctTier);
+function showRescueResult(store: Store<GameState>, result: AcceptRescueResult) {
 	const container = document.getElementById("app");
 	if (!container) return;
 
+	const message = getRescueResultMessage(store.getState(), result.correct);
+
 	container.innerHTML = `
 		<div class="${styles.rescue}">
-			<p class="${styles.message}">${resultInfo.message}</p>
-			<p class="${styles.hint}">"${resultInfo.hint}"</p>
+			<p class="${styles.message}">${message}</p>
+			<p class="${styles.hint}">"${result.hint}"</p>
 			<button class="${styles.declineBtn}">Continue</button>
 		</div>
 	`;

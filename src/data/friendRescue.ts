@@ -33,6 +33,42 @@ export const PHONE_IGNORED_TEXTS = [
 ];
 
 /**
+ * Rescue result messages when activity tier was right for energy level.
+ */
+export const RESCUE_RESULT_CORRECT = [
+	"That was good. You feel better.",
+	"That helped. You needed that.",
+	"Better. Not fixed, but better.",
+	"You feel a bit lighter now.",
+	"That was the right call.",
+];
+
+/**
+ * Rescue result messages when activity tier was too high for energy level.
+ */
+export const RESCUE_RESULT_INCORRECT = [
+	"You pushed yourself a bit too much. Still, you saw your friend.",
+	"That took more out of you than expected. Worth it, though.",
+	"A little much for today. But you showed up.",
+	"Exhausting. But you made it happen.",
+];
+
+/**
+ * Gets a rescue result message based on tier correctness.
+ * Uses seeded selection for variety within a run.
+ */
+export function getRescueResultMessage(
+	state: GameState,
+	correct: boolean,
+): string {
+	const messages = correct ? RESCUE_RESULT_CORRECT : RESCUE_RESULT_INCORRECT;
+	const index =
+		Math.abs(state.runSeed + state.dayIndex * 23 + state.rollCount * 7) %
+		messages.length;
+	return messages[index] as string;
+}
+
+/**
  * Messages the friend sends when rescue triggers.
  */
 export const RESCUE_MESSAGES = [
@@ -52,17 +88,79 @@ export const RESCUE_MESSAGES = [
 
 // --- Pattern Hints ---
 
+import { type TaskCategory, tasksWithVariants } from "./tasks";
+
 /**
  * Pattern hint with multiple message variants.
  */
 export interface PatternHintGroup {
-	/** Condition that must be true for this hint to apply. */
+	/** Condition that must be true for this hint to apply (deterministic, no probability). */
 	condition: (state: GameState) => boolean;
 	/** Possible messages - one selected via seeded random. */
 	messages: string[];
-	/** Optional priority (lower = checked first). Default 50. */
-	priority?: number;
+	/** Weight for selection. Higher = more likely to be picked. Can be number or function of state. */
+	weight: number | ((state: GameState) => number);
+	/** If set, unlocks variants for this category when hint fires. */
+	unlocksVariant?: TaskCategory;
 }
+
+// --- Variant Unlock Hints ---
+// Generated from task definitions. Weight increases with failures.
+
+/**
+ * Calculates the weight for a variant unlock hint.
+ * Higher weight = more likely to be selected.
+ * Returns 0 if already unlocked or no failures.
+ */
+function getVariantUnlockWeight(
+	state: GameState,
+	taskId: string,
+	category: TaskCategory,
+): number {
+	// Already unlocked - not eligible
+	if (state.variantsUnlocked.includes(category)) {
+		return 0;
+	}
+
+	const task = state.tasks.find((t) => t.id === taskId);
+	if (!task || task.failureCount === 0) {
+		return 0;
+	}
+
+	// Base weight varies slightly by seed (3-6)
+	const baseWeight = 3 + (state.runSeed % 4);
+
+	// Per-failure bonus (3-5 per failure, varies by seed)
+	const failureBonus = task.failureCount * (3 + ((state.runSeed >> 8) % 3));
+
+	// Low energy/momentum bonuses (+3 each when < 40%)
+	const energyBonus = state.energy < 0.4 ? 3 : 0;
+	const momentumBonus = state.momentum < 0.4 ? 3 : 0;
+
+	return baseWeight + failureBonus + energyBonus + momentumBonus;
+}
+
+/**
+ * Variant unlock hint groups generated from task definitions.
+ * Weight increases with failure count, making them more likely when struggling.
+ */
+const VARIANT_UNLOCK_HINTS: PatternHintGroup[] = tasksWithVariants.map(
+	(task) => ({
+		condition: (state: GameState) =>
+			!state.variantsUnlocked.includes(task.category) &&
+			(state.tasks.find((t) => t.id === task.id)?.failureCount ?? 0) > 0,
+		messages: task.minimalVariant.unlockHints,
+		weight: (state: GameState) =>
+			getVariantUnlockWeight(state, task.id, task.category),
+		unlocksVariant: task.category,
+	}),
+);
+
+// --- Personality Hints ---
+// Fixed weight, compete with other hints via weighted random.
+
+/** Weight for personality hints. */
+const PERSONALITY_WEIGHT = 10;
 
 /**
  * Night owl doing well at night.
@@ -78,7 +176,7 @@ export const NIGHT_OWL_THRIVING: PatternHintGroup = {
 		"Night person, huh? Nothing wrong with that.",
 		"You're different at night. More... you.",
 	],
-	priority: 10,
+	weight: PERSONALITY_WEIGHT,
 };
 
 /**
@@ -94,7 +192,7 @@ const NIGHT_OWL_MORNING: PatternHintGroup = {
 		"You're not a morning person. Stop fighting it.",
 		"Maybe save the hard stuff for later? Just a thought.",
 	],
-	priority: 15,
+	weight: PERSONALITY_WEIGHT,
 };
 
 /**
@@ -110,7 +208,7 @@ export const EARLY_BIRD_THRIVING: PatternHintGroup = {
 		"Morning person, right? Get the hard stuff done early.",
 		"You've got that morning energy. Don't waste it on easy stuff.",
 	],
-	priority: 10,
+	weight: PERSONALITY_WEIGHT,
 };
 
 /**
@@ -126,7 +224,7 @@ const EARLY_BIRD_NIGHT: PatternHintGroup = {
 		"You're running on fumes. Tomorrow's a fresh start.",
 		"Nothing good happens this late for you. Get some sleep.",
 	],
-	priority: 15,
+	weight: PERSONALITY_WEIGHT,
 };
 
 /**
@@ -140,7 +238,7 @@ export const HERMIT_SOCIAL_COST: PatternHintGroup = {
 		"You need your alone time after this. That's fine.",
 		"Thanks for coming out. I know it's not nothing for you.",
 	],
-	priority: 20,
+	weight: PERSONALITY_WEIGHT,
 };
 
 /**
@@ -154,8 +252,14 @@ export const SOCIAL_BATTERY_BOOST: PatternHintGroup = {
 		"You light up when you're around people. Remember that.",
 		"This helps you, doesn't it? Being around someone.",
 	],
-	priority: 20,
+	weight: PERSONALITY_WEIGHT,
 };
+
+// --- State Hints ---
+// Lower weight than personality, but always in the pool when conditions match.
+
+/** Weight for general state hints. */
+const STATE_WEIGHT = 6;
 
 /**
  * Creative tasks failing a lot.
@@ -171,24 +275,7 @@ export const CREATIVE_STRUGGLING: PatternHintGroup = {
 		"The big creative projects... they're hard. That's not you failing.",
 		"Maybe the bar is too high on that one. What's the smallest version?",
 	],
-	priority: 30,
-};
-
-/**
- * Cooking failing repeatedly.
- */
-export const COOKING_STRUGGLING: PatternHintGroup = {
-	condition: (state) => {
-		const cook = state.tasks.find((t) => t.id === "cook");
-		return cook !== undefined && cook.failureCount >= 3;
-	},
-	messages: [
-		"Ordering food still counts as feeding yourself. You know that, right?",
-		"The cooking thing... it's okay to just eat. Food is food.",
-		"What if eating was just eating? Not a whole production?",
-		"Microwave counts. Takeout counts. You eating counts.",
-	],
-	priority: 30,
+	weight: STATE_WEIGHT,
 };
 
 /**
@@ -205,7 +292,7 @@ export const DOG_ANCHOR: PatternHintGroup = {
 		"The dog doesn't judge. He's just happy you showed up.",
 		"Walking the dog... that's your reliable one. Lean on it.",
 	],
-	priority: 40,
+	weight: STATE_WEIGHT,
 };
 
 /**
@@ -219,7 +306,7 @@ export const LOW_ENERGY: PatternHintGroup = {
 		"Today's rough, huh? That's okay. It happens.",
 		"Not every day is a good day. This is one of those.",
 	],
-	priority: 35,
+	weight: STATE_WEIGHT,
 };
 
 /**
@@ -232,7 +319,7 @@ export const HIGH_MOMENTUM: PatternHintGroup = {
 		"Things are clicking right now. Don't overthink it.",
 		"Good momentum. Do the next thing while you've got it.",
 	],
-	priority: 40,
+	weight: STATE_WEIGHT,
 };
 
 /**
@@ -249,7 +336,7 @@ const HYGIENE_STRUGGLING: PatternHintGroup = {
 		"Teeth, shower, whatever. Tomorrow's another chance.",
 		"Basic stuff isn't basic when your brain won't cooperate.",
 	],
-	priority: 35,
+	weight: STATE_WEIGHT,
 };
 
 /**
@@ -262,7 +349,7 @@ const GENERAL_STRUGGLE: PatternHintGroup = {
 		"Nothing's landing right now. That happens.",
 		"Rough patch. Not your fault.",
 	],
-	priority: 45,
+	weight: STATE_WEIGHT,
 };
 
 /**
@@ -277,10 +364,11 @@ export const FALLBACK_HINTS = [
 ];
 
 /**
- * All pattern hint groups, in priority order.
- * Lower priority = checked first.
+ * All pattern hint groups.
+ * Selection is via weighted random - no priority ordering.
  */
 export const PATTERN_HINT_GROUPS: PatternHintGroup[] = [
+	...VARIANT_UNLOCK_HINTS,
 	NIGHT_OWL_THRIVING,
 	NIGHT_OWL_MORNING,
 	EARLY_BIRD_THRIVING,
@@ -288,13 +376,12 @@ export const PATTERN_HINT_GROUPS: PatternHintGroup[] = [
 	HERMIT_SOCIAL_COST,
 	SOCIAL_BATTERY_BOOST,
 	CREATIVE_STRUGGLING,
-	COOKING_STRUGGLING,
 	LOW_ENERGY,
 	HYGIENE_STRUGGLING,
 	DOG_ANCHOR,
 	HIGH_MOMENTUM,
 	GENERAL_STRUGGLE,
-].sort((a, b) => (a.priority ?? 50) - (b.priority ?? 50));
+];
 
 /**
  * Gets a phone buzz text using seeded selection.
@@ -326,20 +413,77 @@ export function getRandomRescueMessage(state: GameState): string {
 }
 
 /**
- * Gets a pattern hint based on game state.
- * Returns first matching group's message, or fallback.
+ * Result of getting a pattern hint.
  */
-export function getPatternHint(state: GameState): string {
+export interface PatternHintResult {
+	/** The hint message to display. */
+	hint: string;
+	/** Category to unlock variants for, if this hint unlocks one. */
+	unlocksVariant?: TaskCategory;
+}
+
+/**
+ * Resolves a weight value (can be number or function).
+ */
+function resolveWeight(
+	weight: number | ((state: GameState) => number),
+	state: GameState,
+): number {
+	return typeof weight === "function" ? weight(state) : weight;
+}
+
+/**
+ * Gets a pattern hint based on game state.
+ * Uses weighted random selection from all matching hints.
+ */
+export function getPatternHint(state: GameState): PatternHintResult {
+	// Collect all matching hints with their weights
+	const candidates: { group: PatternHintGroup; weight: number }[] = [];
+
 	for (const group of PATTERN_HINT_GROUPS) {
 		if (group.condition(state)) {
-			const index =
-				Math.abs(state.runSeed + state.dayIndex * 13) % group.messages.length;
-			return group.messages[index] as string;
+			const weight = resolveWeight(group.weight, state);
+			if (weight > 0) {
+				candidates.push({ group, weight });
+			}
 		}
 	}
 
-	// Fallback
-	const fallbackIndex =
-		Math.abs(state.runSeed + state.dayIndex) % FALLBACK_HINTS.length;
-	return FALLBACK_HINTS[fallbackIndex] as string;
+	// If no candidates, use fallback
+	if (candidates.length === 0) {
+		const fallbackIndex =
+			Math.abs(state.runSeed + state.dayIndex) % FALLBACK_HINTS.length;
+		return { hint: FALLBACK_HINTS[fallbackIndex] as string };
+	}
+
+	// Weighted random selection
+	const totalWeight = candidates.reduce((sum, c) => sum + c.weight, 0);
+	const roll =
+		((state.runSeed + state.dayIndex * 47 + state.rollCount * 19) % 1000) /
+		1000;
+	let threshold = roll * totalWeight;
+
+	let selected = candidates[0];
+	for (const candidate of candidates) {
+		threshold -= candidate.weight;
+		if (threshold <= 0) {
+			selected = candidate;
+			break;
+		}
+	}
+
+	// Select message from the chosen group
+	const group = selected?.group;
+	if (!group) {
+		const fallbackIndex =
+			Math.abs(state.runSeed + state.dayIndex) % FALLBACK_HINTS.length;
+		return { hint: FALLBACK_HINTS[fallbackIndex] as string };
+	}
+
+	const messageIndex =
+		Math.abs(state.runSeed + state.dayIndex * 13) % group.messages.length;
+	return {
+		hint: group.messages[messageIndex] as string,
+		unlocksVariant: group.unlocksVariant,
+	};
 }

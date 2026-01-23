@@ -92,6 +92,9 @@ bun run cli find-seed -p nightOwl+hermit --survived --min-energy 80 -l 3
 
 # Runs that survived despite 2+ all-nighters
 bun run cli find-seed --min-allnighters 2 --survived -l 3
+
+# Seeds where friend unlocks both food and hygiene variants
+bun run cli find-seed --friend-unlocks food --friend-unlocks hygiene -l 5
 ```
 
 **Criteria options:**
@@ -99,6 +102,7 @@ bun run cli find-seed --min-allnighters 2 --survived -l 3
 - `--max-phone <n>` / `--min-phone <n>` - Phone check bounds
 - `--max-allnighters <n>` / `--min-allnighters <n>` - All-nighter bounds
 - `--min-energy <pct>` / `--max-energy <pct>` - End energy (0-100)
+- `--friend-unlocks <category>` - Require variant unlock (repeatable: hygiene, food, chores)
 - Plus all personality and outcome filters from simulate
 
 ### play

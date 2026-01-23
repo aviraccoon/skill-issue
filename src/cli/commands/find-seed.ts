@@ -51,6 +51,7 @@ function matchesSearchCriteria(
 			phoneChecks: number;
 			allNighters: number;
 			energy: { end: number };
+			variantsUnlocked: string[];
 		};
 	},
 	filters: FilterOptions,
@@ -102,6 +103,13 @@ function matchesSearchCriteria(
 		return false;
 	}
 
+	// Friend unlocks - all specified categories must be unlocked
+	for (const category of criteria.friendUnlocks) {
+		if (!result.stats.variantsUnlocked.includes(category)) {
+			return false;
+		}
+	}
+
 	return true;
 }
 
@@ -129,6 +137,8 @@ function formatCriteria(
 		parts.push(`energy>=${formatPercent(criteria.minEnergy)}`);
 	if (criteria.maxEnergy !== null)
 		parts.push(`energy<=${formatPercent(criteria.maxEnergy)}`);
+	if (criteria.friendUnlocks.length > 0)
+		parts.push(`unlocks=${criteria.friendUnlocks.join("+")}`);
 
 	return parts.length > 0 ? parts.join(", ") : "any";
 }
@@ -183,9 +193,13 @@ export function runFindSeed(args: CliArgs): void {
 			const energy = formatPercent(result.stats.energy.end);
 			const phone = result.stats.phoneChecks;
 			const allNighters = result.stats.allNighters;
+			const unlocks =
+				result.stats.variantsUnlocked.length > 0
+					? ` unlocks=${result.stats.variantsUnlocked.join(",")}`
+					: "";
 
 			console.log(
-				`${seed}: ${personality.padEnd(25)} ${status.padEnd(8)} energy=${energy.padStart(6)} phone=${phone} allNighters=${allNighters}`,
+				`${seed}: ${personality.padEnd(25)} ${status.padEnd(8)} energy=${energy.padStart(6)} phone=${phone} allNighters=${allNighters}${unlocks}`,
 			);
 		}
 

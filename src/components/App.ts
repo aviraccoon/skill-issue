@@ -297,6 +297,16 @@ function renderTaskPanel(
 		urgencyDisplay = `<p class="${panelStyles.urgency}" data-urgency="${selectedTask.urgency.level}">${selectedTask.urgency.text}</p>`;
 	}
 
+	// Show variant option if unlocked
+	let variantDisplay = "";
+	if (
+		selectedTask.variant &&
+		selectedTask.canAttempt &&
+		!selectedTask.succeededToday
+	) {
+		variantDisplay = `<button class="${panelStyles.variantBtn}">${selectedTask.variant.name}</button>`;
+	}
+
 	panel.innerHTML = `
 		<p class="${panelStyles.taskName}">${selectedTask.evolvedName}</p>
 		<p class="${panelStyles.stats}">
@@ -307,6 +317,7 @@ function renderTaskPanel(
 		<button class="${panelStyles.attemptBtn}" ${selectedTask.canAttempt ? "" : "disabled"}>
 			${selectedTask.succeededToday ? "Done" : "Attempt"}
 		</button>
+		${variantDisplay}
 		${continueButtonHtml}
 	`;
 
@@ -314,6 +325,18 @@ function renderTaskPanel(
 	if (attemptBtn && selectedTask.canAttempt) {
 		attemptBtn.addEventListener("click", () => {
 			onDecision({ type: "attempt", taskId: selectedTask.id });
+		});
+	}
+
+	// Wire up variant button
+	const variantBtn = panel.querySelector(`.${panelStyles.variantBtn}`);
+	if (variantBtn && selectedTask.canAttempt) {
+		variantBtn.addEventListener("click", () => {
+			onDecision({
+				type: "attempt",
+				taskId: selectedTask.id,
+				useVariant: true,
+			});
 		});
 	}
 
