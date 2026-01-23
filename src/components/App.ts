@@ -3,11 +3,13 @@ import { type Decision, executeDecision } from "../core/controller";
 import {
 	type GameScreenInfo,
 	getScreenInfo,
+	type ScreenInfo,
 	type TaskDisplay,
 } from "../core/screenInfo";
 import { strings } from "../i18n";
 import { type GameState, isWeekend } from "../state";
 import type { Store } from "../store";
+import { announce } from "../utils/announce";
 import {
 	createAccessibilityDialog,
 	openAccessibilityDialog,
@@ -66,19 +68,70 @@ let a11yDialogCreated = false;
 /** Tracks whether we've set up global keyboard handlers. */
 let keyboardHandlersSetup = false;
 
+/** Tracks the last announced screen to avoid re-announcing. */
+let lastAnnouncedScreen: string | null = null;
+
 /**
- * Announces a message to screen readers via the live region.
- * Used for task successes and other important state changes.
+ * Focuses the main action in the panel: Attempt button, Continue button, or panel itself.
+ * Uses rAF + delay to ensure DOM is painted and screen readers catch up.
  */
-function announce(message: string) {
-	const el = document.getElementById("announcer");
-	if (el) {
-		// Clear first to ensure re-announcement of same message
-		el.textContent = "";
-		// Use setTimeout to ensure the DOM update triggers announcement
+function focusPanelAction() {
+	requestAnimationFrame(() => {
 		setTimeout(() => {
-			el.textContent = message;
-		}, 50);
+			// Try Attempt button first (if enabled)
+			const attemptBtn = document.querySelector<HTMLElement>(
+				`.${panelStyles.attemptBtn}:not([disabled])`,
+			);
+			if (attemptBtn) {
+				attemptBtn.focus();
+				return;
+			}
+
+			// Try Continue button
+			const continueBtn = document.querySelector<HTMLElement>(
+				`.${panelStyles.continueBtn}`,
+			);
+			if (continueBtn) {
+				continueBtn.focus();
+				return;
+			}
+
+			// Fall back to panel
+			const panel = document.querySelector<HTMLElement>(
+				`.${panelStyles.panel}`,
+			);
+			panel?.focus();
+		}, 100);
+	});
+}
+
+/**
+ * Returns the announcement text for a screen type, or null for game screen.
+ * Game screen handles its own announcements (day/time block).
+ */
+function getScreenAnnouncement(screenInfo: ScreenInfo): string | null {
+	const s = strings();
+	switch (screenInfo.type) {
+		case "nightChoice":
+			// Include the night prompt and push-through description
+			return `${s.a11y.screenNightChoice}. ${s.game.nightPrompt} ${screenInfo.description}`;
+		case "friendRescue":
+			// Include the friend's message and cost
+			return `${s.a11y.screenFriendRescue}. ${screenInfo.message} ${s.game.rescueCost(screenInfo.costLabel)}`;
+		case "daySummary": {
+			// Include stats, narrative, and dog note
+			const stats = s.game.taskStats(
+				screenInfo.succeededCount,
+				screenInfo.attemptedCount,
+			);
+			const dogNote = screenInfo.dogNote ? ` ${screenInfo.dogNote}` : "";
+			return `${s.a11y.screenDaySummary}. ${stats}. ${screenInfo.narrative}${dogNote}`;
+		}
+		case "weekComplete":
+			// Include the week narrative
+			return `${s.a11y.screenWeekComplete}. ${screenInfo.narrative}`;
+		default:
+			return null; // Game screen announces day/time separately
 	}
 }
 
@@ -143,11 +196,35 @@ export function renderApp(store: Store<GameState>) {
 			}
 		}
 
+		// Handle focus after skip/continue (advancing to next time block)
+		if (decision.type === "skip") {
+			const newState = store.getState();
+			// Only announce/focus if we're still on game screen (not night choice, etc.)
+			if (newState.screen === "game") {
+				announce(s.a11y.timeBlockChanged(newState.timeBlock));
+				setTimeout(() => {
+					const taskBtns = document.querySelectorAll<HTMLElement>(
+						`.${taskStyles.task}:not(.${taskStyles.succeeded})`,
+					);
+					taskBtns[0]?.focus();
+				}, 0);
+			}
+		}
+
 		// Show phone buzz notification if present
 		if (result.phoneBuzzText) {
 			showNotification(result.phoneBuzzText);
 		}
 	};
+
+	// Announce screen transitions (except game screen which handles its own)
+	if (screenInfo.type !== lastAnnouncedScreen) {
+		const announcement = getScreenAnnouncement(screenInfo);
+		if (announcement) {
+			announce(announcement);
+		}
+		lastAnnouncedScreen = screenInfo.type;
+	}
 
 	switch (screenInfo.type) {
 		case "nightChoice":
@@ -200,6 +277,49 @@ function renderGameScreen(
 				openAccessibilityDialog();
 			});
 
+		// Wire up Enter on panel to trigger Attempt (quick action from panel focus)
+		const panelEl = app.querySelector<HTMLElement>(`.${panelStyles.panel}`);
+		panelEl?.addEventListener("keydown", (e) => {
+			if (e.key === "Enter") {
+				const state = store.getState();
+				// Only trigger if panel itself is focused (not a button inside)
+				// and there's a selected task that can be attempted
+				if (
+					document.activeElement === panelEl &&
+					state.selectedTaskId &&
+					state.screen === "game"
+				) {
+					const task = state.tasks.find((t) => t.id === state.selectedTaskId);
+					const hasActions = isWeekend(state)
+						? state.weekendPointsRemaining > 0
+						: state.slotsRemaining > 0;
+					if (task && !task.succeededToday && hasActions) {
+						e.preventDefault();
+						onDecision({ type: "attempt", taskId: task.id });
+					}
+				}
+			}
+		});
+
+		// Announce panel contents when it receives focus
+		panelEl?.addEventListener("focus", () => {
+			const state = store.getState();
+			const currentScreenInfo = getScreenInfo(state);
+			if (currentScreenInfo.type === "game" && currentScreenInfo.selectedTask) {
+				const task = currentScreenInfo.selectedTask;
+				const s = strings();
+				announce(
+					s.a11y.panelAnnounce(
+						task.evolvedName,
+						task.canAttempt && !task.succeededToday,
+						task.failureCount,
+						task.urgency?.text,
+						task.variant?.name,
+					),
+				);
+			}
+		});
+
 		// Set up keyboard handlers for task deselection
 		if (!keyboardHandlersSetup) {
 			document.addEventListener("keydown", (e) => {
@@ -247,12 +367,39 @@ function renderGameScreen(
 	renderTaskPanel(screenInfo, onDecision);
 	renderFooter(screenInfo, onDecision);
 
-	// Focus selected task when entering game screen (if one is selected)
-	if (isFirstRender && screenInfo.selectedTask) {
-		const taskToFocus = app.querySelector<HTMLElement>(
-			`[data-id="${screenInfo.selectedTask.id}"]`,
-		);
-		taskToFocus?.focus();
+	// Focus and announce on initial render
+	if (isFirstRender) {
+		const s = strings();
+		// Announce full game context for screen readers
+		// Use longer delay on page load to ensure VoiceOver is ready
+		const slotsOrPoints = screenInfo.isWeekend
+			? screenInfo.weekendPointsRemaining
+			: screenInfo.slotsRemaining;
+		setTimeout(() => {
+			announce(
+				s.a11y.gameLoaded(
+					screenInfo.day,
+					screenInfo.timeBlock,
+					screenInfo.isWeekend,
+					slotsOrPoints,
+					screenInfo.selectedTask?.name,
+				),
+			);
+		}, 300);
+
+		if (screenInfo.selectedTask) {
+			// Focus the selected task
+			const taskToFocus = app.querySelector<HTMLElement>(
+				`[data-id="${screenInfo.selectedTask.id}"]`,
+			);
+			taskToFocus?.focus();
+		} else {
+			// No selection - focus first uncompleted task
+			const taskBtns = document.querySelectorAll<HTMLElement>(
+				`.${taskStyles.task}:not(.${taskStyles.succeeded})`,
+			);
+			taskBtns[0]?.focus();
+		}
 	}
 }
 
@@ -280,10 +427,10 @@ function createAppStructure(screenInfo: GameScreenInfo): string {
 					}
 				</div>
 				<ul class="${appStyles.taskList}"></ul>
-				<div class="${appStyles.notification}" aria-live="polite"></div>
+				<div class="${appStyles.notification}" aria-live="polite" aria-atomic="true"></div>
 			</section>
 
-			<aside class="${panelStyles.panel}">
+			<aside id="task-panel" class="${panelStyles.panel}" tabindex="-1" aria-label="${s.a11y.taskPanel}">
 				<p class="${panelStyles.empty}">${s.game.selectTask}</p>
 			</aside>
 		</main>
@@ -298,8 +445,6 @@ function createAppStructure(screenInfo: GameScreenInfo): string {
 				</svg>
 			</button>
 		</footer>
-
-		<div id="announcer" class="sr-only" aria-live="polite" aria-atomic="true"></div>
 	`;
 }
 
@@ -308,13 +453,19 @@ function showNotification(text: string) {
 	const notification = document.querySelector(`.${appStyles.notification}`);
 	if (!notification) return;
 
-	notification.textContent = text;
-	notification.classList.add(appStyles.notificationVisible);
+	// Clear first to ensure re-announcement, then set after paint
+	notification.textContent = "";
+	requestAnimationFrame(() => {
+		setTimeout(() => {
+			notification.textContent = text;
+			notification.classList.add(appStyles.notificationVisible);
+		}, 100);
+	});
 
 	// Clear after a few seconds
 	setTimeout(() => {
 		notification.classList.remove(appStyles.notificationVisible);
-	}, 3000);
+	}, 3200); // Adjusted for the 200ms delay
 }
 
 /** Updates the header with current day and time block. */
@@ -373,6 +524,10 @@ function renderTaskList(screenInfo: GameScreenInfo, store: Store<GameState>) {
 	const list = document.querySelector(`.${appStyles.taskList}`);
 	if (!list) return;
 
+	// Preserve focus across re-render - track which task had focus
+	const focusedTaskId = (document.activeElement as HTMLElement)?.dataset?.id;
+	const focusWasInList = list.contains(document.activeElement);
+
 	list.innerHTML = "";
 
 	for (const task of screenInfo.tasks) {
@@ -392,6 +547,9 @@ function renderTaskList(screenInfo: GameScreenInfo, store: Store<GameState>) {
 		}
 		button.textContent = displayName;
 
+		// Indicate relationship to panel
+		button.setAttribute("aria-controls", "task-panel");
+
 		// Indicate selection state
 		button.setAttribute("aria-pressed", String(isSelected));
 		if (isSelected) {
@@ -403,15 +561,10 @@ function renderTaskList(screenInfo: GameScreenInfo, store: Store<GameState>) {
 
 		button.addEventListener("click", (e) => {
 			selectTask(store, task.id);
-			// Move focus to Attempt button if activated via keyboard (Enter/Space)
+			// Move focus to panel action if activated via keyboard (Enter/Space)
 			// Keyboard clicks have no pointer coordinates
 			if (e.detail === 0) {
-				setTimeout(() => {
-					const attemptBtn = document.querySelector<HTMLElement>(
-						`.${panelStyles.attemptBtn}`,
-					);
-					attemptBtn?.focus();
-				}, 0);
+				focusPanelAction();
 			}
 		});
 
@@ -427,21 +580,24 @@ function renderTaskList(screenInfo: GameScreenInfo, store: Store<GameState>) {
 						: Math.max(currentIndex - 1, 0);
 				tasks[nextIndex]?.focus();
 			}
-			// Arrow Right to select/open details and focus Attempt
+			// Arrow Right to select/open details and focus action
 			if (e.key === "ArrowRight") {
 				e.preventDefault();
 				selectTask(store, task.id);
-				setTimeout(() => {
-					const attemptBtn = document.querySelector<HTMLElement>(
-						`.${panelStyles.attemptBtn}`,
-					);
-					attemptBtn?.focus();
-				}, 0);
+				focusPanelAction();
 			}
 			// Arrow Left handled at document level (works from panel too)
 		});
 
 		list.appendChild(button);
+	}
+
+	// Restore focus if it was in the list before re-render
+	if (focusWasInList && focusedTaskId) {
+		const buttonToFocus = list.querySelector<HTMLElement>(
+			`[data-id="${focusedTaskId}"]`,
+		);
+		buttonToFocus?.focus();
 	}
 }
 
@@ -487,33 +643,33 @@ function renderTaskPanel(
 			? `<p class="${panelStyles.cost}">${s.game.costPoints(selectedTask.weekendCost)}</p>`
 			: "";
 
-	// Show urgency for Walk Dog
-	let urgencyDisplay = "";
-	if (selectedTask.urgency) {
-		urgencyDisplay = `<p class="${panelStyles.urgency}" data-urgency="${selectedTask.urgency.level}">${selectedTask.urgency.text}</p>`;
-	}
-
-	// Show variant option if unlocked
-	let variantDisplay = "";
+	// Build hidden description for screen readers (proper sentences)
+	const descParts = [
+		`${selectedTask.evolvedName}.`,
+		`${s.game.failedCount(selectedTask.failureCount)}.`,
+	];
+	if (selectedTask.urgency) descParts.push(`${selectedTask.urgency.text}.`);
 	if (
 		selectedTask.variant &&
 		selectedTask.canAttempt &&
 		!selectedTask.succeededToday
 	) {
-		variantDisplay = `<button class="${panelStyles.variantBtn}">${selectedTask.variant.name}</button>`;
+		descParts.push(`${s.a11y.variantAvailable(selectedTask.variant.name)}`);
 	}
+	const buttonDesc = descParts.join(" ");
 
 	panel.innerHTML = `
+		<span id="panel-desc" class="sr-only">${buttonDesc}</span>
 		<p class="${panelStyles.taskName}">${selectedTask.evolvedName}</p>
 		<p class="${panelStyles.stats}">
 			${s.game.failedCount(selectedTask.failureCount)}
 		</p>
-		${urgencyDisplay}
+		${selectedTask.urgency ? `<p class="${panelStyles.urgency}" data-urgency="${selectedTask.urgency.level}">${selectedTask.urgency.text}</p>` : ""}
 		${costDisplay}
-		<button class="${panelStyles.attemptBtn}" ${selectedTask.canAttempt ? "" : "disabled"}>
+		<button class="${panelStyles.attemptBtn}" aria-describedby="panel-desc" ${selectedTask.canAttempt ? "" : "disabled"}>
 			${selectedTask.succeededToday ? s.game.done : s.game.attempt}
 		</button>
-		${variantDisplay}
+		${selectedTask.variant && selectedTask.canAttempt && !selectedTask.succeededToday ? `<button class="${panelStyles.variantBtn}" aria-describedby="panel-desc">${selectedTask.variant.name}</button>` : ""}
 		${continueButtonHtml}
 	`;
 

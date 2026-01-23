@@ -18,15 +18,17 @@ export function renderWeekComplete(
 
 	container.innerHTML = `
 		<div class="${styles.summary}">
-			<h1 class="${styles.title}" tabindex="-1">${s.game.weekComplete}</h1>
+			<h1 class="${styles.title}">${s.game.weekComplete}</h1>
 			<p class="${styles.narrative}">${screenInfo.narrative}</p>
 			<button class="${styles.restartBtn}">${s.game.startNewWeek}</button>
 		</div>
 	`;
 
-	// Focus heading for screen reader announcement
-	const heading = container.querySelector<HTMLElement>(`.${styles.title}`);
-	heading?.focus();
+	// Focus restart button for keyboard users (announcement handles context)
+	const restartBtn = container.querySelector<HTMLElement>(
+		`.${styles.restartBtn}`,
+	);
+	restartBtn?.focus();
 
 	container
 		.querySelector(`.${styles.restartBtn}`)

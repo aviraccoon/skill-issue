@@ -5,6 +5,7 @@ import { getRescueResultMessage } from "../data/friendRescue";
 import { strings } from "../i18n";
 import type { GameState } from "../state";
 import type { Store } from "../store";
+import { announce } from "../utils/announce";
 import styles from "./FriendRescue.module.css";
 
 /**
@@ -25,7 +26,7 @@ export function renderFriendRescue(
 
 	container.innerHTML = `
 		<div class="${styles.rescue}">
-			<h1 class="sr-only">${s.a11y.friendRescue}</h1>
+			<h1 class="sr-only">${s.a11y.screenFriendRescue}</h1>
 			<p class="${styles.message}">"${screenInfo.message}"</p>
 			<p class="${styles.cost}">${s.game.rescueCost(screenInfo.costLabel)}</p>
 			<div class="${styles.activities}">
@@ -62,7 +63,7 @@ export function renderFriendRescue(
 			onDecision({ type: "declineRescue" });
 		});
 
-	// Focus first activity for screen reader announcement
+	// Focus first activity button for keyboard users
 	const firstActivity = container.querySelector<HTMLElement>(
 		`.${styles.activity}`,
 	);
@@ -80,9 +81,12 @@ function showRescueResult(store: Store<GameState>, result: AcceptRescueResult) {
 	const s = strings();
 	const message = getRescueResultMessage(store.getState(), result.correct);
 
+	// Announce result and hint for screen readers
+	announce(`${message} ${result.hint}`);
+
 	container.innerHTML = `
 		<div class="${styles.rescue}">
-			<h1 class="sr-only">${s.a11y.friendRescue}</h1>
+			<h1 class="sr-only">${s.a11y.screenFriendRescue}</h1>
 			<p class="${styles.message}">${message}</p>
 			<p class="${styles.hint}">"${result.hint}"</p>
 			<button class="${styles.declineBtn}">${s.game.continue}</button>

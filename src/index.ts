@@ -1,12 +1,12 @@
 import "./styles/base.css";
 import "./styles/themes.css";
 import { renderApp } from "./components/App";
-import { initDevTools } from "./components/DevTools";
+import { initDevTools, simulateDay } from "./components/DevTools";
 import { initThemeSwitcher } from "./components/ThemeSwitcher";
 import { setLocale } from "./i18n";
 import type { GameState } from "./state";
 import { createStore } from "./store";
-import { loadGame, saveGame } from "./systems/persistence";
+import { clearSave, loadGame, saveGame } from "./systems/persistence";
 
 // Initialize locale from query param or browser preference
 initLocale();
@@ -27,6 +27,23 @@ renderApp(store);
 store.subscribe((state) => {
 	renderApp(store);
 	saveGame(state);
+});
+
+// Global dev shortcuts (work on any screen)
+document.addEventListener("keydown", (e) => {
+	// Ctrl+Alt+S: Simulate day
+	if (e.ctrlKey && e.altKey && e.code === "KeyS") {
+		e.preventDefault();
+		simulateDay(store);
+	}
+	// Ctrl+Alt+C: Clear save (with confirmation)
+	if (e.ctrlKey && e.altKey && e.code === "KeyC") {
+		e.preventDefault();
+		if (confirm("Clear save and reload? This cannot be undone.")) {
+			clearSave();
+			window.location.reload();
+		}
+	}
 });
 
 /** Initializes locale from query param (?lang=cs) or browser preference. */

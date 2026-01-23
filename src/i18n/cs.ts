@@ -1,6 +1,13 @@
 import type { Day, TimeBlock } from "../state";
 import type { Strings } from "./types";
 
+/**
+ * Czech plural: returns "1 bod", "3 body", "5 bodů".
+ * Czech has three forms: singular (1), few (2-4), many (5+).
+ */
+const pl = (n: number, one: string, few: string, many: string) =>
+	`${n} ${n === 1 ? one : n >= 2 && n <= 4 ? few : many}`;
+
 /** Day names for standalone display (headers, titles). */
 const days: Record<Day, string> = {
 	monday: "Pondělí",
@@ -51,28 +58,12 @@ export const cs = {
 		selectTask: "Vyber úkol",
 		attempt: "Zkusit",
 		done: "Hotovo",
-		failedCount: (n: number) => {
-			if (n === 1) return "Nepovedlo se 1x tento týden";
-			if (n >= 2 && n <= 4) return `Nepovedlo se ${n}x tento týden`;
-			return `Nepovedlo se ${n}x tento týden`;
-		},
-		costPoints: (n: number) => {
-			if (n === 1) return "1 bod";
-			if (n >= 2 && n <= 4) return `${n} body`;
-			return `${n} bodů`;
-		},
+		failedCount: (n: number) => `Nepovedlo se ${n}x tento týden`,
+		costPoints: (n: number) => pl(n, "bod", "body", "bodů"),
 
 		// Time/slots
-		slots: (n: number) => {
-			if (n === 1) return "1 slot zbývá";
-			if (n >= 2 && n <= 4) return `${n} sloty zbývají`;
-			return `${n} slotů zbývá`;
-		},
-		points: (n: number) => {
-			if (n === 1) return "1 bod";
-			if (n >= 2 && n <= 4) return `${n} body`;
-			return `${n} bodů`;
-		},
+		slots: (n: number) => pl(n, "slot zbývá", "sloty zbývají", "slotů zbývá"),
+		points: (n: number) => pl(n, "bod", "body", "bodů"),
 		lateNight: "Pozdní noc",
 
 		// Actions
@@ -111,8 +102,11 @@ export const cs = {
 	},
 
 	a11y: {
-		// Screen headings
-		friendRescue: "Kamarád se ozývá",
+		// Screen announcements
+		screenNightChoice: "Noc",
+		screenFriendRescue: "Kamarád se ozývá",
+		screenDaySummary: "Shrnutí dne",
+		screenWeekComplete: "Konec týdne",
 
 		// Buttons
 		openA11yDialog: "Přístupnost",
@@ -127,19 +121,54 @@ export const cs = {
 		// Live announcements
 		taskSucceeded: (name: string) => `${name} splněno`,
 		slotUsed: "Slot využit",
-		pointsUsed: (n: number) => {
-			if (n === 1) return "1 bod využit";
-			if (n >= 2 && n <= 4) return `${n} body využity`;
-			return `${n} bodů využito`;
-		},
+		pointsUsed: (n: number) =>
+			pl(n, "bod využit", "body využity", "bodů využito"),
 		screenChanged: (screen: string) => `Obrazovka: ${screen}`,
+		timeBlockChanged: (block: TimeBlock) => `Teď je ${timeBlocksLower[block]}`,
+		gameLoaded: (
+			day: Day,
+			block: TimeBlock,
+			isWeekend: boolean,
+			slotsOrPoints: number,
+			selectedTaskName?: string,
+		) => {
+			const dayTime = isWeekend
+				? days[day]
+				: `${days[day]} ${timeBlocksLower[block]}`;
+			const resources = isWeekend
+				? pl(slotsOrPoints, "bod", "body", "bodů")
+				: pl(slotsOrPoints, "slot zbývá", "sloty zbývají", "slotů zbývá");
+			const selected = selectedTaskName ? `${selectedTaskName} vybráno` : "";
+			return `${[dayTime, resources, selected].filter(Boolean).join(". ")}.`;
+		},
 
 		// Task states
 		selected: "vybráno",
 		completedToday: "splněno dnes",
 
+		// Panel focus announcement
+		panelAnnounce: (
+			taskName: string,
+			canAttempt: boolean,
+			failureCount: number,
+			urgency?: string,
+			variantName?: string,
+		) => {
+			const parts = [taskName];
+			if (failureCount > 0) {
+				parts.push(`Nepovedlo se ${failureCount}x`);
+			}
+			if (urgency) parts.push(urgency);
+			parts.push(canAttempt ? "Pokus dostupný" : "Hotovo");
+			if (variantName && canAttempt) parts.push(`Nebo: ${variantName}`);
+			return `${parts.join(". ")}.`;
+		},
+
 		// Urgency (for Walk Dog)
 		urgency: (level: string) => `Naléhavost: ${level}`,
+
+		// Variant available
+		variantAvailable: (name: string) => `Nebo zkus: ${name}.`,
 	},
 
 	a11yStatement: {
@@ -321,16 +350,8 @@ export const cs = {
 
 	friend: {
 		// Cost labels for rescue screen
-		costSlot: (n: number) => {
-			if (n === 1) return "1 slot";
-			if (n >= 2 && n <= 4) return `${n} sloty`;
-			return `${n} slotů`;
-		},
-		costPoints: (n: number) => {
-			if (n === 1) return "1 bod";
-			if (n >= 2 && n <= 4) return `${n} body`;
-			return `${n} bodů`;
-		},
+		costSlot: (n: number) => pl(n, "slot", "sloty", "slotů"),
+		costPoints: (n: number) => pl(n, "bod", "body", "bodů"),
 
 		// Phone buzz hints (2 consecutive failures, building anticipation)
 		phoneBuzz: [

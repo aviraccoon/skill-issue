@@ -339,7 +339,7 @@ function renderDevState(state: GameState) {
  * Simulates playing through the current day with random actions.
  * Uses real probability system, then triggers day summary.
  */
-function simulateDay(store: Store<GameState>) {
+export function simulateDay(store: Store<GameState>) {
 	const state = store.getState();
 	const weekend = isWeekend(state);
 

@@ -1,5 +1,8 @@
 import type { Day, TimeBlock } from "../state";
 
+/** Simple English plural: returns "1 slot" or "3 slots". */
+const pl = (n: number, word: string) => `${n} ${n === 1 ? word : `${word}s`}`;
+
 /** Day names for standalone display (headers, titles). */
 const days: Record<Day, string> = {
 	monday: "Monday",
@@ -31,13 +34,12 @@ export const en = {
 		selectTask: "Select a task",
 		attempt: "Attempt",
 		done: "Done",
-		failedCount: (n: number) =>
-			`Failed ${n} time${n === 1 ? "" : "s"} this week`,
+		failedCount: (n: number) => `Failed ${pl(n, "time")} this week`,
 		costPoints: (n: number) => `${n} points`,
 
 		// Time/slots
-		slots: (n: number) => `${n} slot${n === 1 ? "" : "s"} remaining`,
-		points: (n: number) => `${n} point${n === 1 ? "" : "s"}`,
+		slots: (n: number) => `${pl(n, "slot")} remaining`,
+		points: (n: number) => pl(n, "point"),
 		lateNight: "Late Night",
 
 		// Actions
@@ -76,8 +78,11 @@ export const en = {
 	},
 
 	a11y: {
-		// Screen headings
-		friendRescue: "Friend reaching out",
+		// Screen announcements
+		screenNightChoice: "Night time",
+		screenFriendRescue: "Friend reaching out",
+		screenDaySummary: "Day summary",
+		screenWeekComplete: "Week complete",
 
 		// Buttons
 		openA11yDialog: "Accessibility",
@@ -92,15 +97,53 @@ export const en = {
 		// Live announcements
 		taskSucceeded: (name: string) => `${name} succeeded`,
 		slotUsed: "Slot used",
-		pointsUsed: (n: number) => `${n} point${n === 1 ? "" : "s"} used`,
+		pointsUsed: (n: number) => `${pl(n, "point")} used`,
 		screenChanged: (screen: string) => `${screen} screen`,
+		timeBlockChanged: (block: TimeBlock) => `Now ${timeBlocks[block]}`,
+		gameLoaded: (
+			day: Day,
+			block: TimeBlock,
+			isWeekend: boolean,
+			slotsOrPoints: number,
+			selectedTaskName?: string,
+		) => {
+			const dayTime = isWeekend
+				? days[day]
+				: `${days[day]} ${timeBlocks[block]}`;
+			const resources = isWeekend
+				? pl(slotsOrPoints, "point")
+				: `${pl(slotsOrPoints, "slot")} remaining`;
+			const selected = selectedTaskName ? `${selectedTaskName} selected` : "";
+			return `${[dayTime, resources, selected].filter(Boolean).join(". ")}.`;
+		},
 
 		// Task states
 		selected: "selected",
 		completedToday: "completed today",
 
+		// Panel focus announcement
+		panelAnnounce: (
+			taskName: string,
+			canAttempt: boolean,
+			failureCount: number,
+			urgency?: string,
+			variantName?: string,
+		) => {
+			const parts = [taskName];
+			if (failureCount > 0) {
+				parts.push(`Failed ${pl(failureCount, "time")}`);
+			}
+			if (urgency) parts.push(urgency);
+			parts.push(canAttempt ? "Attempt available" : "Done");
+			if (variantName && canAttempt) parts.push(`Or: ${variantName}`);
+			return `${parts.join(". ")}.`;
+		},
+
 		// Urgency (for Walk Dog)
 		urgency: (level: string) => `Urgency: ${level}`,
+
+		// Variant available
+		variantAvailable: (name: string) => `Or try: ${name}.`,
 	},
 
 	a11yStatement: {
@@ -282,8 +325,8 @@ export const en = {
 
 	friend: {
 		// Cost labels for rescue screen
-		costSlot: (n: number) => `${n} action slot${n === 1 ? "" : "s"}`,
-		costPoints: (n: number) => `${n} action point${n === 1 ? "" : "s"}`,
+		costSlot: (n: number) => `${pl(n, "action slot")}`,
+		costPoints: (n: number) => `${pl(n, "action point")}`,
 
 		// Phone buzz hints (2 consecutive failures, building anticipation)
 		phoneBuzz: [
