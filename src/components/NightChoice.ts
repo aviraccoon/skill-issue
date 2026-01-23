@@ -16,7 +16,7 @@ export function renderNightChoice(
 
 	container.innerHTML = `
 		<div class="${styles.choice}">
-			<h2 class="${styles.title}">${s.game.nightTitle(screenInfo.day)}</h2>
+			<h1 class="${styles.title}" tabindex="-1">${s.game.nightTitle(screenInfo.day)}</h1>
 			<p class="${styles.prompt}">${s.game.nightPrompt}</p>
 			<p class="${styles.info}">${screenInfo.description}</p>
 			<div class="${styles.buttons}">
@@ -25,6 +25,10 @@ export function renderNightChoice(
 			</div>
 		</div>
 	`;
+
+	// Focus heading for screen reader announcement
+	const heading = container.querySelector<HTMLElement>(`.${styles.title}`);
+	heading?.focus();
 
 	container
 		.querySelector(`.${styles.sleepBtn}`)

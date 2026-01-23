@@ -76,6 +76,12 @@ export const en = {
 	},
 
 	a11y: {
+		// Screen headings
+		friendRescue: "Friend reaching out",
+
+		// Buttons
+		openA11yDialog: "Accessibility",
+
 		// Landmarks & navigation
 		skipLink: "Skip to main content",
 		mainGame: "Game",
@@ -99,13 +105,37 @@ export const en = {
 
 	a11yStatement: {
 		title: "Accessibility",
-		description: `This game's core mechanic involves unreliable controls - sometimes clicking a task doesn't work. This is intentional, not a bug. It simulates the experience of executive dysfunction.
-
-Screen reader users: Task successes are announced. Failures are silent (the slot count will change, but no failure announcement). This matches the visual experience where failure is the absence of success feedback.
-
-Keyboard: All controls are keyboard accessible.
-Reduced motion: Animations respect your system preference.`,
 		close: "Close",
+
+		// Support section
+		supportTitle: "Support",
+		screenReaders: "Screen readers",
+		screenReadersValue: "Supported",
+		keyboard: "Keyboard navigation",
+		keyboardValue: "Full",
+		reducedMotion: "Reduced motion",
+		reducedMotionValue: "Respected",
+
+		// Controls section
+		controlsTitle: "Controls",
+		controlTab: "Navigate",
+		controlUpDown: "Move between tasks",
+		controlRightEnter: "Select task / open details",
+		controlLeftEsc: "Deselect / close details",
+		controlActivate: "Attempt task",
+		controlEscape: "Close dialogs",
+
+		// About section
+		aboutTitle: "About this game",
+		unreliableClicks: "Unreliable clicks",
+		unreliableClicksValue: "Intentional - simulates executive dysfunction",
+		silentFailures: "Silent failures",
+		silentFailuresValue: "No announcement - absence of success is the signal",
+		hiddenState: "Hidden energy/momentum",
+		hiddenStateValue: "By design - discovering patterns is part of the game",
+
+		// Contact
+		contact: "Found a barrier? Let me know.",
 	},
 
 	scrollTrap: [

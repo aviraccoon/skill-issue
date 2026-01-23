@@ -77,3 +77,42 @@ body {
 	--muted: #94a3b8;
 	--surface: #1e293b;
 }
+
+/* Screen reader only - visually hidden but available to assistive tech */
+.sr-only {
+	position: absolute;
+	width: 1px;
+	height: 1px;
+	padding: 0;
+	margin: -1px;
+	overflow: hidden;
+	clip: rect(0, 0, 0, 0);
+	white-space: nowrap;
+	border: 0;
+}
+
+/* Focus indicators - visible outline for keyboard navigation */
+:focus-visible {
+	outline: 2px solid var(--accent);
+	outline-offset: 2px;
+}
+
+/* Remove default focus ring when :focus-visible is supported */
+:focus:not(:focus-visible) {
+	outline: none;
+}
+
+/* Reduced motion - disable animations for users who prefer it.
+   !important is intentional - this accessibility preference must override all animation styles. */
+@media (prefers-reduced-motion: reduce) {
+	*,
+	*::before,
+	*::after {
+		/* biome-ignore lint/complexity/noImportantStyles: a11y override */
+		animation-duration: 0.01ms !important;
+		/* biome-ignore lint/complexity/noImportantStyles: a11y override */
+		animation-iteration-count: 1 !important;
+		/* biome-ignore lint/complexity/noImportantStyles: a11y override */
+		transition-duration: 0.01ms !important;
+	}
+}

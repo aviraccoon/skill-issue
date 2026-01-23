@@ -1,4 +1,5 @@
 declare const styles: {
+	readonly a11yBtn: string;
 	readonly footer: string;
 	readonly header: string;
 	readonly lateNight: string;

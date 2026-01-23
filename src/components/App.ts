@@ -6,8 +6,12 @@ import {
 	type TaskDisplay,
 } from "../core/screenInfo";
 import { strings } from "../i18n";
-import type { GameState } from "../state";
+import { type GameState, isWeekend } from "../state";
 import type { Store } from "../store";
+import {
+	createAccessibilityDialog,
+	openAccessibilityDialog,
+} from "./AccessibilityDialog";
 import appStyles from "./App.module.css";
 import { renderDaySummary } from "./DaySummary";
 import { renderFriendRescue } from "./FriendRescue";
@@ -56,6 +60,28 @@ const browserAttemptCallbacks: AttemptCallbacks = {
 /** Tracks whether we've initialized the DOM structure for game screen. */
 let gameInitialized = false;
 
+/** Tracks whether we've created the accessibility dialog. */
+let a11yDialogCreated = false;
+
+/** Tracks whether we've set up global keyboard handlers. */
+let keyboardHandlersSetup = false;
+
+/**
+ * Announces a message to screen readers via the live region.
+ * Used for task successes and other important state changes.
+ */
+function announce(message: string) {
+	const el = document.getElementById("announcer");
+	if (el) {
+		// Clear first to ensure re-announcement of same message
+		el.textContent = "";
+		// Use setTimeout to ensure the DOM update triggers announcement
+		setTimeout(() => {
+			el.textContent = message;
+		}, 50);
+	}
+}
+
 /**
  * Main render function. Routes between screens based on state.
  */
@@ -69,7 +95,53 @@ export function renderApp(store: Store<GameState>) {
 
 	// Create decision handler that wraps executeDecision
 	const handleDecision = (decision: Decision) => {
+		const s = strings();
 		const result = executeDecision(store, decision, browserAttemptCallbacks);
+
+		// Handle focus after task attempt
+		if (decision.type === "attempt") {
+			const newState = store.getState();
+			const hasActionsLeft = isWeekend(newState)
+				? newState.weekendPointsRemaining > 0
+				: newState.slotsRemaining > 0;
+
+			if (result.succeeded) {
+				const task = state.tasks.find((t) => t.id === decision.taskId);
+				if (task) {
+					announce(s.a11y.taskSucceeded(task.name));
+				}
+
+				// Move focus to next uncompleted task if there are more actions available
+				if (hasActionsLeft) {
+					// Deselect first, then focus after re-render
+					store.set("selectedTaskId", null);
+					setTimeout(() => {
+						const taskBtns = document.querySelectorAll<HTMLElement>(
+							`.${taskStyles.task}:not(.${taskStyles.succeeded})`,
+						);
+						taskBtns[0]?.focus();
+					}, 0);
+				}
+			} else if (hasActionsLeft) {
+				// Failed - keep focus on Attempt button if actions remain
+				setTimeout(() => {
+					const attemptBtn = document.querySelector<HTMLElement>(
+						`.${panelStyles.attemptBtn}`,
+					);
+					attemptBtn?.focus();
+				}, 0);
+			}
+
+			// No actions left - focus Continue button
+			if (!hasActionsLeft) {
+				setTimeout(() => {
+					const continueBtn = document.querySelector<HTMLElement>(
+						`.${panelStyles.continueBtn}`,
+					);
+					continueBtn?.focus();
+				}, 0);
+			}
+		}
 
 		// Show phone buzz notification if present
 		if (result.phoneBuzzText) {
@@ -107,10 +179,62 @@ function renderGameScreen(
 	app: HTMLElement,
 	onDecision: (decision: Decision) => void,
 ) {
+	// Track if this is first render (for focus management)
+	const isFirstRender = !gameInitialized;
+
 	// Create structure on first render of game screen
 	if (!gameInitialized) {
 		app.innerHTML = createAppStructure(screenInfo);
 		gameInitialized = true;
+
+		// Create accessibility dialog once and append to body
+		if (!a11yDialogCreated) {
+			document.body.appendChild(createAccessibilityDialog());
+			a11yDialogCreated = true;
+		}
+
+		// Wire up accessibility button
+		app
+			.querySelector(`.${appStyles.a11yBtn}`)
+			?.addEventListener("click", () => {
+				openAccessibilityDialog();
+			});
+
+		// Set up keyboard handlers for task deselection
+		if (!keyboardHandlersSetup) {
+			document.addEventListener("keydown", (e) => {
+				const state = store.getState();
+				// Only handle if on game screen with a selected task and no dialog open
+				if (
+					state.screen !== "game" ||
+					!state.selectedTaskId ||
+					document.querySelector("dialog[open]")
+				) {
+					return;
+				}
+
+				// Escape works globally
+				// Arrow Left only works when focus is in task list or panel
+				const inTaskArea =
+					document.activeElement?.closest(
+						`.${appStyles.taskList}, .${panelStyles.panel}`,
+					) !== null;
+
+				if (e.key === "Escape" || (e.key === "ArrowLeft" && inTaskArea)) {
+					e.preventDefault();
+					const taskId = state.selectedTaskId;
+					store.set("selectedTaskId", null);
+					// Return focus to the task that was selected
+					setTimeout(() => {
+						const taskBtn = document.querySelector<HTMLElement>(
+							`[data-id="${taskId}"]`,
+						);
+						taskBtn?.focus();
+					}, 0);
+				}
+			});
+			keyboardHandlersSetup = true;
+		}
 	}
 
 	// Set time-based theme (use evening for weekend default)
@@ -122,6 +246,14 @@ function renderGameScreen(
 	renderTaskList(screenInfo, store);
 	renderTaskPanel(screenInfo, onDecision);
 	renderFooter(screenInfo, onDecision);
+
+	// Focus selected task when entering game screen (if one is selected)
+	if (isFirstRender && screenInfo.selectedTask) {
+		const taskToFocus = app.querySelector<HTMLElement>(
+			`[data-id="${screenInfo.selectedTask.id}"]`,
+		);
+		taskToFocus?.focus();
+	}
 }
 
 /** Creates the initial HTML structure for the app. */
@@ -159,7 +291,15 @@ function createAppStructure(screenInfo: GameScreenInfo): string {
 		<footer class="${appStyles.footer}">
 			<button class="${appStyles.phoneBtn}">${s.game.checkPhone}</button>
 			<button class="${appStyles.skipBtn}"></button>
+			<button class="${appStyles.a11yBtn}" aria-label="${s.a11y.openA11yDialog}">
+				<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+					<circle cx="12" cy="4" r="2"/>
+					<path d="M12 6v14M8 10h8M7 20h10"/>
+				</svg>
+			</button>
 		</footer>
+
+		<div id="announcer" class="sr-only" aria-live="polite" aria-atomic="true"></div>
 	`;
 }
 
@@ -229,6 +369,7 @@ function renderSlots(screenInfo: GameScreenInfo) {
 
 /** Renders the list of available tasks. */
 function renderTaskList(screenInfo: GameScreenInfo, store: Store<GameState>) {
+	const s = strings();
 	const list = document.querySelector(`.${appStyles.taskList}`);
 	if (!list) return;
 
@@ -237,18 +378,67 @@ function renderTaskList(screenInfo: GameScreenInfo, store: Store<GameState>) {
 	for (const task of screenInfo.tasks) {
 		const button = document.createElement("button");
 		button.className = taskStyles.task;
-		button.textContent = getTaskDisplayName(task, screenInfo.isWeekend);
 		button.dataset.id = task.id;
 
-		if (screenInfo.selectedTask?.id === task.id) {
+		const displayName = getTaskDisplayName(task, screenInfo.isWeekend);
+		const isSelected = screenInfo.selectedTask?.id === task.id;
+
+		// Set accessible name with state info
+		if (task.succeededToday) {
+			button.setAttribute(
+				"aria-label",
+				`${displayName}, ${s.a11y.completedToday}`,
+			);
+		}
+		button.textContent = displayName;
+
+		// Indicate selection state
+		button.setAttribute("aria-pressed", String(isSelected));
+		if (isSelected) {
 			button.classList.add(taskStyles.selected);
 		}
 		if (task.succeededToday) {
 			button.classList.add(taskStyles.succeeded);
 		}
 
-		button.addEventListener("click", () => {
+		button.addEventListener("click", (e) => {
 			selectTask(store, task.id);
+			// Move focus to Attempt button if activated via keyboard (Enter/Space)
+			// Keyboard clicks have no pointer coordinates
+			if (e.detail === 0) {
+				setTimeout(() => {
+					const attemptBtn = document.querySelector<HTMLElement>(
+						`.${panelStyles.attemptBtn}`,
+					);
+					attemptBtn?.focus();
+				}, 0);
+			}
+		});
+
+		// Arrow key navigation between tasks
+		button.addEventListener("keydown", (e) => {
+			if (e.key === "ArrowDown" || e.key === "ArrowUp") {
+				e.preventDefault();
+				const tasks = list.querySelectorAll<HTMLElement>(`.${taskStyles.task}`);
+				const currentIndex = Array.from(tasks).indexOf(button);
+				const nextIndex =
+					e.key === "ArrowDown"
+						? Math.min(currentIndex + 1, tasks.length - 1)
+						: Math.max(currentIndex - 1, 0);
+				tasks[nextIndex]?.focus();
+			}
+			// Arrow Right to select/open details and focus Attempt
+			if (e.key === "ArrowRight") {
+				e.preventDefault();
+				selectTask(store, task.id);
+				setTimeout(() => {
+					const attemptBtn = document.querySelector<HTMLElement>(
+						`.${panelStyles.attemptBtn}`,
+					);
+					attemptBtn?.focus();
+				}, 0);
+			}
+			// Arrow Left handled at document level (works from panel too)
 		});
 
 		list.appendChild(button);

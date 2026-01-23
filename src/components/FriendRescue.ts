@@ -25,6 +25,7 @@ export function renderFriendRescue(
 
 	container.innerHTML = `
 		<div class="${styles.rescue}">
+			<h1 class="sr-only">${s.a11y.friendRescue}</h1>
 			<p class="${styles.message}">"${screenInfo.message}"</p>
 			<p class="${styles.cost}">${s.game.rescueCost(screenInfo.costLabel)}</p>
 			<div class="${styles.activities}">
@@ -60,6 +61,12 @@ export function renderFriendRescue(
 		?.addEventListener("click", () => {
 			onDecision({ type: "declineRescue" });
 		});
+
+	// Focus first activity for screen reader announcement
+	const firstActivity = container.querySelector<HTMLElement>(
+		`.${styles.activity}`,
+	);
+	firstActivity?.focus();
 }
 
 /**
@@ -75,11 +82,18 @@ function showRescueResult(store: Store<GameState>, result: AcceptRescueResult) {
 
 	container.innerHTML = `
 		<div class="${styles.rescue}">
+			<h1 class="sr-only">${s.a11y.friendRescue}</h1>
 			<p class="${styles.message}">${message}</p>
 			<p class="${styles.hint}">"${result.hint}"</p>
 			<button class="${styles.declineBtn}">${s.game.continue}</button>
 		</div>
 	`;
+
+	// Focus continue button for screen reader announcement
+	const continueBtn = container.querySelector<HTMLElement>(
+		`.${styles.declineBtn}`,
+	);
+	continueBtn?.focus();
 
 	container
 		.querySelector(`.${styles.declineBtn}`)

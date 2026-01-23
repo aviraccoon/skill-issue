@@ -111,6 +111,12 @@ export const cs = {
 	},
 
 	a11y: {
+		// Screen headings
+		friendRescue: "Kamarád se ozývá",
+
+		// Buttons
+		openA11yDialog: "Přístupnost",
+
 		// Landmarks & navigation
 		skipLink: "Přeskočit na obsah",
 		mainGame: "Hra",
@@ -138,13 +144,37 @@ export const cs = {
 
 	a11yStatement: {
 		title: "Přístupnost",
-		description: `Hlavní mechanika této hry zahrnuje nespolehlivé ovládání - někdy kliknutí na úkol nefunguje. To je záměr, ne chyba. Simuluje to zkušenost s exekutivní dysfunkcí.
-
-Uživatelé čteček obrazovky: Úspěchy úkolů jsou oznamovány. Neúspěchy jsou tiché (počet slotů se změní, ale žádné oznámení o neúspěchu). To odpovídá vizuálnímu zážitku, kde neúspěch je absence zpětné vazby o úspěchu.
-
-Klávesnice: Všechny ovládací prvky jsou přístupné z klávesnice.
-Omezený pohyb: Animace respektují vaše systémové nastavení.`,
 		close: "Zavřít",
+
+		// Support section
+		supportTitle: "Podpora",
+		screenReaders: "Čtečky obrazovky",
+		screenReadersValue: "Podporováno",
+		keyboard: "Ovládání klávesnicí",
+		keyboardValue: "Plné",
+		reducedMotion: "Omezený pohyb",
+		reducedMotionValue: "Respektováno",
+
+		// Controls section
+		controlsTitle: "Ovládání",
+		controlTab: "Navigace",
+		controlUpDown: "Pohyb mezi úkoly",
+		controlRightEnter: "Vybrat úkol / otevřít detaily",
+		controlLeftEsc: "Zrušit výběr / zavřít detaily",
+		controlActivate: "Pokusit se o úkol",
+		controlEscape: "Zavřít dialogy",
+
+		// About section
+		aboutTitle: "O této hře",
+		unreliableClicks: "Nespolehlivé klikání",
+		unreliableClicksValue: "Záměr - simuluje exekutivní dysfunkci",
+		silentFailures: "Tiché neúspěchy",
+		silentFailuresValue: "Bez oznámení - absence úspěchu je signál",
+		hiddenState: "Skrytá energie/momentum",
+		hiddenStateValue: "Záměr - objevování vzorců je součást hry",
+
+		// Contact
+		contact: "Našli jste bariéru? Dejte mi vědět.",
 	},
 
 	scrollTrap: [

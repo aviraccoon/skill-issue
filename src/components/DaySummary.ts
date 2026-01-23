@@ -17,7 +17,7 @@ export function renderDaySummary(
 
 	container.innerHTML = `
 		<div class="${styles.summary}">
-			<h2 class="${styles.day}">${screenInfo.title}</h2>
+			<h1 class="${styles.day}" tabindex="-1">${screenInfo.title}</h1>
 			<p class="${styles.stats}">
 				${s.game.taskStats(screenInfo.succeededCount, screenInfo.attemptedCount)}
 			</p>
@@ -26,6 +26,10 @@ export function renderDaySummary(
 			<button class="${styles.continueBtn}">${s.game.continue}</button>
 		</div>
 	`;
+
+	// Focus heading for screen reader announcement
+	const heading = container.querySelector<HTMLElement>(`.${styles.day}`);
+	heading?.focus();
 
 	container
 		.querySelector(`.${styles.continueBtn}`)
