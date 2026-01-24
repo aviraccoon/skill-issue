@@ -13,6 +13,8 @@ import { chooseSleep, pushThrough } from "../actions/night";
 import { checkPhone } from "../actions/phone";
 import { type AttemptCallbacks, attemptTask } from "../actions/tasks";
 import { endWeekendDay, skipTimeBlock } from "../actions/time";
+import type { PhoneOutcome } from "../data/scrollTrap";
+import type { TaskCategory } from "../data/tasks";
 import { type GameState, isWeekend, type Task } from "../state";
 import type { Store } from "../store";
 import { canPushThrough } from "../systems/allnighter";
@@ -42,6 +44,12 @@ export interface ActionResult {
 	phoneBuzzText?: string;
 	/** Scroll trap flavor text, if applicable. */
 	scrollTrapText?: string;
+	/** Phone outcome tier, if checkPhone was used. */
+	phoneOutcome?: PhoneOutcome;
+	/** Variant category unlocked via phone, if applicable. */
+	phoneUnlockedVariant?: TaskCategory;
+	/** Whether friend rescue nudge was applied via phone, if applicable. */
+	phoneFriendNudge?: boolean;
 	/** Pattern hint from friend rescue, if applicable. */
 	rescueHint?: string;
 	/** Whether rescue tier was correct for energy level. */
@@ -140,6 +148,9 @@ export function executeDecision(
 	let friendRescueTriggered: boolean | undefined;
 	let phoneBuzzText: string | undefined;
 	let scrollTrapText: string | undefined;
+	let phoneOutcome: PhoneOutcome | undefined;
+	let phoneUnlockedVariant: TaskCategory | undefined;
+	let phoneFriendNudge: boolean | undefined;
 	let rescueHint: string | undefined;
 	let rescueCorrect: boolean | undefined;
 
@@ -164,9 +175,14 @@ export function executeDecision(
 			skipTimeBlock(store);
 			break;
 
-		case "checkPhone":
-			scrollTrapText = checkPhone(store);
+		case "checkPhone": {
+			const result = checkPhone(store);
+			scrollTrapText = result.flavorText;
+			phoneOutcome = result.outcome;
+			phoneUnlockedVariant = result.unlocksVariant;
+			phoneFriendNudge = result.friendNudge;
 			break;
+		}
 
 		case "endDay":
 			endWeekendDay(store);
@@ -206,6 +222,9 @@ export function executeDecision(
 		friendRescueTriggered,
 		phoneBuzzText,
 		scrollTrapText,
+		phoneOutcome,
+		phoneUnlockedVariant,
+		phoneFriendNudge,
 		rescueHint,
 		rescueCorrect,
 		energyBefore,

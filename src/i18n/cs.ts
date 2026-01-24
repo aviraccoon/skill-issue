@@ -208,16 +208,51 @@ export const cs = {
 		contact: "Našli jste bariéru? Dejte mi vědět.",
 	},
 
-	scrollTrap: [
-		"Nic nového. Věděl jsi to.",
-		"Algoritmus děkuje.",
-		"...tak jo.",
-		"O 30 minut později...",
-		"Azor se na tebe podívá. Odvrátí pohled.",
-		"Pes vzdychne. Nebo si to představuješ.",
-		"Nic jsi nenašel. Jak se dalo čekat.",
-		"Čas plyne. Nic se nemění.",
-	],
+	phoneOutcomes: {
+		void: [
+			"Nic nového, což tě vlastně nepřekvapuje.",
+			"Algoritmus děkuje za pozornost.",
+			"No, tak to bylo k ničemu.",
+			"Azor se na tebe podívá a odvrátí pohled.",
+			"Zdá se ti, že pes vzdychl, ale možná si to jen představuješ.",
+			"Nic jsi nenašel, jak se dalo čekat.",
+			"Čas plyne a nic se nemění.",
+			"Scrollování dokončeno, výsledek nulový.",
+		],
+		scrollHole: [
+			"Mrknul jsi a hodina utekla.",
+			"Tentokrát tě to vtáhlo víc než obvykle.",
+			"Kam se poděl ten čas?",
+			"Pořádně tě to vtáhlo.",
+			"Tohle bylo horší než obvykle.",
+			"Algoritmus tentokrát vyhrál.",
+			"Tak co jsi vlastně dělal?",
+		],
+		actualBreak: [
+			"Hele, to bylo vlastně docela fajn.",
+			"Jeden meme tě rozesmál, a to se počítá.",
+			"Viděl jsi něco, co tě trochu rozveselilo.",
+			"Krátká úleva, a teď zase zpátky.",
+			"Aspoň chvíle, která stála za to.",
+			"Odkládáš telefon s čistým svědomím.",
+		],
+		somethingNice: [
+			"Kamarád něco sdílel a na chvíli jsi cítil spojení.",
+			"Někdo sdílel dobrou zprávu a trochu to pomohlo.",
+			"Připomněl sis, že lidi existují, a to je vlastně fajn.",
+			"Přišla zpráva od někoho, kdo na tebe myslí.",
+			"Něco ve feedu opravdu stálo za pozornost.",
+			"Skutečné lidské spojení, i když jen na chvíli.",
+		],
+		usefulFind: [
+			"Počkat, tohle je vlastně užitečné.",
+			"Narazil jsi na něco, co by mohlo pomoct.",
+			"Produktivní scrollování? To je novinka.",
+			"Algoritmus dodal něco, co má smysl.",
+			"Skutečně užitečná věc, to se nevidí každý den.",
+			"Něco zaklaplo a máš nápad, jak si věci usnadnit.",
+		],
+	},
 
 	tooltips: {
 		checkPhone: [

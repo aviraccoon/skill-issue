@@ -92,6 +92,7 @@ export function createStateFromSeed(seed: number): GameState {
 		inExtendedNight: false,
 		consecutiveFailures: 0,
 		friendRescueUsedToday: false,
+		friendRescueChanceBonus: 0,
 		rollCount: 0,
 		variantsUnlocked: [],
 		runStats: createInitialRunStats(),

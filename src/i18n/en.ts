@@ -183,16 +183,51 @@ export const en = {
 		contact: "Found a barrier? Let me know.",
 	},
 
-	scrollTrap: [
-		"Nothing new. You knew that.",
-		"The algorithm thanks you.",
-		"...anyway.",
-		"30 minutes later...",
-		"Azor glances at you. Looks away.",
-		"The dog sighs. Or you imagine he does.",
-		"You found nothing. As expected.",
-		"Time passes. Nothing changes.",
-	],
+	phoneOutcomes: {
+		void: [
+			"Nothing new. You knew that.",
+			"The algorithm thanks you.",
+			"...anyway.",
+			"Azor glances at you. Looks away.",
+			"The dog sighs. Or you imagine he does.",
+			"You found nothing. As expected.",
+			"Time passes. Nothing changes.",
+			"Scroll. Scroll. Scroll. Done.",
+		],
+		scrollHole: [
+			"You blinked and an hour passed.",
+			"The rabbit hole was deep today.",
+			"Where did that time go?",
+			"You got sucked in. Hard.",
+			"That was worse than usual.",
+			"The algorithm won this round.",
+			"...anyway. What were you doing?",
+		],
+		actualBreak: [
+			"Huh. That was actually kind of nice.",
+			"A meme made you laugh. That counts.",
+			"You saw something that made you smile.",
+			"Brief respite. Back to it.",
+			"A moment of genuine entertainment.",
+			"You put it down. Okay.",
+		],
+		somethingNice: [
+			"A friend posted something. You felt connected for a moment.",
+			"Someone shared good news. It helped.",
+			"You remembered people exist. That's something.",
+			"A message notification. Someone's thinking of you.",
+			"Something in your feed actually mattered.",
+			"A moment of real human connection. Rare.",
+		],
+		usefulFind: [
+			"Wait. That's actually useful.",
+			"You stumbled onto something helpful.",
+			"Accidentally productive scrolling?",
+			"Huh. The algorithm delivered something real.",
+			"A genuinely useful thing. Mark the calendar.",
+			"Something clicked. An idea for making things easier.",
+		],
+	},
 
 	tooltips: {
 		checkPhone: [

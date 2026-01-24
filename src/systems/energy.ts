@@ -1,3 +1,4 @@
+import type { PhoneOutcome } from "../data/scrollTrap";
 import type { GameState, Task } from "../state";
 import { seededVariation } from "../utils/random";
 import {
@@ -12,6 +13,13 @@ const SALT_SCROLL_TRAP = 1002;
 const SALT_FAILURE_COST = 1003;
 const SALT_TASK_ENERGY_BASE = 2000; // Task effects use SALT_TASK_ENERGY_BASE + taskId hash
 const SALT_SATURDAY_WORK = 1004;
+
+// Salt values for phone outcome effects
+const SALT_PHONE_VOID_ENERGY = 1010;
+const SALT_PHONE_SCROLL_HOLE_ENERGY = 1011;
+const SALT_PHONE_ACTUAL_BREAK_ENERGY = 1012;
+const SALT_PHONE_SOMETHING_NICE_ENERGY = 1013;
+const SALT_PHONE_USEFUL_FIND_ENERGY = 1014;
 
 /**
  * Base energy lost per time block from natural decay.
@@ -55,6 +63,7 @@ export function getEnergyDecayPerBlock(seed: number): number {
 
 /**
  * Returns the scroll trap energy cost for this run.
+ * @deprecated Use getPhoneOutcomeEnergyEffect instead for variable outcomes.
  */
 export function getScrollTrapEnergyCost(seed: number): number {
 	return seededVariation(
@@ -63,6 +72,46 @@ export function getScrollTrapEnergyCost(seed: number): number {
 		SCROLL_TRAP_VARIANCE,
 		SALT_SCROLL_TRAP,
 	);
+}
+
+/** Energy effects by phone outcome tier (can be positive for good outcomes). */
+const PHONE_OUTCOME_ENERGY: Record<
+	PhoneOutcome,
+	{ base: number; variance: number; salt: number }
+> = {
+	void: { base: -0.04, variance: 0.01, salt: SALT_PHONE_VOID_ENERGY }, // -3% to -5%
+	scrollHole: {
+		base: -0.06,
+		variance: 0.01,
+		salt: SALT_PHONE_SCROLL_HOLE_ENERGY,
+	}, // -5% to -7%
+	actualBreak: {
+		base: 0.02,
+		variance: 0.01,
+		salt: SALT_PHONE_ACTUAL_BREAK_ENERGY,
+	}, // +1% to +3%
+	somethingNice: {
+		base: 0.03,
+		variance: 0.01,
+		salt: SALT_PHONE_SOMETHING_NICE_ENERGY,
+	}, // +2% to +4%
+	usefulFind: {
+		base: 0.015,
+		variance: 0.005,
+		salt: SALT_PHONE_USEFUL_FIND_ENERGY,
+	}, // +1% to +2%
+};
+
+/**
+ * Returns the energy effect for a phone outcome.
+ * Can be positive (actualBreak, somethingNice, usefulFind) or negative (void, scrollHole).
+ */
+export function getPhoneOutcomeEnergyEffect(
+	seed: number,
+	outcome: PhoneOutcome,
+): number {
+	const config = PHONE_OUTCOME_ENERGY[outcome];
+	return seededVariation(seed, config.base, config.variance, config.salt);
 }
 
 /**

@@ -97,9 +97,10 @@ export function shouldTriggerFriendRescue(store: Store<GameState>): boolean {
 	// Check if player can afford it (no point offering if they can't accept)
 	if (!canAffordRescue(state)) return false;
 
-	// Roll the dice (chance varies by seed)
-	const chance = getFriendRescueChance(state.runSeed);
-	return nextRoll(store) < chance;
+	// Roll the dice (chance varies by seed + bonus from "Something Nice" phone outcome)
+	const baseChance = getFriendRescueChance(state.runSeed);
+	const totalChance = Math.min(baseChance + state.friendRescueChanceBonus, 0.9);
+	return nextRoll(store) < totalChance;
 }
 
 /**

@@ -127,8 +127,9 @@ export function continueToNextDay(store: Store<GameState>) {
 		})),
 	);
 
-	// Reset friend rescue availability for new day
+	// Reset friend rescue state for new day
 	store.set("friendRescueUsedToday", false);
+	store.set("friendRescueChanceBonus", 0);
 
 	// Clear task selection for new day
 	store.set("selectedTaskId", null);

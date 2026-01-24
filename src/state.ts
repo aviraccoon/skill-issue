@@ -115,6 +115,7 @@ export interface GameState {
 	// Friend rescue state
 	consecutiveFailures: number; // resets on success or rescue, triggers check at 3+
 	friendRescueUsedToday: boolean; // limits to 1 rescue per day
+	friendRescueChanceBonus: number; // bonus from "Something Nice" phone outcome, resets daily
 
 	// Deterministic randomness
 	rollCount: number; // increments with each random roll for reproducibility
@@ -159,6 +160,7 @@ export function createInitialState(): GameState {
 		inExtendedNight: false,
 		consecutiveFailures: 0,
 		friendRescueUsedToday: false,
+		friendRescueChanceBonus: 0,
 		rollCount: 0,
 		variantsUnlocked: [],
 		runStats: createInitialRunStats(),

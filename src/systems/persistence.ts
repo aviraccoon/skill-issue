@@ -38,6 +38,7 @@ interface SavedState {
 	inExtendedNight: boolean;
 	consecutiveFailures: number;
 	friendRescueUsedToday: boolean;
+	friendRescueChanceBonus?: number; // Optional for backward compat with old saves
 	rollCount: number;
 	variantsUnlocked: GameState["variantsUnlocked"];
 	runStats: RunStats;
@@ -103,6 +104,7 @@ function toSavedState(state: GameState): SavedState {
 		inExtendedNight: state.inExtendedNight,
 		consecutiveFailures: state.consecutiveFailures,
 		friendRescueUsedToday: state.friendRescueUsedToday,
+		friendRescueChanceBonus: state.friendRescueChanceBonus,
 		rollCount: state.rollCount,
 		variantsUnlocked: state.variantsUnlocked,
 		runStats: state.runStats,
@@ -223,6 +225,7 @@ function fromSavedState(saved: SavedState): GameState {
 		inExtendedNight: saved.inExtendedNight,
 		consecutiveFailures: saved.consecutiveFailures,
 		friendRescueUsedToday: saved.friendRescueUsedToday,
+		friendRescueChanceBonus: saved.friendRescueChanceBonus ?? 0,
 		rollCount: saved.rollCount,
 		variantsUnlocked: saved.variantsUnlocked,
 		runStats: saved.runStats ?? createInitialRunStats(),
