@@ -85,6 +85,7 @@ export interface Task {
 }
 
 export type Screen =
+	| "intro"
 	| "game"
 	| "nightChoice"
 	| "daySummary"

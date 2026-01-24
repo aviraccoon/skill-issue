@@ -139,6 +139,12 @@ export const cs = {
 		startNewWeek: "Začít nový týden",
 	},
 
+	intro: {
+		title: "Skill Issue",
+		description: "Zvládni týden. Klikej na úkoly. Hodně štěstí.",
+		start: "Začít",
+	},
+
 	a11y: {
 		// Screen announcements
 		screenNightChoice: "Noc",

@@ -19,6 +19,7 @@ import {
 import appStyles from "./App.module.css";
 import { renderDaySummary } from "./DaySummary";
 import { renderFriendRescue } from "./FriendRescue";
+import { renderIntro } from "./Intro";
 import { renderNightChoice } from "./NightChoice";
 import panelStyles from "./Panel.module.css";
 import taskStyles from "./Task.module.css";
@@ -234,6 +235,10 @@ export function renderApp(store: Store<GameState>) {
 	}
 
 	switch (screenInfo.type) {
+		case "intro":
+			gameInitialized = false;
+			renderIntro(app, store);
+			break;
 		case "nightChoice":
 			gameInitialized = false;
 			renderNightChoice(screenInfo, app, handleDecision);
@@ -754,6 +759,8 @@ function renderFooter(
 	if (phoneBtn) {
 		const newPhoneBtn = phoneBtn.cloneNode(true) as HTMLButtonElement;
 		phoneBtn.parentNode?.replaceChild(newPhoneBtn, phoneBtn);
+		// Clear tooltip init flag so initTooltips re-initializes after cloning
+		delete newPhoneBtn.dataset.tooltipInit;
 		newPhoneBtn.addEventListener("click", () => {
 			onDecision({ type: "checkPhone" });
 		});
@@ -772,6 +779,8 @@ function renderFooter(
 	// Remove old listeners by cloning
 	const newBtn = skipBtn.cloneNode(true) as HTMLButtonElement;
 	skipBtn.parentNode?.replaceChild(newBtn, skipBtn);
+	// Clear tooltip init flag so initTooltips re-initializes after cloning
+	delete newBtn.dataset.tooltipInit;
 
 	if (screenInfo.isWeekend) {
 		// Weekend: single "End day" button

@@ -56,6 +56,8 @@ export interface CompletedRun {
 export interface PatternsData {
 	unlocked: boolean;
 	history: CompletedRun[];
+	hasSeenIntro?: boolean; // true after dismissing intro screen
+	hasEverAttempted?: boolean; // true after first task attempt (for first-attempt guarantee)
 }
 
 /** Top-level save structure with separate run and patterns sections. */
@@ -177,11 +179,17 @@ export function saveGame(state: GameState): void {
  * Loads game state from localStorage.
  * Returns initial state if no save exists or save is incompatible.
  * Reconstructs full task objects from i18n + saved runtime state.
+ * New players start on the intro screen.
  */
 export function loadGame(): GameState {
 	const data = loadSaveData();
 	if (!data.currentRun) {
-		return createInitialState();
+		const state = createInitialState();
+		// Show intro screen for brand new players
+		if (!data.patterns.hasSeenIntro) {
+			state.screen = "intro";
+		}
+		return state;
 	}
 	return fromSavedState(data.currentRun);
 }
@@ -277,6 +285,50 @@ export function saveCompletedRun(state: GameState): void {
  */
 export function getPatterns(): PatternsData {
 	return loadSaveData().patterns;
+}
+
+/**
+ * Marks the intro as seen.
+ * Call when player dismisses the intro screen.
+ */
+export function markIntroSeen(): void {
+	const existing = loadSaveData();
+	const data: SaveData = {
+		...existing,
+		patterns: {
+			...existing.patterns,
+			hasSeenIntro: true,
+		},
+		savedAt: Date.now(),
+	};
+	writeSaveData(data);
+}
+
+/**
+ * Marks that the player has attempted at least one task.
+ * Call on first task attempt to disable the first-attempt guarantee.
+ */
+export function markFirstAttempt(): void {
+	const existing = loadSaveData();
+	if (existing.patterns.hasEverAttempted) return; // Already marked
+	const data: SaveData = {
+		...existing,
+		patterns: {
+			...existing.patterns,
+			hasEverAttempted: true,
+		},
+		savedAt: Date.now(),
+	};
+	writeSaveData(data);
+}
+
+/**
+ * Returns true if this is the player's very first task attempt ever.
+ * Used for the first-attempt 100% success guarantee.
+ */
+export function isFirstEverAttempt(): boolean {
+	const patterns = loadSaveData().patterns;
+	return !patterns.hasEverAttempted;
 }
 
 /**

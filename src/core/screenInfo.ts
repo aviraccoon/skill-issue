@@ -123,8 +123,14 @@ export interface WeekCompleteInfo {
 	patterns: PatternsDisplay;
 }
 
+/** Intro screen info. */
+export interface IntroInfo {
+	type: "intro";
+}
+
 /** Union of all screen info types. */
 export type ScreenInfo =
+	| IntroInfo
 	| GameScreenInfo
 	| NightChoiceInfo
 	| FriendRescueInfo
@@ -136,6 +142,8 @@ export type ScreenInfo =
  */
 export function getScreenInfo(state: GameState): ScreenInfo {
 	switch (state.screen) {
+		case "intro":
+			return { type: "intro" };
 		case "nightChoice":
 			return getNightChoiceInfo(state);
 		case "friendRescue":

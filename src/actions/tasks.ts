@@ -15,6 +15,7 @@ import {
 	getMomentumFailurePenalty,
 	getMomentumSuccessBonus,
 } from "../systems/momentum";
+import { isFirstEverAttempt, markFirstAttempt } from "../systems/persistence";
 import { calculateSuccessProbability } from "../systems/probability";
 import { nextRoll } from "../utils/random";
 
@@ -81,7 +82,15 @@ export function attemptTask(
 			? { ...task, baseRate: task.minimalVariant.baseRate }
 			: task;
 
-	const probability = calculateSuccessProbability(effectiveTask, state);
+	// First-ever attempt guarantee: 100% success to teach clicking works
+	const firstAttempt = isFirstEverAttempt();
+	if (firstAttempt) {
+		markFirstAttempt();
+	}
+
+	const probability = firstAttempt
+		? 1
+		: calculateSuccessProbability(effectiveTask, state);
 	const succeeded = nextRoll(store) < probability;
 	let friendRescueTriggered = false;
 

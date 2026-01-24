@@ -102,6 +102,12 @@ export const en = {
 		startNewWeek: "Start New Week",
 	},
 
+	intro: {
+		title: "Skill Issue",
+		description: "Manage your week. Click tasks to do them. Good luck.",
+		start: "Start",
+	},
+
 	a11y: {
 		// Screen announcements
 		screenNightChoice: "Night time",
