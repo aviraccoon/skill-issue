@@ -29,6 +29,12 @@ export function renderWeekComplete(
 	// Format success rate as percentage
 	const successRateDisplay = `${Math.round(patterns.successRate * 100)}%`;
 
+	// Build narrative HTML - split paragraphs
+	const narrativeParagraphs = screenInfo.narrative
+		.split("\n\n")
+		.map((p) => `<p class="${styles.narrative}">${p}</p>`)
+		.join("");
+
 	// Build patterns HTML
 	const patternsHtml = `
 		<section class="${styles.patterns}" aria-labelledby="patterns-title">
@@ -108,7 +114,7 @@ export function renderWeekComplete(
 	container.innerHTML = `
 		<div class="${styles.summary}">
 			<h1 class="${styles.title}">${s.game.weekComplete}</h1>
-			<p class="${styles.narrative}">${screenInfo.narrative}</p>
+			<div class="${styles.story}">${narrativeParagraphs}</div>
 			${patternsHtml}
 			<button class="${styles.restartBtn}">${s.game.startNewWeek}</button>
 		</div>

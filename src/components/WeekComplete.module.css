@@ -19,10 +19,19 @@
 	background-clip: text;
 }
 
+.story {
+	max-width: 500px;
+	text-align: left;
+}
+
 .narrative {
-	font-size: 1.125rem;
-	max-width: 400px;
-	line-height: 1.6;
+	font-size: 1rem;
+	line-height: 1.7;
+	margin-bottom: 1rem;
+}
+
+.narrative:last-child {
+	margin-bottom: 0;
 }
 
 .restartBtn {

@@ -7,6 +7,7 @@ declare const styles: {
 	readonly personality: string;
 	readonly restartBtn: string;
 	readonly seed: string;
+	readonly story: string;
 	readonly summary: string;
 	readonly title: string;
 };

@@ -12,6 +12,7 @@ import {
 	getDogNote,
 } from "../data/daySummary";
 import { getRandomRescueMessage } from "../data/friendRescue";
+import { generateWeekStory } from "../data/weekStory";
 import { strings } from "../i18n";
 import type { Day, GameState, Task, TimeBlock } from "../state";
 import { isWeekend, TIME_BLOCKS } from "../state";
@@ -318,8 +319,7 @@ function getWeekCompleteInfo(state: GameState): WeekCompleteInfo {
 	);
 	const totalFailures = state.tasks.reduce((sum, t) => sum + t.failureCount, 0);
 
-	const tone = determineWeekTone(totalSuccesses, totalFailures);
-	const narrative = generateWeekNarrative(tone, state.runSeed);
+	const narrative = generateWeekStory(state);
 
 	// Compute patterns
 	const { runStats, personality } = state;
@@ -389,19 +389,4 @@ function getWeekCompleteInfo(state: GameState): WeekCompleteInfo {
 			variantsUsed,
 		},
 	};
-}
-
-type WeekTone = "survived" | "rough" | "good";
-
-function determineWeekTone(successes: number, failures: number): WeekTone {
-	const total = successes + failures;
-	if (total === 0) return "rough";
-	const ratio = successes / total;
-	if (ratio >= 0.5) return "good";
-	if (ratio >= 0.3) return "survived";
-	return "rough";
-}
-
-function generateWeekNarrative(tone: WeekTone, runSeed: number): string {
-	return pickVariant(strings().weekNarrative[tone], runSeed);
 }

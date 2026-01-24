@@ -357,24 +357,6 @@ export const cs = {
 		],
 	},
 
-	weekNarrative: {
-		good: [
-			"Týden za námi, pes se venčil, jídlo bylo, něco se povedlo a něco ne, takovej týden.",
-			"Celkem slušnej týden, věci fungovaly častěji než ne a základy byly pokryté.",
-			"Ujde to, většina věcí se stala, což se rozhodně počítá.",
-		],
-		rough: [
-			"Přežít se to dalo, některé dny tak tak, ale pes tě má pořád rád a jídlo bylo, i když samej rozvoz.",
-			"Těžkej týden, tlačítka se bránila ze všech sil, ale je to za námi.",
-			"Drsnej týden, kdy nic nešlo lehce, ale už je to pryč.",
-		],
-		survived: [
-			"Týden pokusů, něco vyšlo, většina ne, ale byl tam ten jeden moment, kdy to klaplo.",
-			"Smíšené výsledky, některé dny byly ok a jiné vůbec, ale tak to prostě chodí.",
-			"Snaha tam byla a někdy to i vyšlo, takže se stal další týden.",
-		],
-	},
-
 	patterns: {
 		title: "Tvoje vzorce",
 		personality: "Osobnost",

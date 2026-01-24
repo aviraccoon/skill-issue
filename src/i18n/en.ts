@@ -319,24 +319,6 @@ export const en = {
 		],
 	},
 
-	weekNarrative: {
-		good: [
-			"You made it through. The dog got walked. You ate food. Some tasks happened, some didn't. That's a week.",
-			"A decent week. Things worked more often than not. The basics got covered.",
-			"Not bad. You showed up for most of it. That counts.",
-		],
-		rough: [
-			"You survived. Barely, some days. The dog still loves you. You fed yourself, even if it was delivery every time. You're still here.",
-			"A hard week. The buttons fought back. But you made it to the other side.",
-			"Rough one. Nothing felt easy. But it's over now.",
-		],
-		survived: [
-			"A week of attempts. Some worked. Most didn't. You had that one good moment where things clicked. Normal week, really.",
-			"Mixed results. Some days were okay. Others weren't. That's how it goes.",
-			"You tried. Sometimes it worked. A week happened.",
-		],
-	},
-
 	patterns: {
 		title: "Your Patterns",
 		personality: "Personality",
