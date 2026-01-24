@@ -5,6 +5,7 @@
 
 import { strings } from "../i18n";
 import type { GameState } from "../state";
+import { pickVariant } from "../utils/random";
 
 /**
  * Gets a rescue result message based on tier correctness.
@@ -269,21 +270,16 @@ export const PATTERN_HINT_GROUPS: PatternHintGroup[] = [
  * Gets a phone buzz text using seeded selection.
  */
 export function getPhoneBuzzText(state: GameState): string {
-	const s = strings();
-	const index =
-		Math.abs(state.runSeed + state.rollCount * 7) % s.friend.phoneBuzz.length;
-	return s.friend.phoneBuzz[index] as string;
+	const seed = Math.abs(state.runSeed + state.rollCount * 7);
+	return pickVariant(strings().friend.phoneBuzz, seed);
 }
 
 /**
  * Gets a phone ignored text using seeded selection.
  */
 export function getPhoneIgnoredText(state: GameState): string {
-	const s = strings();
-	const index =
-		Math.abs(state.runSeed + state.rollCount * 11) %
-		s.friend.phoneIgnored.length;
-	return s.friend.phoneIgnored[index] as string;
+	const seed = Math.abs(state.runSeed + state.rollCount * 11);
+	return pickVariant(strings().friend.phoneIgnored, seed);
 }
 
 /**
@@ -291,11 +287,10 @@ export function getPhoneIgnoredText(state: GameState): string {
  * Uses day and failure count to vary within a run.
  */
 export function getRandomRescueMessage(state: GameState): string {
-	const s = strings();
-	const combined =
-		state.runSeed + state.dayIndex * 100 + state.consecutiveFailures * 17;
-	const index = Math.abs(combined) % s.friend.rescueMessages.length;
-	return s.friend.rescueMessages[index] as string;
+	const seed = Math.abs(
+		state.runSeed + state.dayIndex * 100 + state.consecutiveFailures * 17,
+	);
+	return pickVariant(strings().friend.rescueMessages, seed);
 }
 
 /**
@@ -339,9 +334,8 @@ export function getPatternHint(state: GameState): PatternHintResult {
 
 	// If no candidates, use fallback
 	if (candidates.length === 0) {
-		const fallbackIndex =
-			Math.abs(state.runSeed + state.dayIndex) % s.hints.fallback.length;
-		return { hint: s.hints.fallback[fallbackIndex] as string };
+		const seed = Math.abs(state.runSeed + state.dayIndex);
+		return { hint: pickVariant(s.hints.fallback, seed) };
 	}
 
 	// Weighted random selection
@@ -363,16 +357,15 @@ export function getPatternHint(state: GameState): PatternHintResult {
 	// Select message from the chosen group
 	const group = selected?.group;
 	if (!group) {
-		const fallbackIndex =
-			Math.abs(state.runSeed + state.dayIndex) % s.hints.fallback.length;
-		return { hint: s.hints.fallback[fallbackIndex] as string };
+		const seed = Math.abs(state.runSeed + state.dayIndex);
+		return { hint: pickVariant(s.hints.fallback, seed) };
 	}
 
 	const messages = resolveMessages(group.messages);
-	const messageIndex =
-		Math.abs(state.runSeed + state.dayIndex * 13) % messages.length;
+	const seed = Math.abs(state.runSeed + state.dayIndex * 13);
+	const hint = messages[seed % messages.length] ?? messages[0] ?? "";
 	return {
-		hint: messages[messageIndex] as string,
+		hint,
 		unlocksVariant: group.unlocksVariant,
 	};
 }

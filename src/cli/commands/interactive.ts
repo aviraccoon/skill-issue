@@ -110,7 +110,10 @@ export class InteractiveStrategy implements Strategy {
 			console.log("FRIEND RESCUE");
 			console.log(`"${message}"`);
 		} else if (screen === "nightChoice") {
-			const description = getExtendedNightDescription(state.energy);
+			const description = getExtendedNightDescription(
+				state.energy,
+				state.rollCount,
+			);
 			console.log(`${state.day.toUpperCase()} NIGHT`);
 			console.log("It's late. Sleep or push through?");
 			console.log(description);
@@ -160,12 +163,8 @@ export class InteractiveStrategy implements Strategy {
 
 				// Show dog urgency for Walk Dog when not yet done
 				let urgency = "";
-				if (
-					task.id === "walk-dog" &&
-					!task.succeededToday &&
-					dogUrgency !== "normal"
-				) {
-					urgency = ` (${getUrgencyDisplay(dogUrgency)})`;
+				if (task.id === "walk-dog" && !task.succeededToday) {
+					urgency = ` (${getUrgencyDisplay(dogUrgency, state.runSeed)})`;
 				}
 
 				console.log(`  ${i + 1}. ${name}${cost}${urgency}${status}`);
@@ -205,7 +204,7 @@ export class InteractiveStrategy implements Strategy {
 		if (hasAcceptRescue) {
 			console.log("");
 			console.log("Friend activities:");
-			getLocalizedActivities().forEach((a) => {
+			getLocalizedActivities(state.runSeed, state.dayIndex).forEach((a) => {
 				console.log(`  ${a.id} - ${a.name}: ${a.description}`);
 			});
 		}
@@ -446,7 +445,7 @@ export async function runInteractive(
 				const tone = determineTone(attempted.length, succeeded.length);
 				const narrative = pulledAllNighter
 					? generateAllNighterNarrative(state)
-					: generateNarrative(tone);
+					: generateNarrative(tone, state.runSeed + state.dayIndex);
 				const dogNote = getDogNote(state);
 
 				console.log("");

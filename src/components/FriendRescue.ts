@@ -41,7 +41,7 @@ export function renderFriendRescue(
 					)
 					.join("")}
 			</div>
-			<button class="${styles.declineBtn}">${s.game.rescueDecline}</button>
+			<button class="${styles.declineBtn}">${screenInfo.declineLabel}</button>
 		</div>
 	`;
 

@@ -17,7 +17,7 @@ export function renderNightChoice(
 	container.innerHTML = `
 		<div class="${styles.choice}">
 			<h1 class="${styles.title}">${s.game.nightTitle(screenInfo.day)}</h1>
-			<p class="${styles.prompt}">${s.game.nightPrompt}</p>
+			<p class="${styles.prompt}">${screenInfo.nightPrompt}</p>
 			<p class="${styles.info}">${screenInfo.description}</p>
 			<div class="${styles.buttons}">
 				<button class="${styles.sleepBtn}">${s.game.sleep}</button>

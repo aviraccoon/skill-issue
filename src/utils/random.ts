@@ -1,3 +1,15 @@
+/** Array type that guarantees at least one element. */
+export type NonEmptyArray<T> = readonly [T, ...T[]];
+
+/**
+ * Picks a variant from an array deterministically based on seed.
+ * Same seed always picks the same variant.
+ */
+export function pickVariant<T>(variants: NonEmptyArray<T>, seed: number): T {
+	const index = seed % variants.length;
+	return variants[index] ?? variants[0];
+}
+
 /** Simple string hash for deterministic selection. */
 export function hashString(str: string): number {
 	let hash = 0;

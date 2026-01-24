@@ -1,4 +1,5 @@
 import type { Day, TimeBlock } from "../state";
+import { pickVariant } from "../utils/random";
 
 /** Simple English plural: returns "1 slot" or "3 slots". */
 const pl = (n: number, word: string) => `${n} ${n === 1 ? word : `${word}s`}`;
@@ -58,21 +59,43 @@ export const en = {
 
 		// Night choice
 		nightTitle: (day: Day) => `${days[day]} Night`,
-		nightPrompt: "It's late. You could sleep. Or...",
+		nightPrompt: [
+			"It's late. You could sleep. Or...",
+			"Sleep is an option. Theoretically.",
+			"The responsible choice would be to sleep.",
+			"You could stop. You probably won't.",
+		],
 		sleep: "Sleep",
 		pushThrough: "Push Through",
 
 		// Friend rescue
 		rescueCost: (cost: string) => `Meeting up will use ${cost}`,
-		rescueDecline: "Not right now",
+		rescueDecline: [
+			"Not right now",
+			"Can't today",
+			"Maybe later",
+			"I should, but...",
+			"Another time?",
+			"Sorry, not now",
+		],
 
 		// Day summary
 		taskStats: (succeeded: number, attempted: number) =>
 			`${succeeded} of ${attempted} tasks`,
 		allNighterTitle: (day: Day, nextDay: Day | null) =>
 			nextDay ? `${days[day]} / ${days[nextDay]}` : `${days[day]} (late)`,
-		allNighterNarrative: (day: Day, nextDay: Day | null) =>
-			`${days[day]} bled into ${nextDay ? days[nextDay] : "the next day"}. You pushed through. At some point you stopped.`,
+		allNighterNarrative: (day: Day, nextDay: Day | null, seed: number) => {
+			const next = nextDay ? days[nextDay] : "the next day";
+			return pickVariant(
+				[
+					`${days[day]} bled into ${next}. You pushed through. At some point you stopped.`,
+					`The night stretched. ${days[day]} became ${next}. You made it, somehow.`,
+					`You didn't sleep. ${days[day]} turned into ${next}. It's blurry now.`,
+					`One moment it was ${days[day]}, then it was ${next}. Time is fake anyway.`,
+				],
+				seed,
+			);
+		},
 
 		// Week complete
 		weekComplete: "Week Complete",
@@ -247,24 +270,65 @@ export const en = {
 	},
 
 	narrative: {
-		good: "Things clicked today. Not everything, but enough.",
-		rough: "A hard day. The buttons didn't want to work. Tomorrow exists.",
-		mixed: "Some things happened. Some didn't. That's a day.",
+		good: [
+			"Things clicked today. Not everything, but enough.",
+			"A good day, as these things go. Some momentum there.",
+			"More successes than failures. That's something.",
+			"The buttons cooperated today. Mostly.",
+		],
+		rough: [
+			"A hard day. The buttons didn't want to work. Tomorrow exists.",
+			"Nothing landed. That happens. It's not forever.",
+			"The clicks weren't clicking. Sleep will help. Maybe.",
+			"One of those days where everything felt uphill.",
+		],
+		mixed: [
+			"Some things happened. Some didn't. That's a day.",
+			"Half and half. Could be worse.",
+			"Not great, not terrible. A day happened.",
+			"Some wins, some losses. Average, really.",
+		],
 	},
 
 	allnighter: {
-		wired: "You're wired. This could be productive.",
-		someFuel: "You've got some fuel left. Might be worth it.",
-		runningLow: "You're running low, but there's something there.",
-		exhausted: "You're exhausted. One more attempt, maybe.",
+		wired: [
+			"You're wired. This could be productive.",
+			"Wide awake. The night is young.",
+			"Energy to burn. Why waste it on sleep?",
+		],
+		someFuel: [
+			"You've got some fuel left. Might be worth it.",
+			"Not empty yet. Could squeeze out a bit more.",
+			"There's something in the tank still.",
+		],
+		runningLow: [
+			"You're running low, but there's something there.",
+			"Fading, but not gone. One more push?",
+			"The tank's near empty. But not quite.",
+		],
+		exhausted: [
+			"You're exhausted. One more attempt, maybe.",
+			"Running on fumes. This might be a mistake.",
+			"Almost nothing left. But almost isn't nothing.",
+		],
 	},
 
 	weekNarrative: {
-		good: "You made it through. The dog got walked. You ate food. Some tasks happened, some didn't. That's a week.",
-		rough:
+		good: [
+			"You made it through. The dog got walked. You ate food. Some tasks happened, some didn't. That's a week.",
+			"A decent week. Things worked more often than not. The basics got covered.",
+			"Not bad. You showed up for most of it. That counts.",
+		],
+		rough: [
 			"You survived. Barely, some days. The dog still loves you. You fed yourself, even if it was delivery every time. You're still here.",
-		survived:
+			"A hard week. The buttons fought back. But you made it to the other side.",
+			"Rough one. Nothing felt easy. But it's over now.",
+		],
+		survived: [
 			"A week of attempts. Some worked. Most didn't. You had that one good moment where things clicked. Normal week, really.",
+			"Mixed results. Some days were okay. Others weren't. That's how it goes.",
+			"You tried. Sometimes it worked. A week happened.",
+		],
 	},
 
 	patterns: {
@@ -290,16 +354,31 @@ export const en = {
 	},
 
 	dog: {
-		walked: "Azor got his walk. He's happy.",
-		failedAttempt:
+		walked: [
+			"Azor got his walk. He's happy.",
+			"The dog is content. Outside happened.",
+			"Walk complete. Tail wagging.",
+		],
+		failedAttempt: [
 			"You tried to walk Azor. Stood outside briefly. He's disappointed but understands.",
-		forcedMinimal:
+			"The walk didn't quite happen. Azor knows you tried.",
+			"Outside was brief. Not really a walk. He gets it.",
+		],
+		forcedMinimal: [
 			"You stood outside with Azor for a minute. It's not a walk, but it's something. He looks at you.",
+			"A minute of outside. Azor takes what he can get.",
+			"Not a walk, but fresh air happened. He's patient.",
+		],
 		urgency: {
-			normal: "Normal",
-			waiting: "Azor's been waiting",
-			urgent: "He really needs to go",
-			critical: "Critical - he's desperate",
+			normal: [
+				"Azor's still sleepy",
+				"Tail wagging already",
+				"He's ready when you are",
+				"Morning stretch mode",
+			],
+			waiting: ["Azor's been waiting", "He's been patient", "Those eyes"],
+			urgent: ["He really needs to go", "Getting urgent", "Azor needs out"],
+			critical: ["He can't wait anymore", "This is an emergency", "Desperate"],
 		},
 	},
 
@@ -385,18 +464,108 @@ export const en = {
 	},
 
 	activities: {
-		low: {
-			name: "Coffee",
-			description: "Quick coffee, low pressure",
-		},
-		medium: {
-			name: "Grab food",
-			description: "Get something to eat together",
-		},
-		high: {
-			name: "Explore somewhere",
-			description: "Check out that new place",
-		},
+		low: [
+			{
+				name: "Coffee",
+				descriptions: [
+					"Quick coffee, low pressure",
+					"Just caffeine, nothing fancy",
+					"The usual spot",
+				],
+			},
+			{
+				name: "Bubble tea",
+				descriptions: [
+					"Something sweet, nothing big",
+					"Sugar helps",
+					"I'm craving it anyway",
+				],
+			},
+			{
+				name: "Quick walk",
+				descriptions: [
+					"Just around the block",
+					"Fresh air, that's it",
+					"Ten minutes, tops",
+				],
+			},
+			{
+				name: "Exist nearby",
+				descriptions: [
+					"Come over, we don't have to do anything",
+					"Just... be here",
+					"I'll be on my phone too, it's fine",
+				],
+			},
+		],
+		medium: [
+			{
+				name: "Grab food",
+				descriptions: [
+					"Get something to eat together",
+					"You need to eat anyway",
+					"My treat if you show up",
+				],
+			},
+			{
+				name: "Pizza somewhere",
+				descriptions: [
+					"I know a place",
+					"Nothing fancy, just pizza",
+					"Carbs solve problems",
+				],
+			},
+			{
+				name: "Walk somewhere",
+				descriptions: [
+					"There's this spot I want to show you",
+					"Not far, I promise",
+					"I need the steps anyway",
+				],
+			},
+			{
+				name: "Wander around",
+				descriptions: [
+					"No plan, just moving",
+					"See where we end up",
+					"Better than sitting",
+				],
+			},
+		],
+		high: [
+			{
+				name: "Explore somewhere",
+				descriptions: [
+					"Check out that new place",
+					"Could be good, could be weird",
+					"We keep saying we'll go",
+				],
+			},
+			{
+				name: "New area",
+				descriptions: [
+					"Let's get properly lost",
+					"I've never been either",
+					"Adventure, allegedly",
+				],
+			},
+			{
+				name: "That place we mentioned",
+				descriptions: [
+					"The one we keep saying we'll try",
+					"Now or never",
+					"It's been on the list forever",
+				],
+			},
+			{
+				name: "Actual outing",
+				descriptions: [
+					"Like real people who leave the house",
+					"Commit to being outside",
+					"Full expedition mode",
+				],
+			},
+		],
 	},
 
 	friend: {

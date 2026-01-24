@@ -1,7 +1,7 @@
 import { strings } from "../i18n";
 import { type GameState, isWeekend } from "../state";
 import type { Store } from "../store";
-import { nextRoll, seededVariation } from "../utils/random";
+import { nextRoll, pickVariant, seededVariation } from "../utils/random";
 import { calculateFriendRescueEnergyEffect } from "./energy";
 
 const SALT_RESCUE_CHANCE = 5001;
@@ -52,14 +52,22 @@ const ACTIVITY_DATA: { id: ActivityTier; energyThreshold: number }[] = [
 	{ id: "high", energyThreshold: 0.7 },
 ];
 
-/** Gets activities with localized display strings. */
-export function getLocalizedActivities(): Activity[] {
+/** Gets activities with localized display strings, picked deterministically from variants. */
+export function getLocalizedActivities(
+	seed: number,
+	dayIndex: number,
+): Activity[] {
 	const s = strings();
-	return ACTIVITY_DATA.map((data) => ({
-		...data,
-		name: s.activities[data.id].name,
-		description: s.activities[data.id].description,
-	}));
+	return ACTIVITY_DATA.map((data, tierIndex) => {
+		const tierActivities = s.activities[data.id];
+		const activity = pickVariant(tierActivities, seed + dayIndex + tierIndex);
+		const description = pickVariant(activity.descriptions, seed + dayIndex);
+		return {
+			...data,
+			name: activity.name,
+			description,
+		};
+	});
 }
 
 /**

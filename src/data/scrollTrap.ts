@@ -6,7 +6,7 @@
 import { strings } from "../i18n";
 import type { GameState } from "../state";
 import type { Store } from "../store";
-import { nextRoll, seededVariation } from "../utils/random";
+import { nextRoll, pickVariant, seededVariation } from "../utils/random";
 import { getTasksWithVariants, type TaskCategory } from "./tasks";
 
 /** Phone check outcome tier. */
@@ -150,9 +150,7 @@ export function getOutcomeFlavorText(
 	rollCount: number,
 	outcome: PhoneOutcome,
 ): string {
-	const s = strings();
-	const messages = s.phoneOutcomes[outcome];
-	return messages[rollCount % messages.length] as string;
+	return pickVariant(strings().phoneOutcomes[outcome], rollCount);
 }
 
 /**

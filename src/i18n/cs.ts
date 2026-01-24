@@ -1,4 +1,18 @@
+/**
+ * Czech localization.
+ *
+ * Guidelines:
+ * - Gender-neutral: Avoid gendered past tense ("udělal jsi", "přišla jsi").
+ *   Use noun phrases, impersonal "to", or present tense instead.
+ * - No fragments: Czech doesn't work well with English-style short fragments.
+ *   Use flowing sentences that sound like natural internal monologue.
+ * - Lowercase in sentences: Day/time names are lowercase mid-sentence.
+ *   Use daysLower/timeBlocksLower for in-sentence use.
+ * - Plurals: Czech has 3 forms (1, 2-4, 5+). Use the pl() helper.
+ */
+
 import type { Day, TimeBlock } from "../state";
+import { pickVariant } from "../utils/random";
 import type { Strings } from "./types";
 
 /**
@@ -82,21 +96,43 @@ export const cs = {
 
 		// Night choice
 		nightTitle: (day: Day) => `${days[day]} v noci`,
-		nightPrompt: "Je pozdě. Mohl bys jít spát. Nebo...",
+		nightPrompt: [
+			"Je pozdě a spánek by teoreticky byl možnost, jenže...",
+			"Spánek by byl rozumná volba, ale rozum zrovna moc nefunguje.",
+			"Teď by se dalo jít spát, nebo to prostě ignorovat.",
+			"Jít spát je možnost, ale ne jediná.",
+		],
 		sleep: "Spát",
 		pushThrough: "Vydržet",
 
 		// Friend rescue
 		rescueCost: (cost: string) => `Setkání zabere ${cost}`,
-		rescueDecline: "Teď ne",
+		rescueDecline: [
+			"Teď ne",
+			"Dneska to nejde",
+			"Možná jindy",
+			"Jindy, jo?",
+			"Teď to prostě nejde",
+			"Sorry, teď fakt ne",
+		],
 
 		// Day summary
 		taskStats: (succeeded: number, attempted: number) =>
 			`${succeeded} z ${attempted} úkolů`,
 		allNighterTitle: (day: Day, nextDay: Day | null) =>
 			nextDay ? `${days[day]} / ${days[nextDay]}` : `${days[day]} (pozdě)`,
-		allNighterNarrative: (day: Day, nextDay: Day | null) =>
-			`${days[day]} přešlo do ${nextDay ? daysLower[nextDay] : "dalšího dne"}. Vydržel jsi. Nakonec jsi přestal.`,
+		allNighterNarrative: (_day: Day, nextDay: Day | null, seed: number) => {
+			const next = nextDay ? daysLower[nextDay] : "další den";
+			return pickVariant(
+				[
+					`Noc se táhla donekonečna. Pak najednou ${next}. Někde v tom to skončilo.`,
+					`Někdy v noci se to zlomilo a pak bylo ${next}, asi.`,
+					`Čas přestal dávat smysl. Najednou ${next}.`,
+					`Noc? Den? Už je ${next}. To je asi podstatný.`,
+				],
+				seed,
+			);
+		},
 
 		// Week complete
 		weekComplete: "Týden dokončen",
@@ -215,38 +251,38 @@ export const cs = {
 			"No, tak to bylo k ničemu.",
 			"Azor se na tebe podívá a odvrátí pohled.",
 			"Zdá se ti, že pes vzdychl, ale možná si to jen představuješ.",
-			"Nic jsi nenašel, jak se dalo čekat.",
+			"Nic tam nebylo, jak se dalo čekat.",
 			"Čas plyne a nic se nemění.",
 			"Scrollování dokončeno, výsledek nulový.",
 		],
 		scrollHole: [
-			"Mrknul jsi a hodina utekla.",
+			"Jedno mrknutí a hodina pryč.",
 			"Tentokrát tě to vtáhlo víc než obvykle.",
 			"Kam se poděl ten čas?",
 			"Pořádně tě to vtáhlo.",
 			"Tohle bylo horší než obvykle.",
 			"Algoritmus tentokrát vyhrál.",
-			"Tak co jsi vlastně dělal?",
+			"Tak co to vlastně bylo?",
 		],
 		actualBreak: [
 			"Hele, to bylo vlastně docela fajn.",
 			"Jeden meme tě rozesmál, a to se počítá.",
-			"Viděl jsi něco, co tě trochu rozveselilo.",
+			"Něco tam bylo, co trochu rozveselilo.",
 			"Krátká úleva, a teď zase zpátky.",
 			"Aspoň chvíle, která stála za to.",
 			"Odkládáš telefon s čistým svědomím.",
 		],
 		somethingNice: [
-			"Kamarád něco sdílel a na chvíli jsi cítil spojení.",
+			"Kamarád něco sdílel a na chvíli vás to spojilo.",
 			"Někdo sdílel dobrou zprávu a trochu to pomohlo.",
-			"Připomněl sis, že lidi existují, a to je vlastně fajn.",
+			"Připomínka, že lidi existují. To je vlastně fajn.",
 			"Přišla zpráva od někoho, kdo na tebe myslí.",
 			"Něco ve feedu opravdu stálo za pozornost.",
 			"Skutečné lidské spojení, i když jen na chvíli.",
 		],
 		usefulFind: [
 			"Počkat, tohle je vlastně užitečné.",
-			"Narazil jsi na něco, co by mohlo pomoct.",
+			"Hele, tohle by mohlo pomoct.",
 			"Produktivní scrollování? To je novinka.",
 			"Algoritmus dodal něco, co má smysl.",
 			"Skutečně užitečná věc, to se nevidí každý den.",
@@ -272,24 +308,65 @@ export const cs = {
 	},
 
 	narrative: {
-		good: "Dneska to klaplo. Ne všechno, ale dost.",
-		rough: "Těžký den. Tlačítka nechtěla fungovat. Zítra je taky den.",
-		mixed: "Něco se povedlo. Něco ne. Takovej den.",
+		good: [
+			"Dneska to celkem klaplo, ne všechno, ale dost na to, aby to byl dobrej den.",
+			"Docela dobrej den na to, jak to obvykle bývá, a nějaký momentum tam bylo.",
+			"Víc věcí vyšlo než nevyšlo, a to se rozhodně počítá.",
+			"Tlačítka dneska většinou spolupracovala, což je víc, než se dalo čekat.",
+		],
+		rough: [
+			"Těžký den, tlačítka nechtěla fungovat, ale zítra je taky den.",
+			"Dneska nic moc nevyšlo, což se stává a není to navždy.",
+			"Jeden z těch dnů, kdy všechno bylo do kopce a klikání prostě neklikalo.",
+			"Den, kdy se nic nepovedlo, ale spánek možná pomůže to resetovat.",
+		],
+		mixed: [
+			"Něco se povedlo a něco ne, takovej normální den.",
+			"Půl na půl, což mohlo dopadnout i hůř.",
+			"Ani dobře ani špatně, prostě se stal další den.",
+			"Nějaké výhry, nějaké prohry, celkově průměr.",
+		],
 	},
 
 	allnighter: {
-		wired: "Jsi nabuzený. Mohlo by to být produktivní.",
-		someFuel: "Ještě máš nějakou šťávu. Možná to stojí za to.",
-		runningLow: "Docházíš, ale ještě něco zbývá.",
-		exhausted: "Jsi vyčerpaný. Možná ještě jeden pokus.",
+		wired: [
+			"Energie je a mohlo by to být produktivní.",
+			"Úplně vzhůru a noc je ještě mladá.",
+			"Energie na rozdávání, tak proč ji plýtvat na spánek?",
+		],
+		someFuel: [
+			"Ještě zbývá nějaká šťáva a možná to stojí za to.",
+			"Ještě ne prázdno, dá se něco vymáčknout.",
+			"V nádrži ještě něco je, tak proč ne.",
+		],
+		runningLow: [
+			"Docházíš, ale ještě tam něco zbývá.",
+			"Mizí to, ale ještě ne úplně, takže možná ještě jeden pokus.",
+			"Nádrž je skoro prázdná, ale jen skoro.",
+		],
+		exhausted: [
+			"Energie míň než v tom telefonu, co nikdy nenabíjíš, ale možná ještě jeden pokus.",
+			"Na výparech a možná to není úplně dobrý nápad.",
+			"Skoro nic nezbývá, ale skoro není úplně nic.",
+		],
 	},
 
 	weekNarrative: {
-		good: "Zvládl jsi to. Pes se venčil. Jedl jsi. Něco se povedlo, něco ne. Takovej týden.",
-		rough:
-			"Přežil jsi. Některé dny tak tak. Pes tě má pořád rád. Najedl ses, i když to byl samej rozvoz. Jsi tady.",
-		survived:
-			"Týden pokusů. Něco vyšlo. Většina ne. Měl jsi ten jeden moment, kdy to klaplo. Normální týden, vlastně.",
+		good: [
+			"Týden za námi, pes se venčil, jídlo bylo, něco se povedlo a něco ne, takovej týden.",
+			"Celkem slušnej týden, věci fungovaly častěji než ne a základy byly pokryté.",
+			"Ujde to, většina věcí se stala, což se rozhodně počítá.",
+		],
+		rough: [
+			"Přežít se to dalo, některé dny tak tak, ale pes tě má pořád rád a jídlo bylo, i když samej rozvoz.",
+			"Těžkej týden, tlačítka se bránila ze všech sil, ale je to za námi.",
+			"Drsnej týden, kdy nic nešlo lehce, ale už je to pryč.",
+		],
+		survived: [
+			"Týden pokusů, něco vyšlo, většina ne, ale byl tam ten jeden moment, kdy to klaplo.",
+			"Smíšené výsledky, některé dny byly ok a jiné vůbec, ale tak to prostě chodí.",
+			"Snaha tam byla a někdy to i vyšlo, takže se stal další týden.",
+		],
 	},
 
 	patterns: {
@@ -315,16 +392,35 @@ export const cs = {
 	},
 
 	dog: {
-		walked: "Azor se prošel. Je spokojený.",
-		failedAttempt:
-			"Pokusil ses venčit Azora. Stál jsi chvíli venku. Je zklamaný, ale chápe.",
-		forcedMinimal:
-			"Stál jsi minutku venku s Azorem. Není to procházka, ale je to aspoň něco. Dívá se na tebe.",
+		walked: [
+			"Azor se prošel a je spokojený.",
+			"Procházka proběhla a pes je šťastný.",
+			"Venčení hotovo, Azor má radost.",
+		],
+		failedAttempt: [
+			"Venčení Azora bylo spíš jen stání venku, je zklamaný, ale chápe.",
+			"Procházka se úplně nepovedla, ale Azor ví, že snaha tam byla.",
+			"Venku to bylo krátký a moc to nebyla procházka, ale rozumí tomu.",
+		],
+		forcedMinimal: [
+			"Minutka venku s Azorem, není to procházka, ale aspoň něco.",
+			"Aspoň chvilka čerstvého vzduchu, Azor bere, co může dostat.",
+			"Procházka to nebyla, ale vzduch byl a pes je trpělivý.",
+		],
 		urgency: {
-			normal: "Normální",
-			waiting: "Azor čeká",
-			urgent: "Fakt potřebuje jít",
-			critical: "Kritické - je zoufalý",
+			normal: [
+				"Azor ještě dřímá",
+				"Ocásek už vrtí",
+				"Je připravený, až to půjde",
+				"Ranní protahování",
+			],
+			waiting: ["Azor čeká", "Trpělivě vyčkává", "Ten pohled..."],
+			urgent: [
+				"Fakt potřebuje jít",
+				"Začíná to bejt naléhavý",
+				"Azor potřebuje ven",
+			],
+			critical: ["Už nemůže čekat", "Tohle je nouzovka", "Zoufalý"],
 		},
 	},
 
@@ -332,9 +428,9 @@ export const cs = {
 		// Personality hints - night owl
 		nightOwlThriving: [
 			"Ty ožíváš po setmění. Na tom není nic špatného.",
-			"Všiml sis, že večer ti to jde líp? Jen tak říkám.",
+			"Večer ti to jde líp, ne? Jen tak říkám.",
 			"Noční pták, co? To je v pořádku.",
-			"V noci jsi jiný. Víc sám sebou.",
+			"V noci je to jiné. Víc to jde.",
 		],
 		nightOwlMorning: [
 			"Rána nejsou tvoje, že? To je ok.",
@@ -354,10 +450,10 @@ export const cs = {
 		],
 		// Personality hints - social type
 		hermitSocialCost: [
-			"Vím, že tě tohle stojí energii. Díky, žes přišel.",
+			"Vím, že tě tohle stojí energii. Díky, že to vyšlo.",
 			"Chápu, že ti to něco bere. Vážím si, že to děláš.",
 			"Potom budeš potřebovat čas o samotě. To je v pohodě.",
-			"Díky, že jsi vyrazil. Vím, že to není nic.",
+			"Díky, že to vyšlo. Není to samozřejmost.",
 		],
 		socialBatteryBoost: [
 			"Vypadáš líp, když se vidíme. Měli bychom to dělat častěji.",
@@ -375,11 +471,11 @@ export const cs = {
 		dogAnchor: [
 			"Venčení pomáhá, že? Dostane tě do pohybu.",
 			"Azor tě vytáhne z domu. To je důležité.",
-			"Pes nesoudí. Je prostě rád, že jsi přišel.",
+			"Pes nesoudí. Je prostě rád, že jste spolu.",
 			"Venčení psa... to je tvoje jistota. Spoléhej na to.",
 		],
 		lowEnergy: [
-			"Vypadáš fakt vyčerpaně. Buď na sebe hodný.",
+			"Vypadáš fakt vyčerpaně. Nic velkého dneska, ok?",
 			"Dochází ti šťáva. Jen malé věci.",
 			"Těžký den, co? To je ok. Stává se.",
 			"Ne každý den je dobrý. Tohle je jeden z těch.",
@@ -410,18 +506,108 @@ export const cs = {
 	},
 
 	activities: {
-		low: {
-			name: "Kafe",
-			description: "Rychlé kafe, v klidu",
-		},
-		medium: {
-			name: "Dát si jídlo",
-			description: "Zajít někam na jídlo",
-		},
-		high: {
-			name: "Prozkoumat něco",
-			description: "Mrknout na to nové místo",
-		},
+		low: [
+			{
+				name: "Kafe",
+				descriptions: [
+					"Rychlé kafe, v klidu",
+					"Nic složitýho, jen kafe",
+					"Tam co vždycky",
+				],
+			},
+			{
+				name: "Bubble tea",
+				descriptions: [
+					"Něco sladkýho, nic velkýho",
+					"Cukr pomáhá",
+					"Mám na to chuť tak jako tak",
+				],
+			},
+			{
+				name: "Krátká procházka",
+				descriptions: [
+					"Jen kolem baráku",
+					"Čerstvej vzduch, to je všechno",
+					"Deset minut, max",
+				],
+			},
+			{
+				name: "Prostě být spolu",
+				descriptions: [
+					"Přijď, nemusíme nic dělat",
+					"Prostě... buď tady",
+					"Budu taky jen na mobilu, v pohodě",
+				],
+			},
+		],
+		medium: [
+			{
+				name: "Dát si jídlo",
+				descriptions: [
+					"Zajít někam na jídlo",
+					"Stejně musíš jíst",
+					"Platím, když přijdeš",
+				],
+			},
+			{
+				name: "Pizza někde",
+				descriptions: [
+					"Znám jedno místo",
+					"Nic extra, jen pizza",
+					"Sacharáty řeší problémy",
+				],
+			},
+			{
+				name: "Jít někam",
+				descriptions: [
+					"Chci ti ukázat jedno místo",
+					"Není to daleko, slibuju",
+					"Potřebuju kroky tak jako tak",
+				],
+			},
+			{
+				name: "Poflakovat se",
+				descriptions: [
+					"Bez plánu, jen jít",
+					"Uvidíme, kam dojdeme",
+					"Lepší než sedět",
+				],
+			},
+		],
+		high: [
+			{
+				name: "Prozkoumat něco",
+				descriptions: [
+					"Mrknout na to nové místo",
+					"Může to bejt dobrý, může to bejt divný",
+					"Pořád říkáme, že tam zajdem",
+				],
+			},
+			{
+				name: "Nová oblast",
+				descriptions: [
+					"Pojďme se pořádně ztratit",
+					"Nikdo z nás tam nebyl",
+					"Údajně dobrodružství",
+				],
+			},
+			{
+				name: "To místo co odkládáme",
+				descriptions: [
+					"To, co pořád říkáme že zkusíme",
+					"Teď nebo nikdy",
+					"Je to na seznamu už věčnost",
+				],
+			},
+			{
+				name: "Normální výlet",
+				descriptions: [
+					"Jako lidi co vychází z baráku",
+					"Opravdu jít ven",
+					"Plná expedice",
+				],
+			},
+		],
 	},
 
 	friend: {
@@ -465,18 +651,18 @@ export const cs = {
 		],
 		// Result messages when activity tier matched energy level
 		rescueResultCorrect: [
-			"Dobře jsi udělal. Cítíš se líp.",
-			"Tohle pomohlo. Potřeboval jsi to.",
+			"Správná volba. Je to trochu lepší.",
+			"Tohle pomohlo. Bylo to potřeba.",
 			"Líp. Ne v pořádku, ale líp.",
 			"Je ti trochu lehčeji.",
 			"Správná volba.",
 		],
 		// Result messages when activity tier was too high
 		rescueResultIncorrect: [
-			"Trochu ses přetáhl. Ale viděl jsi kamaráda.",
-			"Vzalo ti to víc, než jsi čekal. Ale stálo to za to.",
-			"Na dnešek trochu moc. Ale ukázal ses.",
-			"Vyčerpávající. Ale zvládl jsi to.",
+			"Bylo to trochu víc, než bylo rozumné. Ale kamarád stál za to.",
+			"Vzalo to víc energie, než se čekalo. Ale stálo to za to.",
+			"Na dnešek možná trochu moc. Ale lepší než zůstat doma.",
+			"Náročné. Ale ne zbytečné.",
 		],
 	},
 
@@ -670,13 +856,13 @@ export const cs = {
 				aware: [
 					"Cvičit hudbu - vzpomínáš na hudbu?",
 					"Cvičit hudbu - nástroj tě postrádá",
-					"Cvičit hudbu - tohle jsi dělával rád",
+					"Cvičit hudbu - kdysi to šlo",
 				],
 				honest: ["Hudební ambice", "Sáhnout na nástroj", "Kreativní aspirace"],
 				resigned: [
 					"Nástroj sbírá prach, ale aspoň ho máš",
 					"Hudba je pro lidi, co mají energii na hudbu",
-					"Jednou ses tomu věnoval, možná zase budeš",
+					"Kdysi to šlo, možná zase půjde",
 				],
 			},
 		},
@@ -714,7 +900,7 @@ export const cs = {
 					"Být mezi lidmi",
 				],
 				resigned: [
-					"Kamarády máš rád, ale gauč máš taky rád",
+					"Kamarádi jsou fajn, ale gauč je taky fajn",
 					"Socializace zní fajn, dokud nepřijde",
 					"Lidi jsou super, ale vstát je těžké",
 				],

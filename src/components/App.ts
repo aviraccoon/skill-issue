@@ -116,7 +116,7 @@ function getScreenAnnouncement(screenInfo: ScreenInfo): string | null {
 	switch (screenInfo.type) {
 		case "nightChoice":
 			// Include the night prompt and push-through description
-			return `${s.a11y.screenNightChoice}. ${s.game.nightPrompt} ${screenInfo.description}`;
+			return `${s.a11y.screenNightChoice}. ${screenInfo.nightPrompt} ${screenInfo.description}`;
 		case "friendRescue":
 			// Include the friend's message and cost
 			return `${s.a11y.screenFriendRescue}. ${screenInfo.message} ${s.game.rescueCost(screenInfo.costLabel)}`;

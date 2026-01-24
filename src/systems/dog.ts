@@ -1,12 +1,13 @@
 import { strings } from "../i18n";
 import type { GameState, TimeBlock } from "../state";
+import { pickVariant } from "../utils/random";
 
 /** Urgency levels for dog walk, escalating through the day. */
 export type DogUrgency = "normal" | "waiting" | "urgent" | "critical";
 
-/** Gets localized urgency display text. */
-export function getUrgencyDisplay(level: DogUrgency): string {
-	return strings().dog.urgency[level];
+/** Gets localized urgency display text, picked deterministically from variants. */
+export function getUrgencyDisplay(level: DogUrgency, seed: number): string {
+	return pickVariant(strings().dog.urgency[level], seed);
 }
 
 /** Base urgency by time block (0-3). */

@@ -1,4 +1,5 @@
 import { describe, expect, test } from "bun:test";
+import { strings } from "../i18n";
 import { createInitialState, type GameState } from "../state";
 import {
 	ALL_NIGHTER_ENERGY_PENALTY,
@@ -99,24 +100,26 @@ describe("canPushThrough", () => {
 });
 
 describe("getExtendedNightDescription", () => {
-	test("returns appropriate description for high energy", () => {
-		const desc = getExtendedNightDescription(1.0);
-		expect(desc).toContain("wired");
+	const s = strings();
+
+	test("returns wired variant for high energy", () => {
+		const desc = getExtendedNightDescription(1.0, 0);
+		expect(s.allnighter.wired).toContain(desc);
 	});
 
-	test("returns appropriate description for medium-high energy", () => {
-		const desc = getExtendedNightDescription(0.75);
-		expect(desc).toContain("fuel");
+	test("returns someFuel variant for medium-high energy", () => {
+		const desc = getExtendedNightDescription(0.75, 0);
+		expect(s.allnighter.someFuel).toContain(desc);
 	});
 
-	test("returns appropriate description for medium energy", () => {
-		const desc = getExtendedNightDescription(0.5);
-		expect(desc).toContain("low");
+	test("returns runningLow variant for medium energy", () => {
+		const desc = getExtendedNightDescription(0.5, 0);
+		expect(s.allnighter.runningLow).toContain(desc);
 	});
 
-	test("returns appropriate description for low energy", () => {
-		const desc = getExtendedNightDescription(0.2);
-		expect(desc).toContain("exhausted");
+	test("returns exhausted variant for low energy", () => {
+		const desc = getExtendedNightDescription(0.2, 0);
+		expect(s.allnighter.exhausted).toContain(desc);
 	});
 });
 

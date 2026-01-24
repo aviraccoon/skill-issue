@@ -1,5 +1,5 @@
 import type { Task } from "../state";
-import { hashString } from "../utils/random";
+import { hashString, pickVariant } from "../utils/random";
 
 export type EvolutionStage = "neutral" | "aware" | "honest" | "resigned";
 
@@ -19,7 +19,6 @@ export function getEvolvedDescription(task: Task, runSeed: number): string {
 		return task.name;
 	}
 
-	const variants = task.evolution[stage];
-	const index = hashString(task.id + stage + runSeed) % variants.length;
-	return variants[index] ?? task.name;
+	const seed = hashString(task.id + stage + runSeed);
+	return pickVariant(task.evolution[stage], seed);
 }

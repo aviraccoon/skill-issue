@@ -1,3 +1,5 @@
+import type { NonEmptyArray } from "./utils/random";
+
 export type TimeBlock = "morning" | "afternoon" | "evening" | "night";
 export type Day =
 	| "monday"
@@ -16,9 +18,9 @@ export type Day =
  * - resigned (6+ failures): dark humor acceptance
  */
 export interface TaskEvolution {
-	aware: string[];
-	honest: string[];
-	resigned: string[];
+	aware: NonEmptyArray<string>;
+	honest: NonEmptyArray<string>;
+	resigned: NonEmptyArray<string>;
 }
 
 import type { TaskCategory, TaskId } from "./data/tasks";

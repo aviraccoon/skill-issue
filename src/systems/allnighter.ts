@@ -1,6 +1,6 @@
 import { strings } from "../i18n";
 import { type GameState, isWeekend } from "../state";
-import { seededVariation } from "../utils/random";
+import { pickVariant, seededVariation } from "../utils/random";
 
 const SALT_ALL_NIGHTER_PENALTY = 4001;
 
@@ -63,18 +63,23 @@ export function canPushThrough(state: GameState): boolean {
 
 /**
  * Returns descriptive text for the extended night slots based on energy.
+ * Uses rollCount for variety in the message.
  */
-export function getExtendedNightDescription(energy: number): string {
+export function getExtendedNightDescription(
+	energy: number,
+	rollCount: number,
+): string {
 	const s = strings();
 	const slots = calculateExtendedNightSlots(energy);
+
 	if (slots >= 4) {
-		return s.allnighter.wired;
+		return pickVariant(s.allnighter.wired, rollCount);
 	}
 	if (slots >= 3) {
-		return s.allnighter.someFuel;
+		return pickVariant(s.allnighter.someFuel, rollCount);
 	}
 	if (slots >= 2) {
-		return s.allnighter.runningLow;
+		return pickVariant(s.allnighter.runningLow, rollCount);
 	}
-	return s.allnighter.exhausted;
+	return pickVariant(s.allnighter.exhausted, rollCount);
 }

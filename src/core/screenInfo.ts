@@ -23,7 +23,7 @@ import {
 } from "../systems/dog";
 import { getEvolvedDescription } from "../systems/evolution";
 import { getRescueCost } from "../systems/friend";
-import { seededShuffle } from "../utils/random";
+import { pickVariant, seededShuffle } from "../utils/random";
 import type { Decision } from "./controller";
 import { getAvailableDecisions } from "./controller";
 
@@ -71,6 +71,8 @@ export interface NightChoiceInfo {
 	day: Day;
 	/** Translated day name for display. */
 	dayDisplay: string;
+	/** The "it's late" prompt text. */
+	nightPrompt: string;
 	description: string;
 	canPushThrough: boolean;
 	decisions: Decision[];
@@ -83,6 +85,8 @@ export interface FriendRescueInfo {
 	cost: number;
 	costLabel: string;
 	activities: Activity[];
+	/** The decline button label. */
+	declineLabel: string;
 	decisions: Decision[];
 }
 
@@ -205,9 +209,7 @@ function buildTaskDisplay(
 	let urgency: TaskDisplay["urgency"];
 	if (task.id === "walk-dog" && !task.succeededToday) {
 		const level = getDogUrgency(state);
-		if (level !== "normal") {
-			urgency = { level, text: getUrgencyDisplay(level) };
-		}
+		urgency = { level, text: getUrgencyDisplay(level, state.runSeed) };
 	}
 
 	// Build variant info if available and unlocked
@@ -236,11 +238,17 @@ function getNightChoiceInfo(state: GameState): NightChoiceInfo {
 	const decisions = getAvailableDecisions(state);
 	const canPush = decisions.some((d) => d.type === "pushThrough");
 
+	const nightPrompt = pickVariant(
+		s.game.nightPrompt,
+		state.runSeed + state.dayIndex,
+	);
+
 	return {
 		type: "nightChoice",
 		day: state.day,
 		dayDisplay: s.days[state.day],
-		description: getExtendedNightDescription(state.energy),
+		nightPrompt,
+		description: getExtendedNightDescription(state.energy, state.rollCount),
 		canPushThrough: canPush,
 		decisions,
 	};
@@ -252,12 +260,18 @@ function getFriendRescueInfo(state: GameState): FriendRescueInfo {
 	const cost = getRescueCost(state);
 	const weekend = isWeekend(state);
 
+	const declineLabel = pickVariant(
+		s.game.rescueDecline,
+		state.runSeed + state.dayIndex,
+	);
+
 	return {
 		type: "friendRescue",
 		message: getRandomRescueMessage(state),
 		cost,
 		costLabel: weekend ? s.friend.costPoints(cost) : s.friend.costSlot(cost),
-		activities: getLocalizedActivities(),
+		activities: getLocalizedActivities(state.runSeed, state.dayIndex),
+		declineLabel,
 		decisions,
 	};
 }
@@ -271,7 +285,7 @@ function getDaySummaryInfo(state: GameState): DaySummaryInfo {
 	const tone = determineTone(attempted.length, succeeded.length);
 	const narrative = pulledAllNighter
 		? generateAllNighterNarrative(state)
-		: generateNarrative(tone);
+		: generateNarrative(tone, state.runSeed + state.dayIndex);
 
 	const title = pulledAllNighter
 		? getAllNighterTitle(state)
@@ -297,7 +311,7 @@ function getWeekCompleteInfo(state: GameState): WeekCompleteInfo {
 	const totalFailures = state.tasks.reduce((sum, t) => sum + t.failureCount, 0);
 
 	const tone = determineWeekTone(totalSuccesses, totalFailures);
-	const narrative = generateWeekNarrative(tone);
+	const narrative = generateWeekNarrative(tone, state.runSeed);
 
 	// Compute patterns
 	const { runStats, personality } = state;
@@ -380,7 +394,6 @@ function determineWeekTone(successes: number, failures: number): WeekTone {
 	return "rough";
 }
 
-function generateWeekNarrative(tone: WeekTone): string {
-	const s = strings();
-	return s.weekNarrative[tone];
+function generateWeekNarrative(tone: WeekTone, runSeed: number): string {
+	return pickVariant(strings().weekNarrative[tone], runSeed);
 }
