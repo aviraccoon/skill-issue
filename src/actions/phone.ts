@@ -20,6 +20,12 @@ export function checkPhone(store: Store<GameState>): string {
 	const energyCost = getScrollTrapEnergyCost(state.runSeed);
 	store.update("energy", (e) => Math.max(e - energyCost, 0));
 
+	// Track phone check in run stats
+	store.update("runStats", (stats) => ({
+		...stats,
+		phoneChecks: stats.phoneChecks + 1,
+	}));
+
 	// Get flavor text using rollCount for deterministic variety, then increment
 	const flavorText = getScrollTrapFlavor(state.rollCount);
 	store.update("rollCount", (c) => c + 1);

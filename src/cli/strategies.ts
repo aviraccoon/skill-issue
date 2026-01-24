@@ -1,5 +1,10 @@
+import type { Decision } from "../core/controller";
+import {
+	type DecisionContext,
+	humanLikeStrategy,
+	type Strategy,
+} from "../core/strategies";
 import { CATEGORY_PRIORITIES } from "../data/tasks";
-import type { Decision, DecisionContext, Strategy } from "./engine";
 
 /**
  * Random strategy - picks randomly from available options.
@@ -307,6 +312,7 @@ export const STRATEGIES: Record<string, Strategy> = {
 	worstCase: worstCaseStrategy,
 	bestCase: bestCaseStrategy,
 	realistic: realisticStrategy,
+	humanLike: humanLikeStrategy,
 };
 
 /**

@@ -56,6 +56,15 @@ export function acceptFriendRescue(
 	// Reset consecutive failures
 	store.set("consecutiveFailures", 0);
 
+	// Track friend rescue acceptance in run stats
+	store.update("runStats", (stats) => ({
+		...stats,
+		friendRescues: {
+			...stats.friendRescues,
+			accepted: stats.friendRescues.accepted + 1,
+		},
+	}));
+
 	// Unlock variant category if the hint unlocks one
 	if (hintResult.unlocksVariant) {
 		const currentUnlocked = store.getState().variantsUnlocked;

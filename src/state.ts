@@ -24,6 +24,41 @@ export interface TaskEvolution {
 import type { TaskCategory, TaskId } from "./data/tasks";
 import type { Personality } from "./systems/personality";
 
+/**
+ * Statistics tracked during a run for "Your Patterns" reveal.
+ */
+export interface RunStats {
+	/** Total task attempts and successes. */
+	tasks: { attempted: number; succeeded: number };
+	/** Attempts/successes per time block. */
+	byTimeBlock: Record<TimeBlock, { attempted: number; succeeded: number }>;
+	/** Scroll trap (Check Phone) count. */
+	phoneChecks: number;
+	/** All-nighter count. */
+	allNighters: number;
+	/** Friend rescues triggered and accepted. */
+	friendRescues: { triggered: number; accepted: number };
+	/** Task categories where variants were used. */
+	variantsUsed: TaskCategory[];
+}
+
+/** Creates fresh run stats with all counters at zero. */
+export function createInitialRunStats(): RunStats {
+	return {
+		tasks: { attempted: 0, succeeded: 0 },
+		byTimeBlock: {
+			morning: { attempted: 0, succeeded: 0 },
+			afternoon: { attempted: 0, succeeded: 0 },
+			evening: { attempted: 0, succeeded: 0 },
+			night: { attempted: 0, succeeded: 0 },
+		},
+		phoneChecks: 0,
+		allNighters: 0,
+		friendRescues: { triggered: 0, accepted: 0 },
+		variantsUsed: [],
+	};
+}
+
 export interface Task {
 	id: TaskId;
 	name: string;
@@ -86,6 +121,9 @@ export interface GameState {
 
 	// Task variants (unlocked through friend hints)
 	variantsUnlocked: TaskCategory[]; // categories where minimal variants are visible
+
+	// Run statistics (for "Your Patterns" reveal)
+	runStats: RunStats;
 }
 
 /** Returns true if the current day is Saturday or Sunday. */
@@ -123,6 +161,7 @@ export function createInitialState(): GameState {
 		friendRescueUsedToday: false,
 		rollCount: 0,
 		variantsUnlocked: [],
+		runStats: createInitialRunStats(),
 	};
 }
 

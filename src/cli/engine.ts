@@ -7,8 +7,14 @@ import {
 	hasLost,
 	isComplete,
 } from "../core/controller";
+import type { DecisionContext, Strategy } from "../core/strategies";
 import { initialTasks } from "../data/tasks";
-import { DAYS, type Day, type GameState } from "../state";
+import {
+	createInitialRunStats,
+	DAYS,
+	type Day,
+	type GameState,
+} from "../state";
 import { createStore } from "../store";
 import {
 	getPersonalityFromSeed,
@@ -20,29 +26,8 @@ import type { RunStats } from "./stats";
 
 // Re-export for consumers that import from engine.ts
 export type { ActionResult, Decision };
+export type { DecisionContext, Strategy };
 export { executeDecision, getAvailableDecisions, hasLost, isComplete };
-
-/**
- * Context for decision making.
- */
-export interface DecisionContext {
-	/** Current game state. */
-	state: GameState;
-	/** Available decisions at this point. */
-	availableDecisions: Decision[];
-	/** Which screen is active. */
-	screen: "game" | "nightChoice" | "friendRescue";
-	/** Get next deterministic random value in [0, 1). */
-	roll: () => number;
-}
-
-/**
- * Strategy interface for automated decision making.
- */
-export interface Strategy {
-	/** Returns the decision to make given current context. */
-	decide(context: DecisionContext): Decision;
-}
 
 /**
  * Summary of a single day in the simulation.
@@ -109,6 +94,7 @@ export function createStateFromSeed(seed: number): GameState {
 		friendRescueUsedToday: false,
 		rollCount: 0,
 		variantsUnlocked: [],
+		runStats: createInitialRunStats(),
 	};
 }
 

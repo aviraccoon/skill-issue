@@ -257,6 +257,28 @@ export const cs = {
 			"Týden pokusů. Něco vyšlo. Většina ne. Měl jsi ten jeden moment, kdy to klaplo. Normální týden, vlastně.",
 	},
 
+	patterns: {
+		title: "Tvoje vzorce",
+		personality: "Osobnost",
+		seed: "Seed",
+		successRate: "Úspěšnost",
+		bestTime: "Nejlepší čas",
+		worstTime: "Nejhorší čas",
+		phoneChecks: "Kontroly telefonu",
+		allNighters: "Probdělé noci",
+		friendRescues: "Záchrany od kamaráda",
+		variantsUsed: "Vyzkoušené varianty",
+		none: "Žádné",
+		personalities: {
+			nightOwl: "Noční sova",
+			earlyBird: "Ranní ptáče",
+			neutralTime: "Flexibilní",
+			socialBattery: "Sociální baterie",
+			hermit: "Poustevník",
+			neutralSocial: "Vyrovnaný",
+		},
+	},
+
 	dog: {
 		walked: "Azor se prošel. Je spokojený.",
 		failedAttempt:

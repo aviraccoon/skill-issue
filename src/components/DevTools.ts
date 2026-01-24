@@ -1,5 +1,8 @@
-import type { GameState, Task } from "../state";
-import { createInitialState, isWeekend, TIME_BLOCKS } from "../state";
+import { continueToNextDay } from "../actions/time";
+import { executeDecision, getAvailableDecisions } from "../core/controller";
+import { type DecisionContext, humanLikeStrategy } from "../core/strategies";
+import type { GameState } from "../state";
+import { createInitialState } from "../state";
 import type { Store } from "../store";
 import {
 	calculateExtendedNightSlots,
@@ -16,7 +19,7 @@ import {
 	getMomentumSuccessBonus,
 	getScrollTrapMomentumRange,
 } from "../systems/momentum";
-import { clearSave } from "../systems/persistence";
+import { clearAllData, resetCurrentRun } from "../systems/persistence";
 import {
 	calculateSuccessProbability,
 	getEnergyModifier,
@@ -72,7 +75,8 @@ export function initDevTools(store: Store<GameState>) {
 				<button class="${styles.btn}" data-action="momentum-up">M+</button>
 				<button class="${styles.btn}" data-action="momentum-down">M-</button>
 				<button class="${styles.btn}" data-action="sim-day">Sim Day</button>
-				<button class="${styles.btn} ${styles.btnDanger}" data-action="clear-save">Clear Save</button>
+				<button class="${styles.btn} ${styles.btnDanger}" data-action="clear-run">Clear Run</button>
+				<button class="${styles.btn} ${styles.btnDanger}" data-action="clear-all">Clear All</button>
 			</div>
 		</div>
 	`;
@@ -160,9 +164,15 @@ export function initDevTools(store: Store<GameState>) {
 			case "sim-day":
 				simulateDay(store);
 				break;
-			case "clear-save":
-				clearSave();
+			case "clear-run":
+				resetCurrentRun();
 				window.location.reload();
+				break;
+			case "clear-all":
+				if (confirm("Clear all data including patterns history?")) {
+					clearAllData();
+					window.location.reload();
+				}
 				break;
 		}
 	});
@@ -336,125 +346,55 @@ function renderDevState(state: GameState) {
 }
 
 /**
- * Simulates playing through the current day with random actions.
- * Uses real probability system, then triggers day summary.
+ * Simulates playing through the current day using the shared controller.
+ * Uses executeDecision for all actions, so stats are tracked correctly.
+ * If called from day summary, continues to next day first.
  */
 export function simulateDay(store: Store<GameState>) {
-	const state = store.getState();
-	const weekend = isWeekend(state);
-
-	if (weekend) {
-		simulateWeekend(store);
-	} else {
-		simulateWeekday(store);
+	// If on day summary, continue to next day first
+	if (store.getState().screen === "daySummary") {
+		continueToNextDay(store);
 	}
 
-	// Show day summary
-	store.set("screen", "daySummary");
-}
-
-/** Simulates a weekday: 4 time blocks x 3 slots. */
-function simulateWeekday(store: Store<GameState>) {
-	for (const block of TIME_BLOCKS) {
-		store.set("timeBlock", block);
-
-		for (let slot = 0; slot < 3; slot++) {
-			simulateAction(store, block);
-		}
-
-		// Momentum decay per block
-		store.update("momentum", (m) => Math.max(m - 0.02, 0));
+	// If we hit week complete, nothing to simulate
+	if (store.getState().screen === "weekComplete") {
+		return;
 	}
-}
 
-/** Simulates a weekend: 8 action points. */
-function simulateWeekend(store: Store<GameState>) {
-	let points = store.getState().weekendPointsRemaining;
+	const startDayIndex = store.getState().dayIndex;
 
-	while (points > 0) {
+	// Loop until we reach daySummary or a new day
+	while (true) {
 		const state = store.getState();
-		const availableTasks = state.tasks.filter(
-			(t) => !t.succeededToday && (t.weekendCost ?? 1) <= points,
-		);
 
-		// Random action: 20% phone, 60% task, 20% skip
-		const roll = Math.random();
-		if (roll < 0.2) {
-			// Check phone - momentum killer
-			store.update("momentum", (m) => Math.max(m - 0.15, 0));
-		} else if (roll < 0.8 && availableTasks.length > 0) {
-			// Attempt random task
-			const task =
-				availableTasks[Math.floor(Math.random() * availableTasks.length)];
-			if (task) {
-				simulateTaskAttempt(store, task);
-				points -= task.weekendCost ?? 1;
-			}
-		}
-		// else: do nothing (skip)
+		// Stop when we reach day summary or moved to next day
+		if (state.screen === "daySummary") break;
+		if (state.dayIndex !== startDayIndex) break;
 
-		points--;
-		store.set("weekendPointsRemaining", Math.max(points, 0));
+		// Get available decisions
+		const decisions = getAvailableDecisions(state);
+		if (decisions.length === 0) break;
+
+		// Build context for strategy
+		const context: DecisionContext = {
+			state,
+			availableDecisions: decisions,
+			screen:
+				state.screen === "friendRescue"
+					? "friendRescue"
+					: state.screen === "nightChoice"
+						? "nightChoice"
+						: "game",
+			roll: Math.random,
+		};
+
+		// Use shared human-like strategy
+		const decision = humanLikeStrategy.decide(context);
+		executeDecision(store, decision);
 	}
-}
 
-/** Simulates a single action slot. */
-function simulateAction(store: Store<GameState>, block: string) {
-	const state = store.getState();
-	const availableTasks = state.tasks.filter(
-		(t) =>
-			!t.succeededToday &&
-			t.availableBlocks.includes(block as GameState["timeBlock"]),
-	);
-
-	// Random action: 20% phone, 60% task, 20% skip
-	const roll = Math.random();
-	if (roll < 0.2) {
-		// Check phone
-		store.update("momentum", (m) => Math.max(m - 0.15, 0));
-	} else if (roll < 0.8 && availableTasks.length > 0) {
-		// Attempt random task
-		const task =
-			availableTasks[Math.floor(Math.random() * availableTasks.length)];
-		if (task) {
-			simulateTaskAttempt(store, task);
-		}
-	}
-	// else: do nothing
-}
-
-/** Simulates attempting a task with real probability. */
-function simulateTaskAttempt(store: Store<GameState>, task: Task) {
-	const state = store.getState();
-	const probability = calculateSuccessProbability(task, state);
-	const succeeded = Math.random() < probability;
-
-	// Update task state
-	store.update("tasks", (tasks) =>
-		tasks.map((t) => {
-			if (t.id !== task.id) return t;
-			return {
-				...t,
-				attemptedToday: true,
-				succeededToday: succeeded,
-				failureCount: succeeded ? t.failureCount : t.failureCount + 1,
-			};
-		}),
-	);
-
-	// Update momentum
-	if (succeeded) {
-		store.update("momentum", (m) => Math.min(m + 0.05, 1));
-
-		// Saturday work penalty
-		if (
-			isWeekend(state) &&
-			task.category === "work" &&
-			state.day === "saturday"
-		) {
-			store.update("energy", (e) => Math.max(e - 0.1, 0));
-		}
-	} else {
-		store.update("momentum", (m) => Math.max(m - 0.03, 0));
+	// Ensure we're on day summary (in case loop exited early)
+	if (store.getState().screen !== "daySummary") {
+		store.set("screen", "daySummary");
 	}
 }

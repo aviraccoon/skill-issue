@@ -98,6 +98,34 @@ export function attemptTask(
 		}),
 	);
 
+	// Track run stats
+	const timeBlock = state.timeBlock;
+	store.update("runStats", (stats) => {
+		const blockStats = stats.byTimeBlock[timeBlock];
+		const newVariantsUsed =
+			useVariant &&
+			task.minimalVariant &&
+			!stats.variantsUsed.includes(task.category)
+				? [...stats.variantsUsed, task.category]
+				: stats.variantsUsed;
+
+		return {
+			...stats,
+			tasks: {
+				attempted: stats.tasks.attempted + 1,
+				succeeded: stats.tasks.succeeded + (succeeded ? 1 : 0),
+			},
+			byTimeBlock: {
+				...stats.byTimeBlock,
+				[timeBlock]: {
+					attempted: blockStats.attempted + 1,
+					succeeded: blockStats.succeeded + (succeeded ? 1 : 0),
+				},
+			},
+			variantsUsed: newVariantsUsed,
+		};
+	});
+
 	// Consume resource based on day type
 	if (weekend) {
 		const cost = task.weekendCost ?? 1;
@@ -144,6 +172,14 @@ export function attemptTask(
 		if (shouldTriggerFriendRescue(store)) {
 			store.set("screen", "friendRescue");
 			friendRescueTriggered = true;
+			// Track friend rescue trigger
+			store.update("runStats", (stats) => ({
+				...stats,
+				friendRescues: {
+					...stats.friendRescues,
+					triggered: stats.friendRescues.triggered + 1,
+				},
+			}));
 		}
 	}
 

@@ -97,12 +97,26 @@ export interface DaySummaryInfo {
 	pulledAllNighter: boolean;
 }
 
+/** Patterns data for week complete screen. */
+export interface PatternsDisplay {
+	personality: string;
+	seed: number;
+	successRate: number;
+	bestTimeBlock: TimeBlock | null;
+	worstTimeBlock: TimeBlock | null;
+	phoneChecks: number;
+	allNighters: number;
+	friendRescues: { triggered: number; accepted: number };
+	variantsUsed: string[];
+}
+
 /** Week complete screen info. */
 export interface WeekCompleteInfo {
 	type: "weekComplete";
 	totalSuccesses: number;
 	totalFailures: number;
 	narrative: string;
+	patterns: PatternsDisplay;
 }
 
 /** Union of all screen info types. */
@@ -275,6 +289,7 @@ function getDaySummaryInfo(state: GameState): DaySummaryInfo {
 }
 
 function getWeekCompleteInfo(state: GameState): WeekCompleteInfo {
+	const s = strings();
 	const totalSuccesses = state.tasks.reduce(
 		(sum, t) => sum + (t.succeededToday ? 1 : 0),
 		0,
@@ -284,11 +299,73 @@ function getWeekCompleteInfo(state: GameState): WeekCompleteInfo {
 	const tone = determineWeekTone(totalSuccesses, totalFailures);
 	const narrative = generateWeekNarrative(tone);
 
+	// Compute patterns
+	const { runStats, personality } = state;
+
+	// Format personality string
+	const timePersonality =
+		personality.time === "nightOwl"
+			? s.patterns.personalities.nightOwl
+			: personality.time === "earlyBird"
+				? s.patterns.personalities.earlyBird
+				: s.patterns.personalities.neutralTime;
+	const socialPersonality =
+		personality.social === "socialBattery"
+			? s.patterns.personalities.socialBattery
+			: personality.social === "hermit"
+				? s.patterns.personalities.hermit
+				: s.patterns.personalities.neutralSocial;
+	const personalityString = `${timePersonality} + ${socialPersonality}`;
+
+	// Calculate success rate
+	const successRate =
+		runStats.tasks.attempted > 0
+			? runStats.tasks.succeeded / runStats.tasks.attempted
+			: 0;
+
+	// Find best and worst time blocks
+	let bestTimeBlock: TimeBlock | null = null;
+	let worstTimeBlock: TimeBlock | null = null;
+	let bestRate = -1;
+	let worstRate = 2;
+
+	for (const block of TIME_BLOCKS) {
+		const blockStats = runStats.byTimeBlock[block];
+		if (blockStats.attempted > 0) {
+			const rate = blockStats.succeeded / blockStats.attempted;
+			if (rate > bestRate) {
+				bestRate = rate;
+				bestTimeBlock = block;
+			}
+			if (rate < worstRate) {
+				worstRate = rate;
+				worstTimeBlock = block;
+			}
+		}
+	}
+
+	// Get localized variant category names
+	const variantsUsed = runStats.variantsUsed.map((category) => {
+		// Categories are like "hygiene", "food", "chores" - capitalize for display
+		return category.charAt(0).toUpperCase() + category.slice(1);
+	});
+
 	return {
 		type: "weekComplete",
 		totalSuccesses,
 		totalFailures,
 		narrative,
+		patterns: {
+			personality: personalityString,
+			seed: state.runSeed,
+			successRate,
+			bestTimeBlock,
+			worstTimeBlock,
+			phoneChecks: runStats.phoneChecks,
+			allNighters: runStats.allNighters,
+			friendRescues: runStats.friendRescues,
+			variantsUsed,
+		},
 	};
 }
 

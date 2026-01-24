@@ -31,5 +31,11 @@ export function pushThrough(store: Store<GameState>): PushThroughResult {
 	store.set("slotsRemaining", slots);
 	store.set("screen", "game");
 
+	// Track all-nighter in run stats
+	store.update("runStats", (stats) => ({
+		...stats,
+		allNighters: stats.allNighters + 1,
+	}));
+
 	return { slots };
 }

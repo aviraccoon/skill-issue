@@ -1,8 +1,15 @@
 import { createInitialTasks, type TaskId } from "../data/tasks";
-import { createInitialState, type GameState, type Task } from "../state";
+import {
+	createInitialRunStats,
+	createInitialState,
+	type GameState,
+	type RunStats,
+	type Task,
+} from "../state";
+import type { Personality } from "./personality";
 
 const STORAGE_KEY = "skill-issue-save";
-const SAVE_VERSION = 2; // Bumped: now saves only task runtime state, not full objects
+const SAVE_VERSION = 3; // Bumped: restructured to separate currentRun and patterns
 
 /** Runtime state for a task - the only thing we persist. */
 interface SavedTask {
@@ -33,12 +40,37 @@ interface SavedState {
 	friendRescueUsedToday: boolean;
 	rollCount: number;
 	variantsUnlocked: GameState["variantsUnlocked"];
+	runStats: RunStats;
 }
 
+/** A completed run stored in patterns history. */
+export interface CompletedRun {
+	seed: number;
+	personality: Personality;
+	stats: RunStats;
+	completedAt: number;
+}
+
+/** Persistent patterns data that survives across runs. */
+export interface PatternsData {
+	unlocked: boolean;
+	history: CompletedRun[];
+}
+
+/** Top-level save structure with separate run and patterns sections. */
 interface SaveData {
 	version: number;
-	state: SavedState;
+	currentRun: SavedState | null;
+	patterns: PatternsData;
 	savedAt: number;
+}
+
+/** Creates empty patterns data. */
+function createEmptyPatterns(): PatternsData {
+	return {
+		unlocked: false,
+		history: [],
+	};
 }
 
 /** Extracts only runtime state from a task for saving. */
@@ -73,19 +105,50 @@ function toSavedState(state: GameState): SavedState {
 		friendRescueUsedToday: state.friendRescueUsedToday,
 		rollCount: state.rollCount,
 		variantsUnlocked: state.variantsUnlocked,
+		runStats: state.runStats,
 	};
 }
 
-/**
- * Saves game state to localStorage.
- * Only persists task runtime state (id, failureCount, etc.), not translatable content.
- */
-export function saveGame(state: GameState): void {
-	const data: SaveData = {
-		version: SAVE_VERSION,
-		state: toSavedState(state),
-		savedAt: Date.now(),
-	};
+/** Loads existing save data or creates empty structure. */
+function loadSaveData(): SaveData {
+	try {
+		const raw = localStorage.getItem(STORAGE_KEY);
+		if (!raw) {
+			return {
+				version: SAVE_VERSION,
+				currentRun: null,
+				patterns: createEmptyPatterns(),
+				savedAt: Date.now(),
+			};
+		}
+
+		const data = JSON.parse(raw) as SaveData;
+
+		// Version check - migrate or reset as needed
+		if (data.version !== SAVE_VERSION) {
+			// For now, preserve nothing from old versions
+			// Future: could migrate patterns data
+			return {
+				version: SAVE_VERSION,
+				currentRun: null,
+				patterns: createEmptyPatterns(),
+				savedAt: Date.now(),
+			};
+		}
+
+		return data;
+	} catch {
+		return {
+			version: SAVE_VERSION,
+			currentRun: null,
+			patterns: createEmptyPatterns(),
+			savedAt: Date.now(),
+		};
+	}
+}
+
+/** Saves data to localStorage. */
+function writeSaveData(data: SaveData): void {
 	try {
 		localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
 	} catch {
@@ -94,26 +157,31 @@ export function saveGame(state: GameState): void {
 }
 
 /**
+ * Saves game state to localStorage.
+ * Preserves patterns data while updating currentRun.
+ */
+export function saveGame(state: GameState): void {
+	const existing = loadSaveData();
+	const data: SaveData = {
+		version: SAVE_VERSION,
+		currentRun: toSavedState(state),
+		patterns: existing.patterns,
+		savedAt: Date.now(),
+	};
+	writeSaveData(data);
+}
+
+/**
  * Loads game state from localStorage.
  * Returns initial state if no save exists or save is incompatible.
  * Reconstructs full task objects from i18n + saved runtime state.
  */
 export function loadGame(): GameState {
-	try {
-		const raw = localStorage.getItem(STORAGE_KEY);
-		if (!raw) return createInitialState();
-
-		const data = JSON.parse(raw) as SaveData;
-
-		// Version check - reject incompatible saves
-		if (data.version !== SAVE_VERSION) {
-			return createInitialState();
-		}
-
-		return fromSavedState(data.state);
-	} catch {
+	const data = loadSaveData();
+	if (!data.currentRun) {
 		return createInitialState();
 	}
+	return fromSavedState(data.currentRun);
 }
 
 /**
@@ -157,12 +225,65 @@ function fromSavedState(saved: SavedState): GameState {
 		friendRescueUsedToday: saved.friendRescueUsedToday,
 		rollCount: saved.rollCount,
 		variantsUnlocked: saved.variantsUnlocked,
+		runStats: saved.runStats ?? createInitialRunStats(),
 	};
 }
 
 /**
- * Clears the saved game and returns to initial state.
+ * Resets the current run while preserving patterns data.
+ * Use this for "New Game" and "Start New Week".
  */
-export function clearSave(): void {
+export function resetCurrentRun(): void {
+	const existing = loadSaveData();
+	const data: SaveData = {
+		version: SAVE_VERSION,
+		currentRun: null,
+		patterns: existing.patterns,
+		savedAt: Date.now(),
+	};
+	writeSaveData(data);
+}
+
+/**
+ * Saves a completed run to patterns history.
+ * Call this when a week is completed.
+ */
+export function saveCompletedRun(state: GameState): void {
+	const existing = loadSaveData();
+	const completedRun: CompletedRun = {
+		seed: state.runSeed,
+		personality: state.personality,
+		stats: state.runStats,
+		completedAt: Date.now(),
+	};
+
+	const data: SaveData = {
+		version: SAVE_VERSION,
+		currentRun: existing.currentRun,
+		patterns: {
+			unlocked: true,
+			history: [...existing.patterns.history, completedRun],
+		},
+		savedAt: Date.now(),
+	};
+	writeSaveData(data);
+}
+
+/**
+ * Gets patterns data (for displaying historical stats).
+ */
+export function getPatterns(): PatternsData {
+	return loadSaveData().patterns;
+}
+
+/**
+ * Clears all save data including patterns.
+ * Use sparingly - this is a full reset.
+ */
+export function clearAllData(): void {
 	localStorage.removeItem(STORAGE_KEY);
 }
+
+// Legacy export for compatibility during transition
+// TODO: Remove after updating all call sites
+export const clearSave = resetCurrentRun;

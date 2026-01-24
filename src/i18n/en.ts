@@ -232,6 +232,28 @@ export const en = {
 			"A week of attempts. Some worked. Most didn't. You had that one good moment where things clicked. Normal week, really.",
 	},
 
+	patterns: {
+		title: "Your Patterns",
+		personality: "Personality",
+		seed: "Seed",
+		successRate: "Success Rate",
+		bestTime: "Best Time",
+		worstTime: "Worst Time",
+		phoneChecks: "Phone Checks",
+		allNighters: "All-Nighters",
+		friendRescues: "Friend Rescues",
+		variantsUsed: "Variants Tried",
+		none: "None",
+		personalities: {
+			nightOwl: "Night Owl",
+			earlyBird: "Early Bird",
+			neutralTime: "Flexible",
+			socialBattery: "Social Battery",
+			hermit: "Hermit",
+			neutralSocial: "Balanced",
+		},
+	},
+
 	dog: {
 		walked: "Azor got his walk. He's happy.",
 		failedAttempt:
