@@ -68,6 +68,8 @@ export const cs = {
 
 		// Actions
 		checkPhone: "Zkontrolovat telefon",
+		newGame: "Nová hra",
+		newGameConfirm: "Začít novou hru? Aktuální postup bude ztracen.",
 		skipTo: (block: TimeBlock) => `Přeskočit na ${timeBlocksLower[block]}`,
 		endDay: "Ukončit den",
 		continue: "Pokračovat",
@@ -216,6 +218,23 @@ export const cs = {
 		"Nic jsi nenašel. Jak se dalo čekat.",
 		"Čas plyne. Nic se nemění.",
 	],
+
+	tooltips: {
+		checkPhone: [
+			"Víš, že bys neměl",
+			"Nepomůže to",
+			"Zase?",
+			"Algoritmus čeká",
+			"Asi nic nového",
+		],
+		skip: [
+			"Čas, který už nedostaneš zpět",
+			"Odvážná strategie",
+			"Nic se nestane",
+			"Přeskočit je taky volba",
+			"Možná později znamená nikdy",
+		],
+	},
 
 	narrative: {
 		good: "Dneska to klaplo. Ne všechno, ale dost.",

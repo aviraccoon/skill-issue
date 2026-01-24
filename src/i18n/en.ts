@@ -44,6 +44,8 @@ export const en = {
 
 		// Actions
 		checkPhone: "Check Phone",
+		newGame: "New Game",
+		newGameConfirm: "Start a new game? Current progress will be lost.",
 		skipTo: (block: TimeBlock) => `Skip to ${timeBlocks[block]}`,
 		endDay: "End day",
 		continue: "Continue",
@@ -191,6 +193,23 @@ export const en = {
 		"You found nothing. As expected.",
 		"Time passes. Nothing changes.",
 	],
+
+	tooltips: {
+		checkPhone: [
+			"You know you shouldn't",
+			"It won't help",
+			"Again?",
+			"The algorithm awaits",
+			"Nothing new, probably",
+		],
+		skip: [
+			"Time you'll never get back",
+			"Bold strategy",
+			"Nothing will happen",
+			"Skipping is also a choice",
+			"Maybe later means never",
+		],
+	},
 
 	narrative: {
 		good: "Things clicked today. Not everything, but enough.",

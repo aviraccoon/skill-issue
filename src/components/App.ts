@@ -9,7 +9,9 @@ import {
 import { strings } from "../i18n";
 import { type GameState, isWeekend } from "../state";
 import type { Store } from "../store";
+import { clearSave } from "../systems/persistence";
 import { announce } from "../utils/announce";
+import { initTooltips } from "../utils/tooltip";
 import {
 	createAccessibilityDialog,
 	openAccessibilityDialog,
@@ -215,6 +217,11 @@ export function renderApp(store: Store<GameState>) {
 		if (result.phoneBuzzText) {
 			showNotification(result.phoneBuzzText);
 		}
+
+		// Show scroll trap flavor text if present
+		if (result.scrollTrapText) {
+			showNotification(result.scrollTrapText);
+		}
 	};
 
 	// Announce screen transitions (except game screen which handles its own)
@@ -275,6 +282,16 @@ function renderGameScreen(
 			.querySelector(`.${appStyles.a11yBtn}`)
 			?.addEventListener("click", () => {
 				openAccessibilityDialog();
+			});
+
+		// Wire up new game button
+		app
+			.querySelector(`.${appStyles.newGameBtn}`)
+			?.addEventListener("click", () => {
+				if (confirm(strings().game.newGameConfirm)) {
+					clearSave();
+					location.reload();
+				}
 			});
 
 		// Wire up Enter on panel to trigger Attempt (quick action from panel focus)
@@ -366,6 +383,7 @@ function renderGameScreen(
 	renderTaskList(screenInfo, store);
 	renderTaskPanel(screenInfo, onDecision);
 	renderFooter(screenInfo, onDecision);
+	initTooltips();
 
 	// Focus and announce on initial render
 	if (isFirstRender) {
@@ -438,20 +456,30 @@ function createAppStructure(screenInfo: GameScreenInfo): string {
 		<footer class="${appStyles.footer}">
 			<button class="${appStyles.phoneBtn}">${s.game.checkPhone}</button>
 			<button class="${appStyles.skipBtn}"></button>
-			<button class="${appStyles.a11yBtn}" aria-label="${s.a11y.openA11yDialog}">
+			<button class="${appStyles.a11yBtn}" data-tooltip="${s.a11y.openA11yDialog}" aria-label="${s.a11y.openA11yDialog}">
 				<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
 					<circle cx="12" cy="4" r="2"/>
 					<path d="M12 6v14M8 10h8M7 20h10"/>
 				</svg>
 			</button>
+			<button class="${appStyles.newGameBtn}">${s.game.newGame}</button>
 		</footer>
 	`;
 }
+
+/** Timeout ID for hiding notification - tracked to reset on new notifications. */
+let notificationHideTimeout: ReturnType<typeof setTimeout> | null = null;
 
 /** Shows a brief notification message (e.g., phone buzz text). */
 function showNotification(text: string) {
 	const notification = document.querySelector(`.${appStyles.notification}`);
 	if (!notification) return;
+
+	// Cancel any pending hide timeout
+	if (notificationHideTimeout) {
+		clearTimeout(notificationHideTimeout);
+		notificationHideTimeout = null;
+	}
 
 	// Clear first to ensure re-announcement, then set after paint
 	notification.textContent = "";
@@ -463,9 +491,10 @@ function showNotification(text: string) {
 	});
 
 	// Clear after a few seconds
-	setTimeout(() => {
+	notificationHideTimeout = setTimeout(() => {
 		notification.classList.remove(appStyles.notificationVisible);
-	}, 3200); // Adjusted for the 200ms delay
+		notificationHideTimeout = null;
+	}, 3200);
 }
 
 /** Updates the header with current day and time block. */
@@ -728,6 +757,14 @@ function renderFooter(
 		newPhoneBtn.addEventListener("click", () => {
 			onDecision({ type: "checkPhone" });
 		});
+		// Random tooltip on hover (set initial so initTooltips picks it up)
+		const phoneTips = s.tooltips.checkPhone;
+		newPhoneBtn.dataset.tooltip =
+			phoneTips[Math.floor(Math.random() * phoneTips.length)];
+		newPhoneBtn.addEventListener("mouseenter", () => {
+			newPhoneBtn.dataset.tooltip =
+				phoneTips[Math.floor(Math.random() * phoneTips.length)];
+		});
 	}
 
 	if (!skipBtn) return;
@@ -750,6 +787,14 @@ function renderFooter(
 			newBtn.disabled = false;
 			newBtn.addEventListener("click", () => {
 				onDecision({ type: "skip" });
+			});
+			// Random tooltip on hover (set initial so initTooltips picks it up)
+			const skipTips = s.tooltips.skip;
+			newBtn.dataset.tooltip =
+				skipTips[Math.floor(Math.random() * skipTips.length)];
+			newBtn.addEventListener("mouseenter", () => {
+				newBtn.dataset.tooltip =
+					skipTips[Math.floor(Math.random() * skipTips.length)];
 			});
 		} else {
 			newBtn.textContent = s.game.endDay;

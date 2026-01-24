@@ -62,6 +62,10 @@
 }
 
 .footer {
+	display: flex;
+	flex-wrap: wrap;
+	align-items: center;
+	gap: 0.5rem;
 	padding: 1rem 0;
 	border-top: 1px solid var(--border);
 	margin-top: 1rem;
@@ -88,7 +92,6 @@
 	border-radius: 0.25rem;
 	cursor: pointer;
 	color: var(--muted);
-	margin-right: 0.5rem;
 }
 
 .phoneBtn:hover {
@@ -137,6 +140,21 @@
 }
 
 .a11yBtn:hover {
+	border-color: var(--fg);
+	color: var(--fg);
+}
+
+/* New game button */
+.newGameBtn {
+	padding: 0.5rem 1rem;
+	background: transparent;
+	border: 1px solid var(--border);
+	border-radius: 0.25rem;
+	cursor: pointer;
+	color: var(--muted);
+}
+
+.newGameBtn:hover {
 	border-color: var(--fg);
 	color: var(--fg);
 }

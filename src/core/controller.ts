@@ -40,6 +40,8 @@ export interface ActionResult {
 	friendRescueTriggered?: boolean;
 	/** Phone buzz flavor text (pre-rescue hint), if applicable. */
 	phoneBuzzText?: string;
+	/** Scroll trap flavor text, if applicable. */
+	scrollTrapText?: string;
 	/** Pattern hint from friend rescue, if applicable. */
 	rescueHint?: string;
 	/** Whether rescue tier was correct for energy level. */
@@ -137,6 +139,7 @@ export function executeDecision(
 	let probability: number | undefined;
 	let friendRescueTriggered: boolean | undefined;
 	let phoneBuzzText: string | undefined;
+	let scrollTrapText: string | undefined;
 	let rescueHint: string | undefined;
 	let rescueCorrect: boolean | undefined;
 
@@ -162,7 +165,7 @@ export function executeDecision(
 			break;
 
 		case "checkPhone":
-			checkPhone(store);
+			scrollTrapText = checkPhone(store);
 			break;
 
 		case "endDay":
@@ -202,6 +205,7 @@ export function executeDecision(
 		probability,
 		friendRescueTriggered,
 		phoneBuzzText,
+		scrollTrapText,
 		rescueHint,
 		rescueCorrect,
 		energyBefore,

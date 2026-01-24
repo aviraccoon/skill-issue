@@ -294,8 +294,8 @@ Simple homegrown i18n without external dependencies.
 src/i18n/
   types.ts    # Strings type derived from English
   en.ts       # English strings (source of truth)
+  {locale}.ts # Additional translations
   index.ts    # strings() accessor with fallback
-  # cs.ts     # Czech (future)
 ```
 
 ### Usage
@@ -334,6 +334,54 @@ This allows incremental translation without breaking the game.
 - **Content/narrative** (`src/data/`): Task definitions, day summaries, scroll trap text, friend dialogue
 
 Content files may eventually need i18n, but are separate because they have their own structure (arrays of variants, weighted selection, etc.).
+
+## Accessibility
+
+Screen reader and keyboard support without compromising the core mechanic.
+
+### Design Principle
+
+The unreliable click mechanic must work the same for all users:
+- **Sighted**: Click task, see button depress/return, no success indicator = failure
+- **Screen reader**: Activate button, hear slot count change, no success announcement = failure
+
+Both learn that absence of success feedback means failure. We announce successes, not failures.
+
+### Implementation
+
+**Live region** (`#announcer` in index.html):
+- `aria-live="polite"` announces successes and screen transitions
+- Uses `requestAnimationFrame` + delay for reliable screen reader pickup
+- Clear-then-set pattern ensures re-announcements work
+
+**Focus management**:
+- Screen transitions focus primary action (buttons, not headings)
+- Task selection can move focus to panel via Enter/Arrow Right
+- `tabindex="-1"` on elements that need programmatic focus
+
+**Keyboard navigation**:
+- Arrow keys navigate task list
+- Enter/Arrow Right selects task and focuses panel action
+- Escape/Arrow Left deselects and returns to task list
+- All screens fully keyboard-accessible
+
+**ARIA attributes**:
+- `aria-pressed` on task buttons for selection state
+- `aria-describedby` on panel buttons pointing to hidden context
+- `aria-controls` linking tasks to panel
+
+**CSS**:
+- `.sr-only` utility for screen-reader-only content
+- `:focus-visible` for keyboard focus indicators
+- `prefers-reduced-motion` disables all animations
+
+### Strings
+
+Accessibility text lives in `src/i18n/` under `a11y` namespace. Screen announcements are template functions that include full context.
+
+### Testing
+
+Manual testing checklist: keyboard-only navigation, VoiceOver, 200% browser zoom, Lighthouse accessibility audit.
 
 ## Future: Single-File Executable
 

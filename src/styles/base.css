@@ -116,3 +116,19 @@ body {
 		transition-duration: 0.01ms !important;
 	}
 }
+
+/* Styled tooltips */
+.tooltip {
+	position: absolute;
+	max-width: 200px;
+	padding: 0.375rem 0.625rem;
+	background: var(--surface);
+	color: var(--fg);
+	border: 1px solid var(--border);
+	border-radius: 0.25rem;
+	font-size: 0.8125rem;
+	line-height: 1.4;
+	z-index: 1000;
+	box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+	pointer-events: auto;
+}

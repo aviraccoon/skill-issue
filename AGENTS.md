@@ -29,6 +29,10 @@
 - Write JSDoc comments for functions (types are in TypeScript, JSDoc is for descriptions)
 - Don't run `bun run dev` for manual testing - you can't interact with the browser. User will test manually.
 
+## Private Directory
+
+The `private/` directory contains internal docs not for public reference. Never reference `private/` paths in committed files (README, ARCHITECTURE, etc.).
+
 ## Project Context
 
 - This is a game, not a productivity app
