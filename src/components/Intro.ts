@@ -15,7 +15,7 @@ export function renderIntro(container: HTMLElement, store: Store<GameState>) {
 		<div class="${styles.intro}">
 			<h1 class="${styles.title}">${s.intro.title}</h1>
 			<p class="${styles.description}">${s.intro.description}</p>
-			<button class="${styles.startBtn}">${s.intro.start}</button>
+			<button class="btn btn-primary ${styles.startBtn}">${s.intro.start}</button>
 		</div>
 	`;
 

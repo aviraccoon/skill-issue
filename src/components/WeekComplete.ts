@@ -117,7 +117,7 @@ export function renderWeekComplete(
 			<h1 class="${styles.title}">${s.game.weekComplete}</h1>
 			<div class="${styles.story}">${narrativeParagraphs}</div>
 			${patternsHtml}
-			<button class="${styles.restartBtn}">${s.game.startNewWeek}</button>
+			<button class="btn btn-primary ${styles.restartBtn}">${s.game.startNewWeek}</button>
 		</div>
 	`;
 

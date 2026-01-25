@@ -33,7 +33,7 @@ export function renderFriendRescue(
 				${screenInfo.activities
 					.map(
 						(a) => `
-					<button class="${styles.activity}" data-activity="${a.id}">
+					<button class="btn btn-primary ${styles.activity}" data-activity="${a.id}">
 						<div class="${styles.activityName}">${a.name}</div>
 						<div class="${styles.activityDesc}">${a.description}</div>
 					</button>
@@ -41,7 +41,7 @@ export function renderFriendRescue(
 					)
 					.join("")}
 			</div>
-			<button class="${styles.declineBtn}">${screenInfo.declineLabel}</button>
+			<button class="btn btn-secondary ${styles.declineBtn}">${screenInfo.declineLabel}</button>
 		</div>
 	`;
 
@@ -89,7 +89,7 @@ function showRescueResult(store: Store<GameState>, result: AcceptRescueResult) {
 			<h1 class="sr-only">${s.a11y.screenFriendRescue}</h1>
 			<p class="${styles.message}">${message}</p>
 			<p class="${styles.hint}">"${result.hint}"</p>
-			<button class="${styles.declineBtn}">${s.game.continue}</button>
+			<button class="btn btn-secondary ${styles.declineBtn}">${s.game.continue}</button>
 		</div>
 	`;
 

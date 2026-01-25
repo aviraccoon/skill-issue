@@ -1,23 +1,5 @@
 /* Theme definitions */
 
-/* Dark theme */
-[data-theme="dark"] {
-	--bg: #0f172a;
-	--fg: #e2e8f0;
-	--muted: #64748b;
-	--border: #334155;
-	--accent: #3b82f6;
-	--success: #22c55e;
-	--slot-empty: #1e293b;
-	--slot-used: #475569;
-	--surface: #1e293b;
-	--morning-bg: #1e293b;
-	--afternoon-bg: #0f172a;
-	--evening-bg: #1e293b;
-	--night-bg: #020617;
-	--night-fg: #f1f5f9;
-}
-
 /* Hacker theme - because 2am productivity */
 [data-theme="hacker"] {
 	--bg: #0a0a0a;
@@ -25,7 +7,9 @@
 	--muted: #00aa00;
 	--border: #003300;
 	--accent: #00ff00;
+	--accent-fg: #0a0a0a;
 	--success: #00ff00;
+	--error: #ff0000;
 	--slot-empty: #001100;
 	--slot-used: #00ff00;
 	--surface: #0a0a0a;
@@ -37,6 +21,7 @@
 
 	/* Component overrides */
 	--attempt-btn-background: #003300;
+	--attempt-btn-color: #00ff00;
 	--attempt-btn-border: 1px solid #00ff00;
 
 	font-family: "Courier New", monospace;
@@ -93,5 +78,182 @@
 	--title-background: linear-gradient(90deg, #ff71ce, #01cdfe, #05ffa1);
 	--title-text-fill: transparent;
 
+	/* Dark text on bright accent for active buttons */
+	--btn-active-color: #1a1a2e;
+
 	font-family: "Arial Black", sans-serif;
+}
+
+/* Notion theme - the second brain that doesn't work */
+[data-theme="notion"] {
+	--bg: #ffffff;
+	--fg: #37352f;
+	--muted: #9b9a97;
+	--border: #e9e9e7;
+	--accent: #2eaadc;
+	--success: #6acc93;
+	--slot-empty: #f7f6f3;
+	--slot-used: #37352f;
+	--surface: #ffffff;
+	--morning-bg: #ffffff;
+	--afternoon-bg: #fbfbfa;
+	--evening-bg: #f7f6f3;
+	--night-bg: #191919;
+	--night-fg: #e6e6e4;
+
+	font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+}
+
+/* Todoist theme - where tasks go to die */
+[data-theme="todoist"] {
+	--bg: #fafafa;
+	--fg: #202020;
+	--muted: #808080;
+	--border: #f0f0f0;
+	--accent: #db4035;
+	--accent-fg: #ffffff;
+	--success: #058527;
+	--error: #b8860b;
+	--slot-empty: #f0f0f0;
+	--slot-used: #db4035;
+	--surface: #ffffff;
+	--morning-bg: #ffffff;
+	--afternoon-bg: #fafafa;
+	--evening-bg: #f5f5f5;
+	--night-bg: #1f1f1f;
+	--night-fg: #fafafa;
+
+	/* Component overrides */
+	--attempt-btn-background: #db4035;
+
+	font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+}
+
+/* Things theme - beautiful and useless */
+[data-theme="things"] {
+	--bg: #ffffff;
+	--fg: #1c1c1e;
+	--muted: #8e8e93;
+	--border: #e5e5ea;
+	--accent: #007aff;
+	--success: #34c759;
+	--slot-empty: #f2f2f7;
+	--slot-used: #007aff;
+	--surface: #f2f2f7;
+	--morning-bg: #ffffff;
+	--afternoon-bg: #f9f9f9;
+	--evening-bg: #f2f2f7;
+	--night-bg: #1c1c1e;
+	--night-fg: #ffffff;
+
+	/* Component overrides */
+	--task-radius: 0.75rem;
+	--panel-radius: 0.75rem;
+	--attempt-btn-background: #007aff;
+	--attempt-btn-radius: 0.75rem;
+
+	font-family: -apple-system, BlinkMacSystemFont, "SF Pro", sans-serif;
+}
+
+/* Linear theme - move fast, accomplish nothing */
+[data-theme="linear"] {
+	--bg: #0f0f10;
+	--fg: #f5f5f5;
+	--muted: #6b6f76;
+	--border: #26282d;
+	--accent: #5e6ad2;
+	--success: #3fb950;
+	--slot-empty: #1a1a1c;
+	--slot-used: #5e6ad2;
+	--surface: #1a1a1c;
+	--morning-bg: #141415;
+	--afternoon-bg: #0f0f10;
+	--evening-bg: #141415;
+	--night-bg: #0a0a0b;
+	--night-fg: #f5f5f5;
+
+	/* Component overrides */
+	--task-radius: 0.5rem;
+	--panel-radius: 0.5rem;
+	--attempt-btn-background: #5e6ad2;
+
+	font-family: "Inter", -apple-system, BlinkMacSystemFont, sans-serif;
+}
+
+/* Paper theme - analog dreams, digital reality */
+[data-theme="paper"] {
+	--bg: #fffef5;
+	--fg: #2c3e50;
+	--muted: #7f8c8d;
+	--border: #d4d4c8;
+	--accent: #c0392b;
+	--accent-fg: #ffffff;
+	--success: #27ae60;
+	--error: #8e44ad;
+	--slot-empty: #f5f4eb;
+	--slot-used: #2c3e50;
+	--surface: #fffef5;
+	--morning-bg: #fffef5;
+	--afternoon-bg: #fdfcf3;
+	--evening-bg: #f5f4eb;
+	--night-bg: #2c3e50;
+	--night-fg: #fffef5;
+
+	/* Component overrides */
+	--task-radius: 0;
+	--panel-radius: 0;
+	--attempt-btn-background: #c0392b;
+	--attempt-btn-radius: 0;
+
+	font-family: "Comic Sans MS", "Marker Felt", cursive;
+}
+
+/* 90s Office theme - retro dysfunction */
+[data-theme="win95"] {
+	--bg: #c0c0c0;
+	--fg: #000000;
+	--muted: #4a4a4a;
+	--border: #808080;
+	--accent: #000080;
+	--accent-fg: #ffffff;
+	--success: #008000;
+	--error: #800000;
+	--slot-empty: #ffffff;
+	--slot-used: #000080;
+	--surface: #c0c0c0;
+	--morning-bg: #c0c0c0;
+	--afternoon-bg: #c0c0c0;
+	--evening-bg: #a0a0a0;
+	--night-bg: #008080;
+	--night-fg: #ffffff;
+
+	/* Component overrides - chunky 90s look */
+	--task-radius: 0;
+	--panel-radius: 0;
+
+	/* All buttons get the 3D beveled look */
+	--btn-radius: 0;
+	--btn-background: #c0c0c0;
+	--btn-color: #000000;
+	--btn-border: 2px outset #dfdfdf;
+	--btn-hover-background: #d4d4d4;
+	--btn-hover-border: 2px outset #efefef;
+	--btn-active-background: #a0a0a0;
+	--btn-active-color: #000000;
+	--btn-active-border: 2px inset #808080;
+
+	/* Primary button - default button has black outer border */
+	--attempt-btn-background: #c0c0c0;
+	--attempt-btn-color: #000000;
+	--attempt-btn-radius: 0;
+	--attempt-btn-border: 2px outset #dfdfdf;
+	--attempt-btn-shadow: 0 0 0 1px #000000;
+	--attempt-btn-hover-background: #d4d4d4;
+	--attempt-btn-hover-border: 2px outset #efefef;
+	--attempt-btn-hover-opacity: 1;
+	--attempt-btn-active-background: #a0a0a0;
+	--attempt-btn-active-border: 2px inset #808080;
+	--attempt-btn-active-transform: none;
+
+	font-family: "MS Sans Serif", "Segoe UI", Tahoma, sans-serif;
 }

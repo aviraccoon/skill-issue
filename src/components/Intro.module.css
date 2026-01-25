@@ -28,19 +28,5 @@
 
 .startBtn {
 	padding: 0.875rem 2.5rem;
-	background: var(--attempt-btn-background);
-	color: var(--attempt-btn-color);
-	border: var(--attempt-btn-border);
-	border-radius: var(--attempt-btn-radius);
-	cursor: pointer;
 	font-size: 1.125rem;
-	transition: transform 0.1s ease;
-}
-
-.startBtn:hover {
-	opacity: 0.9;
-}
-
-.startBtn:active {
-	transform: scale(0.98);
 }

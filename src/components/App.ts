@@ -445,9 +445,9 @@ function createAppStructure(screenInfo: GameScreenInfo): string {
 		</main>
 
 		<footer class="${appStyles.footer}">
-			<button class="${appStyles.phoneBtn}">${s.game.checkPhone}</button>
-			<button class="${appStyles.skipBtn}"></button>
-			<button class="${appStyles.menuBtn}">${s.game.menu}</button>
+			<button class="btn btn-secondary ${appStyles.phoneBtn}">${s.game.checkPhone}</button>
+			<button class="btn btn-secondary ${appStyles.skipBtn}"></button>
+			<button class="btn btn-secondary ${appStyles.menuBtn}">${s.game.menu}</button>
 		</footer>
 	`;
 }
@@ -639,7 +639,7 @@ function renderTaskPanel(
 			: screenInfo.nextTimeBlock
 				? s.game.continueTo(screenInfo.nextTimeBlock)
 				: s.game.endDay;
-		continueButtonHtml = `<button class="${panelStyles.continueBtn}">${buttonText}</button>`;
+		continueButtonHtml = `<button class="btn btn-secondary ${panelStyles.continueBtn}">${buttonText}</button>`;
 	}
 
 	if (!selectedTask) {
@@ -680,10 +680,10 @@ function renderTaskPanel(
 		</p>
 		${selectedTask.urgency ? `<p class="${panelStyles.urgency}" data-urgency="${selectedTask.urgency.level}">${selectedTask.urgency.text}</p>` : ""}
 		${costDisplay}
-		<button class="${panelStyles.attemptBtn}" aria-describedby="panel-desc" ${selectedTask.canAttempt ? "" : "disabled"}>
+		<button class="btn btn-primary ${panelStyles.attemptBtn}" aria-describedby="panel-desc" ${selectedTask.canAttempt ? "" : "disabled"}>
 			${selectedTask.succeededToday ? s.game.done : s.game.attempt}
 		</button>
-		${selectedTask.variant && selectedTask.canAttempt && !selectedTask.succeededToday ? `<button class="${panelStyles.variantBtn}" aria-describedby="panel-desc">${selectedTask.variant.name}</button>` : ""}
+		${selectedTask.variant && selectedTask.canAttempt && !selectedTask.succeededToday ? `<button class="btn ${panelStyles.variantBtn}" aria-describedby="panel-desc">${selectedTask.variant.name}</button>` : ""}
 		${continueButtonHtml}
 	`;
 

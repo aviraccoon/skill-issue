@@ -5,7 +5,6 @@ declare const styles: {
 	readonly continueBtn: string;
 	readonly menu: string;
 	readonly newGameBtn: string;
-	readonly secondaryBtn: string;
 	readonly seedBtn: string;
 	readonly seedInput: string;
 	readonly seedLabel: string;

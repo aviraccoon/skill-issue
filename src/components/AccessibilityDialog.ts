@@ -6,15 +6,31 @@ import styles from "./AccessibilityDialog.module.css";
  * Uses native <dialog> element for proper modal behavior.
  */
 export function createAccessibilityDialog(): HTMLDialogElement {
-	const s = strings();
 	const dialog = document.createElement("dialog");
 	dialog.id = "a11y-dialog";
 	dialog.className = styles.dialog;
 
+	// Close on backdrop click
+	dialog.addEventListener("click", (e) => {
+		if (e.target === dialog) {
+			dialog.close();
+		}
+	});
+
+	return dialog;
+}
+
+/**
+ * Renders the accessibility dialog content.
+ * Called each time the dialog opens to ensure correct language.
+ */
+function renderAccessibilityContent(dialog: HTMLDialogElement) {
+	const s = strings();
+
 	dialog.innerHTML = `
 		<div class="${styles.header}">
 			<h2 class="${styles.title}">${s.a11yStatement.title}</h2>
-			<button class="${styles.closeBtn}" aria-label="${s.a11yStatement.close}">&times;</button>
+			<button class="btn btn-ghost ${styles.closeBtn}" aria-label="${s.a11yStatement.close}">&times;</button>
 		</div>
 		<div class="${styles.content}">
 			<div class="${styles.section}">
@@ -69,21 +85,16 @@ export function createAccessibilityDialog(): HTMLDialogElement {
 	dialog.querySelector(`.${styles.closeBtn}`)?.addEventListener("click", () => {
 		dialog.close();
 	});
-
-	// Close on backdrop click
-	dialog.addEventListener("click", (e) => {
-		if (e.target === dialog) {
-			dialog.close();
-		}
-	});
-
-	return dialog;
 }
 
 /**
  * Opens the accessibility dialog.
+ * Re-renders content each time to reflect current language.
  */
 export function openAccessibilityDialog() {
 	const dialog = document.getElementById("a11y-dialog") as HTMLDialogElement;
-	dialog?.showModal();
+	if (dialog) {
+		renderAccessibilityContent(dialog);
+		dialog.showModal();
+	}
 }

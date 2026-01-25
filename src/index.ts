@@ -2,7 +2,7 @@ import "./styles/base.css";
 import "./styles/themes.css";
 import { renderApp } from "./components/App";
 import { initDevTools, simulateDay } from "./components/DevTools";
-import { initThemeSwitcher } from "./components/ThemeSwitcher";
+import { initTheme } from "./components/ThemeSwitcher";
 import { createInitialState, type GameState } from "./state";
 import { createStore } from "./store";
 import { clearSave, saveGame } from "./systems/persistence";
@@ -14,8 +14,8 @@ const initialState = createInitialState();
 initialState.screen = "splash";
 const store = createStore<GameState>(initialState);
 
-// Initialize theme switcher
-initThemeSwitcher();
+// Initialize theme from localStorage
+initTheme();
 
 // Initialize dev tools if enabled
 initDevToolsIfEnabled();

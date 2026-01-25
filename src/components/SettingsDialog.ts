@@ -1,6 +1,15 @@
 import { getLocale, setLocale, strings } from "../i18n";
+import { initTooltips } from "../utils/tooltip";
 import { openAccessibilityDialog } from "./AccessibilityDialog";
 import styles from "./SettingsDialog.module.css";
+import {
+	createThemeButton,
+	getTheme,
+	getThemeActiveClass,
+	getThemeButtonsContainerClass,
+	setTheme,
+	THEMES,
+} from "./ThemeSwitcher";
 
 /** Callback to re-render app after locale change. */
 let onLocaleChange: (() => void) | null = null;
@@ -36,31 +45,57 @@ export function createSettingsDialog(
 function renderSettingsContent(dialog: HTMLDialogElement) {
 	const s = strings();
 	const currentLocale = getLocale();
+	const currentTheme = getTheme();
 
 	dialog.innerHTML = `
 		<div class="${styles.header}">
 			<h2 class="${styles.title}">${s.settings.title}</h2>
-			<button class="${styles.closeBtn}" aria-label="${s.settings.close}">&times;</button>
+			<button class="btn btn-ghost ${styles.closeBtn}" aria-label="${s.settings.close}">&times;</button>
 		</div>
 		<div class="${styles.content}">
+			<div class="${styles.row}">
+				<span class="${styles.label}">${s.settings.theme}</span>
+				<div class="${getThemeButtonsContainerClass()}" role="radiogroup" aria-label="${s.settings.theme}"></div>
+			</div>
 			<div class="${styles.row}">
 				<span class="${styles.label}">${s.settings.language}</span>
 				<div class="${styles.langButtons}">
 					<button
-						class="${styles.langBtn} ${currentLocale === "en" ? styles.langBtnActive : ""}"
+						class="btn btn-secondary ${styles.langBtn} ${currentLocale === "en" ? styles.langBtnActive : ""}"
 						data-lang="en"
 					>English</button>
 					<button
-						class="${styles.langBtn} ${currentLocale === "cs" ? styles.langBtnActive : ""}"
+						class="btn btn-secondary ${styles.langBtn} ${currentLocale === "cs" ? styles.langBtnActive : ""}"
 						data-lang="cs"
 					>Čeština</button>
 				</div>
 			</div>
 			<div class="${styles.row}">
-				<button class="${styles.a11yBtn}">${s.settings.accessibility}</button>
+				<button class="btn btn-secondary ${styles.a11yBtn}">${s.settings.accessibility}</button>
 			</div>
 		</div>
 	`;
+
+	// Add theme buttons
+	const themeContainer = dialog.querySelector(
+		`.${getThemeButtonsContainerClass()}`,
+	);
+	if (themeContainer) {
+		for (const theme of THEMES) {
+			const btn = createThemeButton(theme, theme === currentTheme);
+			btn.addEventListener("click", () => {
+				setTheme(theme);
+				// Update active states
+				themeContainer.querySelectorAll("button").forEach((b) => {
+					const isActive = (b as HTMLElement).dataset.theme === theme;
+					b.classList.toggle(getThemeActiveClass(), isActive);
+					b.setAttribute("aria-checked", String(isActive));
+				});
+			});
+			themeContainer.appendChild(btn);
+		}
+		initTooltips(themeContainer);
+	}
 
 	// Close button handler
 	dialog.querySelector(`.${styles.closeBtn}`)?.addEventListener("click", () => {

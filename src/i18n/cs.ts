@@ -191,6 +191,7 @@ export const cs = {
 	settings: {
 		title: "Nastavení",
 		close: "Zavřít",
+		theme: "Vzhled",
 		language: "Jazyk",
 		accessibility: "Přístupnost",
 	},

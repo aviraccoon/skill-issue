@@ -25,10 +25,12 @@ function getInitialLocale(): Locale {
 		// localStorage unavailable
 	}
 
-	// Fall back to browser language
-	const browserLang = navigator.language.split("-")[0];
-	if (browserLang && browserLang in locales) {
-		return browserLang as Locale;
+	// Fall back to browser language (if available - not in test environment)
+	if (typeof navigator !== "undefined" && navigator.language) {
+		const browserLang = navigator.language.split("-")[0];
+		if (browserLang && browserLang in locales) {
+			return browserLang as Locale;
+		}
 	}
 
 	return "en";

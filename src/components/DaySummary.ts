@@ -23,7 +23,7 @@ export function renderDaySummary(
 			</p>
 			<p class="${styles.narrative}">${screenInfo.narrative}</p>
 			${screenInfo.dogNote ? `<p class="${styles.dogNote}">${screenInfo.dogNote}</p>` : ""}
-			<button class="${styles.continueBtn}">${s.game.continue}</button>
+			<button class="btn btn-primary ${styles.continueBtn}">${s.game.continue}</button>
 		</div>
 	`;
 

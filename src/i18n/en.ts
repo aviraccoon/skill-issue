@@ -154,6 +154,7 @@ export const en = {
 	settings: {
 		title: "Settings",
 		close: "Close",
+		theme: "Theme",
 		language: "Language",
 		accessibility: "Accessibility",
 	},

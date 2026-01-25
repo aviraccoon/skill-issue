@@ -45,7 +45,7 @@ export function renderMainMenu(
 			screenInfo.mainRunSummary.timeBlock,
 		);
 		continueHtml = `
-			<button class="${styles.continueBtn}">
+			<button class="btn btn-primary ${styles.continueBtn}">
 				<span class="${styles.btnLabel}">${s.menu.continue}</span>
 				<span class="${styles.btnSubtext}">${subtext}</span>
 			</button>
@@ -58,7 +58,7 @@ export function renderMainMenu(
 		seededNoticeHtml = `
 			<p class="${styles.seededNotice}">
 				${s.menu.seededRunNotice(screenInfo.seededRunSummary.day, screenInfo.seededRunSummary.seed)}
-				<button class="${styles.secondaryBtn} ${styles.seededContinueBtn}">${s.menu.continue}</button>
+				<button class="btn btn-secondary ${styles.seededContinueBtn}">${s.menu.continue}</button>
 			</p>
 		`;
 	}
@@ -69,7 +69,7 @@ export function renderMainMenu(
 
 			<div class="${styles.actions}">
 				${continueHtml}
-				<button class="${styles.secondaryBtn} ${styles.newGameBtn}">${s.menu.newGame}</button>
+				<button class="btn btn-secondary ${styles.newGameBtn}">${s.menu.newGame}</button>
 			</div>
 
 			<div class="${styles.seedSection}">
@@ -83,13 +83,13 @@ export function renderMainMenu(
 						inputmode="numeric"
 						pattern="[0-9]*"
 					>
-					<button class="${styles.secondaryBtn} ${styles.seedBtn}">${s.menu.startSeeded}</button>
+					<button class="btn btn-secondary ${styles.seedBtn}">${s.menu.startSeeded}</button>
 				</div>
 			</div>
 
 			${seededNoticeHtml}
 
-			<button class="${styles.secondaryBtn} ${styles.settingsBtn}">${s.menu.settings}</button>
+			<button class="btn btn-secondary ${styles.settingsBtn}">${s.menu.settings}</button>
 		</div>
 	`;
 

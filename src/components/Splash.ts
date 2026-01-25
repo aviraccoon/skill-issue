@@ -19,7 +19,7 @@ export function renderSplash(
 		<div class="${styles.splash}">
 			<h1 class="${styles.title}">${s.splash.title}</h1>
 			<p class="${styles.text}">${screenInfo.splashText}</p>
-			<button class="${styles.startBtn}">${screenInfo.startButton}</button>
+			<button class="btn btn-primary ${styles.startBtn}">${screenInfo.startButton}</button>
 		</div>
 	`;
 

@@ -20,8 +20,8 @@ export function renderNightChoice(
 			<p class="${styles.prompt}">${screenInfo.nightPrompt}</p>
 			<p class="${styles.info}">${screenInfo.description}</p>
 			<div class="${styles.buttons}">
-				<button class="${styles.sleepBtn}">${s.game.sleep}</button>
-				${screenInfo.canPushThrough ? `<button class="${styles.pushThroughBtn}">${s.game.pushThrough}</button>` : ""}
+				<button class="btn btn-secondary ${styles.sleepBtn}">${s.game.sleep}</button>
+				${screenInfo.canPushThrough ? `<button class="btn btn-primary ${styles.pushThroughBtn}">${s.game.pushThrough}</button>` : ""}
 			</div>
 		</div>
 	`;
