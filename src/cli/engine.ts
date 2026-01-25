@@ -96,6 +96,7 @@ export function createStateFromSeed(seed: number): GameState {
 		rollCount: 0,
 		variantsUnlocked: [],
 		runStats: createInitialRunStats(),
+		gameMode: "main",
 	};
 }
 

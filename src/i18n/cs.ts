@@ -82,8 +82,7 @@ export const cs = {
 
 		// Actions
 		checkPhone: "Zkontrolovat telefon",
-		newGame: "Nová hra",
-		newGameConfirm: "Začít novou hru? Aktuální postup bude ztracen.",
+		menu: "Menu",
 		skipTo: (block: TimeBlock) => `Přeskočit na ${timeBlocksLower[block]}`,
 		endDay: "Ukončit den",
 		continue: "Pokračovat",
@@ -143,6 +142,57 @@ export const cs = {
 		title: "Skill Issue",
 		description: "Zvládni týden. Klikej na úkoly. Hodně štěstí.",
 		start: "Začít",
+	},
+
+	splash: {
+		title: "SKILL ISSUE",
+		texts: [
+			"Klikni, nebo ne, jak chceš",
+			"Časem se k tomu člověk dostane",
+			"Tlačítko nejspíš funguje",
+			"V klidu, žádný spěch",
+			"Dneska by to mohlo jít",
+			"Jedno kliknutí, to je všechno",
+			"Tenhle start se plánoval už včera",
+			"Začít je to nejtěžší",
+			"Úkoly nikam neutečou, bohužel",
+			"Připraveno k použití",
+			"Jedno kliknutí se dá zvládnout",
+			"Týden se sám nezvládne",
+			"Hodně štěstí, bude potřeba",
+			"Úkol 1: Kliknout na tohle tlačítko",
+			"Tohle se počítá jako produktivita",
+			"Prokrastinace už začala",
+		],
+		startButtons: [
+			"Spustit",
+			"Start",
+			"No tak jo",
+			"Jdeme na to",
+			"Tak tedy",
+			"Ať to máme za sebou",
+			"Tak začít, asi",
+			"Uvidíme",
+		],
+	},
+
+	menu: {
+		continue: "Pokračovat",
+		continueSubtext: (day: string, time: string) => `${day}, ${time}`,
+		newGame: "Nová hra",
+		seedLabel: "Seed",
+		seedPlaceholder: "Volitelný seed",
+		startSeeded: "Spustit se seedem",
+		seededRunNotice: (day: string, seed: number) =>
+			`Rozehraná hra se seedem ${seed}: ${day}`,
+		settings: "Nastavení",
+	},
+
+	settings: {
+		title: "Nastavení",
+		close: "Zavřít",
+		language: "Jazyk",
+		accessibility: "Přístupnost",
 	},
 
 	a11y: {

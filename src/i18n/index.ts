@@ -9,7 +9,32 @@ const locales: Record<Locale, Strings> = {
 	cs,
 };
 
-let currentLocale: Locale = "en";
+const LOCALE_STORAGE_KEY = "skill-issue-locale";
+
+/**
+ * Determines the initial locale from localStorage or browser settings.
+ */
+function getInitialLocale(): Locale {
+	// Check localStorage first
+	try {
+		const stored = localStorage.getItem(LOCALE_STORAGE_KEY);
+		if (stored && stored in locales) {
+			return stored as Locale;
+		}
+	} catch {
+		// localStorage unavailable
+	}
+
+	// Fall back to browser language
+	const browserLang = navigator.language.split("-")[0];
+	if (browserLang && browserLang in locales) {
+		return browserLang as Locale;
+	}
+
+	return "en";
+}
+
+let currentLocale: Locale = getInitialLocale();
 
 /**
  * Gets a value from the current locale's strings, with English fallback.
@@ -83,7 +108,7 @@ export function strings(): Strings {
 }
 
 /**
- * Sets the active locale.
+ * Sets the active locale and persists it to localStorage.
  */
 export function setLocale(locale: Locale): void {
 	if (!(locale in locales)) {
@@ -93,6 +118,11 @@ export function setLocale(locale: Locale): void {
 		return;
 	}
 	currentLocale = locale;
+	try {
+		localStorage.setItem(LOCALE_STORAGE_KEY, locale);
+	} catch {
+		// localStorage unavailable - setting still works for current session
+	}
 }
 
 /**

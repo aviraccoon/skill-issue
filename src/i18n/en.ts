@@ -45,8 +45,7 @@ export const en = {
 
 		// Actions
 		checkPhone: "Check Phone",
-		newGame: "New Game",
-		newGameConfirm: "Start a new game? Current progress will be lost.",
+		menu: "Menu",
 		skipTo: (block: TimeBlock) => `Skip to ${timeBlocks[block]}`,
 		endDay: "End day",
 		continue: "Continue",
@@ -106,6 +105,57 @@ export const en = {
 		title: "Skill Issue",
 		description: "Manage your week. Click tasks to do them. Good luck.",
 		start: "Start",
+	},
+
+	splash: {
+		title: "SKILL ISSUE",
+		texts: [
+			"Click to start (or don't)",
+			"You'll get to it eventually",
+			"The button works. Probably.",
+			"No pressure",
+			"Today's the day",
+			"It's just one click",
+			"You meant to start yesterday",
+			"Starting is the hardest part",
+			"The tasks aren't going anywhere",
+			"Ready when you are",
+			"One click. You can do one click.",
+			"The week won't manage itself",
+			"Good luck (you'll need it)",
+			"Task 1: Click this button",
+			"This counts as productivity",
+			"You're already procrastinating",
+		],
+		startButtons: [
+			"Click to start",
+			"Start",
+			"Fine, start",
+			"Here goes nothing",
+			"Might as well",
+			"Get it over with",
+			"Begin, I guess",
+			"Let's see",
+		],
+	},
+
+	menu: {
+		continue: "Continue",
+		continueSubtext: (day: string, time: string) => `${day}, ${time}`,
+		newGame: "New Game",
+		seedLabel: "Seed",
+		seedPlaceholder: "Enter seed (optional)",
+		startSeeded: "Start with Seed",
+		seededRunNotice: (day: string, seed: number) =>
+			`Seeded run in progress: ${day} (seed ${seed})`,
+		settings: "Settings",
+	},
+
+	settings: {
+		title: "Settings",
+		close: "Close",
+		language: "Language",
+		accessibility: "Accessibility",
 	},
 
 	a11y: {

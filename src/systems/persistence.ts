@@ -1,15 +1,29 @@
-import { createInitialTasks, type TaskId } from "../data/tasks";
+/**
+ * Save/load system with multi-slot support for different game modes.
+ * Version 4: runs.main and runs.seeded slots.
+ */
+
+import {
+	createInitialTasks,
+	type TaskCategory,
+	type TaskId,
+} from "../data/tasks";
 import {
 	createInitialRunStats,
 	createInitialState,
+	type Day,
 	type GameState,
 	type RunStats,
 	type Task,
+	type TimeBlock,
 } from "../state";
+import { CURRENT_SAVE_VERSION, runMigrations } from "./migrations";
 import type { Personality } from "./personality";
 
 const STORAGE_KEY = "skill-issue-save";
-const SAVE_VERSION = 3; // Bumped: restructured to separate currentRun and patterns
+
+/** Game mode determines which save slot to use. */
+export type GameMode = "main" | "seeded";
 
 /** Runtime state for a task - the only thing we persist. */
 interface SavedTask {
@@ -20,10 +34,10 @@ interface SavedTask {
 }
 
 /** Minimal game state for persistence - no translatable content. */
-interface SavedState {
-	day: GameState["day"];
+export interface SavedState {
+	day: Day;
 	dayIndex: number;
-	timeBlock: GameState["timeBlock"];
+	timeBlock: TimeBlock;
 	slotsRemaining: number;
 	weekendPointsRemaining: number;
 	tasks: SavedTask[];
@@ -32,16 +46,17 @@ interface SavedState {
 	energy: number;
 	momentum: number;
 	runSeed: number;
-	personality: GameState["personality"];
+	personality: Personality;
 	dogFailedYesterday: boolean;
 	pushedThroughLastNight: boolean;
 	inExtendedNight: boolean;
 	consecutiveFailures: number;
 	friendRescueUsedToday: boolean;
-	friendRescueChanceBonus?: number; // Optional for backward compat with old saves
+	friendRescueChanceBonus?: number;
 	rollCount: number;
-	variantsUnlocked: GameState["variantsUnlocked"];
+	variantsUnlocked: TaskCategory[];
 	runStats: RunStats;
+	gameMode: GameMode;
 }
 
 /** A completed run stored in patterns history. */
@@ -56,14 +71,20 @@ export interface CompletedRun {
 export interface PatternsData {
 	unlocked: boolean;
 	history: CompletedRun[];
-	hasSeenIntro?: boolean; // true after dismissing intro screen
-	hasEverAttempted?: boolean; // true after first task attempt (for first-attempt guarantee)
+	hasSeenIntro?: boolean;
+	hasEverAttempted?: boolean;
 }
 
-/** Top-level save structure with separate run and patterns sections. */
-interface SaveData {
-	version: number;
-	currentRun: SavedState | null;
+/** Save slots for different game modes. */
+export interface SaveRuns {
+	main: SavedState | null;
+	seeded: SavedState | null;
+}
+
+/** Top-level save structure (version 4). */
+export interface SaveDataV4 {
+	version: 4;
+	runs: SaveRuns;
 	patterns: PatternsData;
 	savedAt: number;
 }
@@ -73,6 +94,19 @@ function createEmptyPatterns(): PatternsData {
 	return {
 		unlocked: false,
 		history: [],
+	};
+}
+
+/** Creates empty save data. */
+function createEmptySaveData(): SaveDataV4 {
+	return {
+		version: 4,
+		runs: {
+			main: null,
+			seeded: null,
+		},
+		patterns: createEmptyPatterns(),
+		savedAt: Date.now(),
 	};
 }
 
@@ -110,49 +144,42 @@ function toSavedState(state: GameState): SavedState {
 		rollCount: state.rollCount,
 		variantsUnlocked: state.variantsUnlocked,
 		runStats: state.runStats,
+		gameMode: state.gameMode,
 	};
 }
 
-/** Loads existing save data or creates empty structure. */
-function loadSaveData(): SaveData {
+/** Loads existing save data, migrating if necessary. */
+function loadSaveData(): SaveDataV4 {
 	try {
 		const raw = localStorage.getItem(STORAGE_KEY);
 		if (!raw) {
-			return {
-				version: SAVE_VERSION,
-				currentRun: null,
-				patterns: createEmptyPatterns(),
-				savedAt: Date.now(),
-			};
+			return createEmptySaveData();
 		}
 
-		const data = JSON.parse(raw) as SaveData;
+		const data = JSON.parse(raw) as { version: number };
 
-		// Version check - migrate or reset as needed
-		if (data.version !== SAVE_VERSION) {
-			// For now, preserve nothing from old versions
-			// Future: could migrate patterns data
-			return {
-				version: SAVE_VERSION,
-				currentRun: null,
-				patterns: createEmptyPatterns(),
-				savedAt: Date.now(),
-			};
+		// Already current version
+		if (data.version === CURRENT_SAVE_VERSION) {
+			return data as SaveDataV4;
 		}
 
-		return data;
+		// Try to migrate
+		const migrated = runMigrations(data);
+		if (migrated) {
+			// Save migrated data
+			writeSaveData(migrated);
+			return migrated;
+		}
+
+		// Migration failed - start fresh
+		return createEmptySaveData();
 	} catch {
-		return {
-			version: SAVE_VERSION,
-			currentRun: null,
-			patterns: createEmptyPatterns(),
-			savedAt: Date.now(),
-		};
+		return createEmptySaveData();
 	}
 }
 
 /** Saves data to localStorage. */
-function writeSaveData(data: SaveData): void {
+function writeSaveData(data: SaveDataV4): void {
 	try {
 		localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
 	} catch {
@@ -161,14 +188,17 @@ function writeSaveData(data: SaveData): void {
 }
 
 /**
- * Saves game state to localStorage.
- * Preserves patterns data while updating currentRun.
+ * Saves game state to the specified mode's slot.
+ * Preserves patterns data and other mode's slot.
  */
-export function saveGame(state: GameState): void {
+export function saveGame(state: GameState, mode: GameMode): void {
 	const existing = loadSaveData();
-	const data: SaveData = {
-		version: SAVE_VERSION,
-		currentRun: toSavedState(state),
+	const data: SaveDataV4 = {
+		version: 4,
+		runs: {
+			...existing.runs,
+			[mode]: toSavedState(state),
+		},
 		patterns: existing.patterns,
 		savedAt: Date.now(),
 	};
@@ -176,22 +206,73 @@ export function saveGame(state: GameState): void {
 }
 
 /**
- * Loads game state from localStorage.
- * Returns initial state if no save exists or save is incompatible.
- * Reconstructs full task objects from i18n + saved runtime state.
- * New players start on the intro screen.
+ * Loads game state from the specified mode's slot.
+ * Returns null if no save exists for that mode.
  */
-export function loadGame(): GameState {
+export function loadGame(mode: GameMode): GameState | null {
 	const data = loadSaveData();
-	if (!data.currentRun) {
-		const state = createInitialState();
-		// Show intro screen for brand new players
-		if (!data.patterns.hasSeenIntro) {
-			state.screen = "intro";
-		}
-		return state;
+	const saved = data.runs[mode];
+	if (!saved) {
+		return null;
 	}
-	return fromSavedState(data.currentRun);
+	return fromSavedState(saved);
+}
+
+/**
+ * Creates initial state for a new game.
+ * Shows intro screen for brand new players.
+ */
+export function createNewGame(
+	seed?: number,
+	mode: GameMode = "main",
+): GameState {
+	const data = loadSaveData();
+	const state = createInitialState(seed, mode);
+	// Show intro screen for brand new players
+	if (!data.patterns.hasSeenIntro) {
+		state.screen = "intro";
+	}
+	return state;
+}
+
+/**
+ * Checks if a save exists for the specified mode.
+ */
+export function hasSavedGame(mode: GameMode): boolean {
+	const data = loadSaveData();
+	return data.runs[mode] !== null;
+}
+
+/**
+ * Gets summary info about saved games for the menu.
+ */
+export function getSavedGameSummaries(): {
+	main: { day: Day; dayIndex: number; timeBlock: TimeBlock } | null;
+	seeded: {
+		day: Day;
+		dayIndex: number;
+		timeBlock: TimeBlock;
+		seed: number;
+	} | null;
+} {
+	const data = loadSaveData();
+	return {
+		main: data.runs.main
+			? {
+					day: data.runs.main.day,
+					dayIndex: data.runs.main.dayIndex,
+					timeBlock: data.runs.main.timeBlock,
+				}
+			: null,
+		seeded: data.runs.seeded
+			? {
+					day: data.runs.seeded.day,
+					dayIndex: data.runs.seeded.dayIndex,
+					timeBlock: data.runs.seeded.timeBlock,
+					seed: data.runs.seeded.runSeed,
+				}
+			: null,
+	};
 }
 
 /**
@@ -237,18 +318,21 @@ function fromSavedState(saved: SavedState): GameState {
 		rollCount: saved.rollCount,
 		variantsUnlocked: saved.variantsUnlocked,
 		runStats: saved.runStats ?? createInitialRunStats(),
+		gameMode: saved.gameMode ?? "main", // Fallback for migrated saves
 	};
 }
 
 /**
- * Resets the current run while preserving patterns data.
- * Use this for "New Game" and "Start New Week".
+ * Resets the specified mode's save slot while preserving patterns data.
  */
-export function resetCurrentRun(): void {
+export function resetRun(mode: GameMode): void {
 	const existing = loadSaveData();
-	const data: SaveData = {
-		version: SAVE_VERSION,
-		currentRun: null,
+	const data: SaveDataV4 = {
+		version: 4,
+		runs: {
+			...existing.runs,
+			[mode]: null,
+		},
 		patterns: existing.patterns,
 		savedAt: Date.now(),
 	};
@@ -256,10 +340,9 @@ export function resetCurrentRun(): void {
 }
 
 /**
- * Saves a completed run to patterns history.
- * Call this when a week is completed.
+ * Saves a completed run to patterns history and clears the mode's slot.
  */
-export function saveCompletedRun(state: GameState): void {
+export function saveCompletedRun(state: GameState, mode: GameMode): void {
 	const existing = loadSaveData();
 	const completedRun: CompletedRun = {
 		seed: state.runSeed,
@@ -268,10 +351,14 @@ export function saveCompletedRun(state: GameState): void {
 		completedAt: Date.now(),
 	};
 
-	const data: SaveData = {
-		version: SAVE_VERSION,
-		currentRun: existing.currentRun,
+	const data: SaveDataV4 = {
+		version: 4,
+		runs: {
+			...existing.runs,
+			[mode]: null, // Clear the completed run's slot
+		},
 		patterns: {
+			...existing.patterns,
 			unlocked: true,
 			history: [...existing.patterns.history, completedRun],
 		},
@@ -289,11 +376,10 @@ export function getPatterns(): PatternsData {
 
 /**
  * Marks the intro as seen.
- * Call when player dismisses the intro screen.
  */
 export function markIntroSeen(): void {
 	const existing = loadSaveData();
-	const data: SaveData = {
+	const data: SaveDataV4 = {
 		...existing,
 		patterns: {
 			...existing.patterns,
@@ -306,12 +392,11 @@ export function markIntroSeen(): void {
 
 /**
  * Marks that the player has attempted at least one task.
- * Call on first task attempt to disable the first-attempt guarantee.
  */
 export function markFirstAttempt(): void {
 	const existing = loadSaveData();
-	if (existing.patterns.hasEverAttempted) return; // Already marked
-	const data: SaveData = {
+	if (existing.patterns.hasEverAttempted) return;
+	const data: SaveDataV4 = {
 		...existing,
 		patterns: {
 			...existing.patterns,
@@ -324,7 +409,6 @@ export function markFirstAttempt(): void {
 
 /**
  * Returns true if this is the player's very first task attempt ever.
- * Used for the first-attempt 100% success guarantee.
  */
 export function isFirstEverAttempt(): boolean {
 	const patterns = loadSaveData().patterns;
@@ -333,12 +417,11 @@ export function isFirstEverAttempt(): boolean {
 
 /**
  * Clears all save data including patterns.
- * Use sparingly - this is a full reset.
  */
 export function clearAllData(): void {
 	localStorage.removeItem(STORAGE_KEY);
 }
 
-// Legacy export for compatibility during transition
-// TODO: Remove after updating all call sites
+// Legacy exports for compatibility during transition
+export const resetCurrentRun = () => resetRun("main");
 export const clearSave = resetCurrentRun;

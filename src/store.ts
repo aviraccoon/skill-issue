@@ -5,6 +5,7 @@ export interface Store<T> {
 	get<K extends keyof T>(key: K): T[K];
 	set<K extends keyof T>(key: K, value: T[K]): void;
 	update<K extends keyof T>(key: K, updater: (current: T[K]) => T[K]): void;
+	setState(newState: T): void;
 	subscribe(listener: Listener<T>): () => void;
 }
 
@@ -49,6 +50,12 @@ export function createStore<T extends object>(initialState: T): Store<T> {
 				state = { ...state, [key]: newValue };
 				notify();
 			}
+		},
+
+		/** Replaces entire state. Always notifies. */
+		setState(newState: T) {
+			state = { ...newState };
+			notify();
 		},
 
 		/** Subscribes to state changes. Returns unsubscribe function. */

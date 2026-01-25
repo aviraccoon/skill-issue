@@ -9,19 +9,16 @@ import {
 import { strings } from "../i18n";
 import { type GameState, isWeekend } from "../state";
 import type { Store } from "../store";
-import { clearSave } from "../systems/persistence";
 import { announce } from "../utils/announce";
 import { initTooltips } from "../utils/tooltip";
-import {
-	createAccessibilityDialog,
-	openAccessibilityDialog,
-} from "./AccessibilityDialog";
 import appStyles from "./App.module.css";
 import { renderDaySummary } from "./DaySummary";
 import { renderFriendRescue } from "./FriendRescue";
 import { renderIntro } from "./Intro";
+import { renderMainMenu } from "./MainMenu";
 import { renderNightChoice } from "./NightChoice";
 import panelStyles from "./Panel.module.css";
+import { renderSplash } from "./Splash";
 import taskStyles from "./Task.module.css";
 import { renderWeekComplete } from "./WeekComplete";
 
@@ -64,9 +61,6 @@ const browserAttemptCallbacks: AttemptCallbacks = {
 
 /** Tracks whether we've initialized the DOM structure for game screen. */
 let gameInitialized = false;
-
-/** Tracks whether we've created the accessibility dialog. */
-let a11yDialogCreated = false;
 
 /** Tracks whether we've set up global keyboard handlers. */
 let keyboardHandlersSetup = false;
@@ -235,6 +229,14 @@ export function renderApp(store: Store<GameState>) {
 	}
 
 	switch (screenInfo.type) {
+		case "splash":
+			gameInitialized = false;
+			renderSplash(screenInfo, app, store);
+			break;
+		case "menu":
+			gameInitialized = false;
+			renderMainMenu(screenInfo, app, store);
+			break;
 		case "intro":
 			gameInitialized = false;
 			renderIntro(app, store);
@@ -276,27 +278,11 @@ function renderGameScreen(
 		app.innerHTML = createAppStructure(screenInfo);
 		gameInitialized = true;
 
-		// Create accessibility dialog once and append to body
-		if (!a11yDialogCreated) {
-			document.body.appendChild(createAccessibilityDialog());
-			a11yDialogCreated = true;
-		}
-
-		// Wire up accessibility button
+		// Wire up menu button
 		app
-			.querySelector(`.${appStyles.a11yBtn}`)
+			.querySelector(`.${appStyles.menuBtn}`)
 			?.addEventListener("click", () => {
-				openAccessibilityDialog();
-			});
-
-		// Wire up new game button
-		app
-			.querySelector(`.${appStyles.newGameBtn}`)
-			?.addEventListener("click", () => {
-				if (confirm(strings().game.newGameConfirm)) {
-					clearSave();
-					location.reload();
-				}
+				store.set("screen", "menu");
 			});
 
 		// Wire up Enter on panel to trigger Attempt (quick action from panel focus)
@@ -461,13 +447,7 @@ function createAppStructure(screenInfo: GameScreenInfo): string {
 		<footer class="${appStyles.footer}">
 			<button class="${appStyles.phoneBtn}">${s.game.checkPhone}</button>
 			<button class="${appStyles.skipBtn}"></button>
-			<button class="${appStyles.a11yBtn}" data-tooltip="${s.a11y.openA11yDialog}" aria-label="${s.a11y.openA11yDialog}">
-				<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
-					<circle cx="12" cy="4" r="2"/>
-					<path d="M12 6v14M8 10h8M7 20h10"/>
-				</svg>
-			</button>
-			<button class="${appStyles.newGameBtn}">${s.game.newGame}</button>
+			<button class="${appStyles.menuBtn}">${s.game.menu}</button>
 		</footer>
 	`;
 }

@@ -24,6 +24,7 @@ import {
 } from "../systems/dog";
 import { getEvolvedDescription } from "../systems/evolution";
 import { getRescueCost } from "../systems/friend";
+import { getSavedGameSummaries } from "../systems/persistence";
 import { pickVariant, seededShuffle } from "../utils/random";
 import type { Decision } from "./controller";
 import { getAvailableDecisions } from "./controller";
@@ -129,8 +130,28 @@ export interface IntroInfo {
 	type: "intro";
 }
 
+/** Splash screen info. */
+export interface SplashInfo {
+	type: "splash";
+	/** Snarky rotating text. */
+	splashText: string;
+	/** Button label variant. */
+	startButton: string;
+}
+
+/** Menu screen info. */
+export interface MenuScreenInfo {
+	type: "menu";
+	/** Summary of main run if exists, null if no save. */
+	mainRunSummary: { day: string; timeBlock: string } | null;
+	/** Summary of seeded run if exists, null if no save. */
+	seededRunSummary: { day: string; timeBlock: string; seed: number } | null;
+}
+
 /** Union of all screen info types. */
 export type ScreenInfo =
+	| SplashInfo
+	| MenuScreenInfo
 	| IntroInfo
 	| GameScreenInfo
 	| NightChoiceInfo
@@ -143,6 +164,10 @@ export type ScreenInfo =
  */
 export function getScreenInfo(state: GameState): ScreenInfo {
 	switch (state.screen) {
+		case "splash":
+			return getSplashInfo(state);
+		case "menu":
+			return getMenuScreenInfo();
 		case "intro":
 			return { type: "intro" };
 		case "nightChoice":
@@ -156,6 +181,39 @@ export function getScreenInfo(state: GameState): ScreenInfo {
 		default:
 			return getGameScreenInfo(state);
 	}
+}
+
+function getSplashInfo(_state: GameState): SplashInfo {
+	const s = strings();
+	const textIndex = Math.floor(Math.random() * s.splash.texts.length);
+	const buttonIndex = Math.floor(Math.random() * s.splash.startButtons.length);
+	return {
+		type: "splash",
+		splashText: s.splash.texts[textIndex] ?? s.splash.texts[0],
+		startButton: s.splash.startButtons[buttonIndex] ?? s.splash.startButtons[0],
+	};
+}
+
+function getMenuScreenInfo(): MenuScreenInfo {
+	const s = strings();
+	const summaries = getSavedGameSummaries();
+
+	return {
+		type: "menu",
+		mainRunSummary: summaries.main
+			? {
+					day: s.days[summaries.main.day],
+					timeBlock: s.timeBlocks[summaries.main.timeBlock],
+				}
+			: null,
+		seededRunSummary: summaries.seeded
+			? {
+					day: s.days[summaries.seeded.day],
+					timeBlock: s.timeBlocks[summaries.seeded.timeBlock],
+					seed: summaries.seeded.seed,
+				}
+			: null,
+	};
 }
 
 function getGameScreenInfo(state: GameState): GameScreenInfo {

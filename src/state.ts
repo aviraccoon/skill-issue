@@ -85,12 +85,17 @@ export interface Task {
 }
 
 export type Screen =
+	| "splash"
+	| "menu"
 	| "intro"
 	| "game"
 	| "nightChoice"
 	| "daySummary"
 	| "weekComplete"
 	| "friendRescue";
+
+/** Game mode determines which save slot to use. */
+export type GameMode = "main" | "seeded";
 
 export interface GameState {
 	day: Day;
@@ -128,6 +133,9 @@ export interface GameState {
 
 	// Run statistics (for "Your Patterns" reveal)
 	runStats: RunStats;
+
+	// Active game mode (determines which save slot to use)
+	gameMode: GameMode;
 }
 
 /** Returns true if the current day is Saturday or Sunday. */
@@ -142,9 +150,12 @@ import {
 	getStartingMomentumFromSeed,
 } from "./systems/personality";
 
-/** Generates a fresh initial state with a new random seed. */
-export function createInitialState(): GameState {
-	const runSeed = Math.floor(Math.random() * 2147483647);
+/** Generates a fresh initial state. Uses provided seed or generates random one. */
+export function createInitialState(
+	seed?: number,
+	mode: GameMode = "main",
+): GameState {
+	const runSeed = seed ?? Math.floor(Math.random() * 2147483647);
 	return {
 		day: "monday",
 		dayIndex: 0,
@@ -167,6 +178,7 @@ export function createInitialState(): GameState {
 		rollCount: 0,
 		variantsUnlocked: [],
 		runStats: createInitialRunStats(),
+		gameMode: mode,
 	};
 }
 

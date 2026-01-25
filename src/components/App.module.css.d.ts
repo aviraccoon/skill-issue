@@ -1,10 +1,9 @@
 declare const styles: {
-	readonly a11yBtn: string;
 	readonly footer: string;
 	readonly header: string;
 	readonly lateNight: string;
 	readonly main: string;
-	readonly newGameBtn: string;
+	readonly menuBtn: string;
 	readonly notification: string;
 	readonly notificationVisible: string;
 	readonly phoneBtn: string;
