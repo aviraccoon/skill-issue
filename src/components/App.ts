@@ -69,21 +69,12 @@ let keyboardHandlersSetup = false;
 let lastAnnouncedScreen: string | null = null;
 
 /**
- * Focuses the main action in the panel: Attempt button, Continue button, or panel itself.
+ * Focuses the main action in the panel: Continue button, or panel itself.
  * Uses rAF + delay to ensure DOM is painted and screen readers catch up.
  */
 function focusPanelAction() {
 	requestAnimationFrame(() => {
 		setTimeout(() => {
-			// Try Attempt button first (if enabled)
-			const attemptBtn = document.querySelector<HTMLElement>(
-				`.${panelStyles.attemptBtn}:not([disabled])`,
-			);
-			if (attemptBtn) {
-				attemptBtn.focus();
-				return;
-			}
-
 			// Try Continue button
 			const continueBtn = document.querySelector<HTMLElement>(
 				`.${panelStyles.continueBtn}`,
@@ -173,22 +164,12 @@ export function renderApp(store: Store<GameState>) {
 					}, 0);
 				}
 			} else if (hasActionsLeft) {
-				// Failed - keep focus on Attempt button if actions remain
+				// Failed - keep focus on panel
 				setTimeout(() => {
-					const attemptBtn = document.querySelector<HTMLElement>(
-						`.${panelStyles.attemptBtn}`,
+					const panel = document.querySelector<HTMLElement>(
+						`.${panelStyles.panel}`,
 					);
-					attemptBtn?.focus();
-				}, 0);
-			}
-
-			// No actions left - focus Continue button
-			if (!hasActionsLeft) {
-				setTimeout(() => {
-					const continueBtn = document.querySelector<HTMLElement>(
-						`.${panelStyles.continueBtn}`,
-					);
-					continueBtn?.focus();
+					panel?.focus();
 				}, 0);
 			}
 		}
@@ -679,11 +660,18 @@ function renderTaskPanel(
 			${s.game.failedCount(selectedTask.failureCount)}
 		</p>
 		${selectedTask.urgency ? `<p class="${panelStyles.urgency}" data-urgency="${selectedTask.urgency.level}">${selectedTask.urgency.text}</p>` : ""}
-		${costDisplay}
-		<button class="btn btn-primary ${panelStyles.attemptBtn}" aria-describedby="panel-desc" ${selectedTask.canAttempt ? "" : "disabled"}>
-			${selectedTask.succeededToday ? s.game.done : s.game.attempt}
-		</button>
-		${selectedTask.variant && selectedTask.canAttempt && !selectedTask.succeededToday ? `<button class="btn ${panelStyles.variantBtn}" aria-describedby="panel-desc">${selectedTask.variant.name}</button>` : ""}
+${costDisplay}
+		${selectedTask.succeededToday ? `<p class="${panelStyles.doneText}">${s.game.done}</p>` : ""}
+		${
+			selectedTask.canAttempt && !periodExhausted
+				? `
+			<button class="btn btn-primary ${panelStyles.attemptBtn}" aria-describedby="panel-desc">
+				${s.game.attempt}
+			</button>
+		`
+				: ""
+		}
+		${selectedTask.variant && selectedTask.canAttempt && !selectedTask.succeededToday && !periodExhausted ? `<button class="btn ${panelStyles.variantBtn}" aria-describedby="panel-desc">${selectedTask.variant.name}</button>` : ""}
 		${continueButtonHtml}
 	`;
 

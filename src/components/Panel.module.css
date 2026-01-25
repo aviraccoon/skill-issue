@@ -25,6 +25,12 @@
 	margin-bottom: 0.5rem;
 }
 
+.doneText {
+	font-size: 0.875rem;
+	color: var(--muted);
+	margin-bottom: 0.5rem;
+}
+
 .cost {
 	font-size: 0.875rem;
 	color: var(--accent, var(--muted));
