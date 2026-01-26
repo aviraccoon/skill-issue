@@ -18,6 +18,7 @@ import { renderIntro } from "./Intro";
 import { renderMainMenu } from "./MainMenu";
 import { renderNightChoice } from "./NightChoice";
 import panelStyles from "./Panel.module.css";
+import { renderPatterns } from "./Patterns";
 import { renderSplash } from "./Splash";
 import taskStyles from "./Task.module.css";
 import { renderWeekComplete } from "./WeekComplete";
@@ -237,6 +238,10 @@ export function renderApp(store: Store<GameState>) {
 		case "weekComplete":
 			gameInitialized = false;
 			renderWeekComplete(screenInfo, app, store);
+			break;
+		case "patterns":
+			gameInitialized = false;
+			renderPatterns(screenInfo, app, store);
 			break;
 		default:
 			renderGameScreen(store, screenInfo, app, handleDecision);

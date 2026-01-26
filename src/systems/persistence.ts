@@ -3,6 +3,7 @@
  * Version 4: runs.main and runs.seeded slots.
  */
 
+import { MENU_SCREENS } from "../core/screenInfo";
 import {
 	createInitialTasks,
 	type TaskCategory,
@@ -296,6 +297,9 @@ function fromSavedState(saved: SavedState): GameState {
 		};
 	});
 
+	// Menu screens shouldn't be restored - go to game instead
+	const screen = MENU_SCREENS.has(saved.screen) ? "game" : saved.screen;
+
 	return {
 		day: saved.day,
 		dayIndex: saved.dayIndex,
@@ -304,7 +308,7 @@ function fromSavedState(saved: SavedState): GameState {
 		weekendPointsRemaining: saved.weekendPointsRemaining,
 		tasks,
 		selectedTaskId: saved.selectedTaskId,
-		screen: saved.screen,
+		screen,
 		energy: saved.energy,
 		momentum: saved.momentum,
 		runSeed: saved.runSeed,

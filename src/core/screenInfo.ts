@@ -14,7 +14,7 @@ import {
 import { getRandomRescueMessage } from "../data/friendRescue";
 import { generateWeekStory } from "../data/weekStory";
 import { strings } from "../i18n";
-import type { Day, GameState, Task, TimeBlock } from "../state";
+import type { Day, GameState, Screen, Task, TimeBlock } from "../state";
 import { isWeekend, TIME_BLOCKS } from "../state";
 import { getExtendedNightDescription } from "../systems/allnighter";
 import {
@@ -24,7 +24,7 @@ import {
 } from "../systems/dog";
 import { getEvolvedDescription } from "../systems/evolution";
 import { getRescueCost } from "../systems/friend";
-import { getSavedGameSummaries } from "../systems/persistence";
+import { getPatterns, getSavedGameSummaries } from "../systems/persistence";
 import { pickVariant, seededShuffle } from "../utils/random";
 import type { Decision } from "./controller";
 import { getAvailableDecisions } from "./controller";
@@ -146,6 +146,39 @@ export interface MenuScreenInfo {
 	mainRunSummary: { day: string; timeBlock: string } | null;
 	/** Summary of seeded run if exists, null if no save. */
 	seededRunSummary: { day: string; timeBlock: string; seed: number } | null;
+	/** Whether patterns have been unlocked (at least one completion). */
+	patternsUnlocked: boolean;
+}
+
+/** Personality type counts for breakdown display. */
+export interface PersonalityBreakdown {
+	/** Count of runs per time preference. */
+	time: { nightOwl: number; earlyBird: number; neutral: number };
+	/** Count of runs per social preference. */
+	social: { socialBattery: number; hermit: number; neutral: number };
+}
+
+/** Lifetime stats aggregated from all completed runs. */
+export interface LifetimeStats {
+	runsCompleted: number;
+	totalAttempted: number;
+	totalSucceeded: number;
+	overallSuccessRate: number;
+	bestTimeBlock: TimeBlock | null;
+	worstTimeBlock: TimeBlock | null;
+	totalPhoneChecks: number;
+	totalAllNighters: number;
+	totalFriendRescues: { triggered: number; accepted: number };
+	/** All variant categories ever used across runs. */
+	variantsUsed: string[];
+	/** Personality breakdown across runs. */
+	personalities: PersonalityBreakdown;
+}
+
+/** Patterns screen info. */
+export interface PatternsScreenInfo {
+	type: "patterns";
+	lifetime: LifetimeStats;
 }
 
 /** Union of all screen info types. */
@@ -157,7 +190,16 @@ export type ScreenInfo =
 	| NightChoiceInfo
 	| FriendRescueInfo
 	| DaySummaryInfo
-	| WeekCompleteInfo;
+	| WeekCompleteInfo
+	| PatternsScreenInfo;
+
+/** Screens that are menu/navigation, not gameplay. Should not be restored on "Continue". */
+export const MENU_SCREENS: ReadonlySet<Screen> = new Set<Screen>([
+	"splash",
+	"menu",
+	"intro",
+	"patterns",
+]);
 
 /**
  * Gets all information needed to render the current screen.
@@ -178,6 +220,8 @@ export function getScreenInfo(state: GameState): ScreenInfo {
 			return getDaySummaryInfo(state);
 		case "weekComplete":
 			return getWeekCompleteInfo(state);
+		case "patterns":
+			return getPatternsScreenInfo();
 		default:
 			return getGameScreenInfo(state);
 	}
@@ -197,6 +241,7 @@ function getSplashInfo(_state: GameState): SplashInfo {
 function getMenuScreenInfo(): MenuScreenInfo {
 	const s = strings();
 	const summaries = getSavedGameSummaries();
+	const patterns = getPatterns();
 
 	return {
 		type: "menu",
@@ -213,6 +258,110 @@ function getMenuScreenInfo(): MenuScreenInfo {
 					seed: summaries.seeded.seed,
 				}
 			: null,
+		patternsUnlocked: patterns.unlocked,
+	};
+}
+
+function getPatternsScreenInfo(): PatternsScreenInfo {
+	const patterns = getPatterns();
+	const history = patterns.history;
+
+	// Aggregate stats from all completed runs
+	let totalAttempted = 0;
+	let totalSucceeded = 0;
+	let totalPhoneChecks = 0;
+	let totalAllNighters = 0;
+	let totalFriendRescuesTriggered = 0;
+	let totalFriendRescuesAccepted = 0;
+
+	const byTimeBlock: Record<
+		TimeBlock,
+		{ attempted: number; succeeded: number }
+	> = {
+		morning: { attempted: 0, succeeded: 0 },
+		afternoon: { attempted: 0, succeeded: 0 },
+		evening: { attempted: 0, succeeded: 0 },
+		night: { attempted: 0, succeeded: 0 },
+	};
+
+	// Track unique variants and personality counts
+	const variantsSet = new Set<string>();
+	const personalities: PersonalityBreakdown = {
+		time: { nightOwl: 0, earlyBird: 0, neutral: 0 },
+		social: { socialBattery: 0, hermit: 0, neutral: 0 },
+	};
+
+	for (const run of history) {
+		totalAttempted += run.stats.tasks.attempted;
+		totalSucceeded += run.stats.tasks.succeeded;
+		totalPhoneChecks += run.stats.phoneChecks;
+		totalAllNighters += run.stats.allNighters;
+		totalFriendRescuesTriggered += run.stats.friendRescues.triggered;
+		totalFriendRescuesAccepted += run.stats.friendRescues.accepted;
+
+		for (const block of TIME_BLOCKS) {
+			byTimeBlock[block].attempted += run.stats.byTimeBlock[block].attempted;
+			byTimeBlock[block].succeeded += run.stats.byTimeBlock[block].succeeded;
+		}
+
+		// Collect variants used
+		for (const variant of run.stats.variantsUsed) {
+			variantsSet.add(variant);
+		}
+
+		// Count personality types
+		personalities.time[run.personality.time]++;
+		personalities.social[run.personality.social]++;
+	}
+
+	// Calculate overall success rate
+	const overallSuccessRate =
+		totalAttempted > 0 ? totalSucceeded / totalAttempted : 0;
+
+	// Find best and worst time blocks
+	let bestTimeBlock: TimeBlock | null = null;
+	let worstTimeBlock: TimeBlock | null = null;
+	let bestRate = -1;
+	let worstRate = 2;
+
+	for (const block of TIME_BLOCKS) {
+		const stats = byTimeBlock[block];
+		if (stats.attempted > 0) {
+			const rate = stats.succeeded / stats.attempted;
+			if (rate > bestRate) {
+				bestRate = rate;
+				bestTimeBlock = block;
+			}
+			if (rate < worstRate) {
+				worstRate = rate;
+				worstTimeBlock = block;
+			}
+		}
+	}
+
+	// Format variants for display (capitalize first letter)
+	const variantsUsed = Array.from(variantsSet).map(
+		(v) => v.charAt(0).toUpperCase() + v.slice(1),
+	);
+
+	return {
+		type: "patterns",
+		lifetime: {
+			runsCompleted: history.length,
+			totalAttempted,
+			totalSucceeded,
+			overallSuccessRate,
+			bestTimeBlock,
+			worstTimeBlock,
+			totalPhoneChecks,
+			totalAllNighters,
+			totalFriendRescues: {
+				triggered: totalFriendRescuesTriggered,
+				accepted: totalFriendRescuesAccepted,
+			},
+			variantsUsed,
+			personalities,
+		},
 	};
 }
 

@@ -410,6 +410,8 @@ export const cs = {
 
 	patterns: {
 		title: "Tvoje vzorce",
+		runsCompleted: "Hry",
+		tasks: "Úkoly",
 		personality: "Osobnost",
 		seed: "Seed",
 		successRate: "Úspěšnost",
@@ -420,6 +422,7 @@ export const cs = {
 		friendRescues: "Záchrany od kamaráda",
 		variantsUsed: "Vyzkoušené varianty",
 		none: "Žádné",
+		back: "Zpět",
 		personalities: {
 			nightOwl: "Noční sova",
 			earlyBird: "Ranní ptáče",

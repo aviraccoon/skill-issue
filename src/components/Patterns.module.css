@@ -1,0 +1,111 @@
+.container {
+	display: flex;
+	flex-direction: column;
+	align-items: center;
+	justify-content: center;
+	min-height: 100vh;
+	padding: 2rem;
+	gap: 2rem;
+}
+
+.header {
+	text-align: center;
+}
+
+.title {
+	font-size: 1.5rem;
+	font-weight: 600;
+	margin: 0;
+	color: var(--fg);
+}
+
+.content {
+	display: flex;
+	flex-direction: column;
+	gap: 2rem;
+	width: 100%;
+	max-width: 400px;
+}
+
+.stats {
+	display: flex;
+	justify-content: center;
+	gap: 3rem;
+}
+
+.stat {
+	display: flex;
+	flex-direction: column;
+	align-items: center;
+	gap: 0.25rem;
+}
+
+.statValue {
+	font-size: 2rem;
+	font-weight: 700;
+	color: var(--accent);
+}
+
+.statLabel {
+	font-size: 0.875rem;
+	color: var(--muted);
+}
+
+.timeBlocks {
+	display: flex;
+	justify-content: center;
+	gap: 2rem;
+}
+
+.timeBlock {
+	display: flex;
+	flex-direction: column;
+	align-items: center;
+	gap: 0.25rem;
+}
+
+.timeLabel {
+	font-size: 0.875rem;
+	color: var(--muted);
+}
+
+.timeValue {
+	font-size: 1.125rem;
+	font-weight: 500;
+	color: var(--fg);
+}
+
+.extras {
+	display: flex;
+	flex-direction: column;
+	gap: 0.5rem;
+	text-align: center;
+	color: var(--muted);
+	font-size: 0.875rem;
+}
+
+.extras p {
+	margin: 0;
+}
+
+.personalities {
+	display: flex;
+	flex-direction: column;
+	gap: 0.25rem;
+	text-align: center;
+	color: var(--muted);
+	font-size: 0.8rem;
+}
+
+.personalityRow {
+	margin: 0;
+}
+
+.footer {
+	display: flex;
+	justify-content: center;
+}
+
+.backBtn {
+	min-width: 120px;
+}

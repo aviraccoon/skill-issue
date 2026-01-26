@@ -92,7 +92,8 @@ export type Screen =
 	| "nightChoice"
 	| "daySummary"
 	| "weekComplete"
-	| "friendRescue";
+	| "friendRescue"
+	| "patterns";
 
 /** Game mode determines which save slot to use. */
 export type GameMode = "main" | "seeded";

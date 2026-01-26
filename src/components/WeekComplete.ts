@@ -117,7 +117,10 @@ export function renderWeekComplete(
 			<h1 class="${styles.title}">${s.game.weekComplete}</h1>
 			<div class="${styles.story}">${narrativeParagraphs}</div>
 			${patternsHtml}
-			<button class="btn btn-primary ${styles.restartBtn}">${s.game.startNewWeek}</button>
+			<div class="${styles.actions}">
+				<button class="btn btn-primary ${styles.restartBtn}">${s.game.startNewWeek}</button>
+				<button class="btn btn-secondary ${styles.menuBtn}">${s.game.menu}</button>
+			</div>
 		</div>
 	`;
 
@@ -131,27 +134,21 @@ export function renderWeekComplete(
 		.querySelector(`.${styles.restartBtn}`)
 		?.addEventListener("click", () => {
 			resetCurrentRun();
-			savedRunSeed = null; // Reset tracking for next completion
 			const fresh = createInitialState();
-			store.set("day", fresh.day);
-			store.set("dayIndex", fresh.dayIndex);
-			store.set("timeBlock", fresh.timeBlock);
-			store.set("slotsRemaining", fresh.slotsRemaining);
-			store.set("weekendPointsRemaining", fresh.weekendPointsRemaining);
-			store.set("selectedTaskId", null);
-			store.set("screen", "game");
-			store.set("energy", fresh.energy);
-			store.set("momentum", fresh.momentum);
-			store.set("runSeed", fresh.runSeed);
-			store.set("personality", fresh.personality);
-			store.set("tasks", fresh.tasks);
-			store.set("runStats", fresh.runStats);
-			store.set("variantsUnlocked", fresh.variantsUnlocked);
-			store.set("dogFailedYesterday", fresh.dogFailedYesterday);
-			store.set("pushedThroughLastNight", fresh.pushedThroughLastNight);
-			store.set("inExtendedNight", fresh.inExtendedNight);
-			store.set("consecutiveFailures", fresh.consecutiveFailures);
-			store.set("friendRescueUsedToday", fresh.friendRescueUsedToday);
-			store.set("rollCount", fresh.rollCount);
+			// Set savedRunSeed to new seed BEFORE state update to prevent
+			// intermediate re-renders from saving the old run again
+			savedRunSeed = fresh.runSeed;
+			// Batch all state changes to trigger single re-render
+			store.setState({
+				...fresh,
+				screen: "game",
+				selectedTaskId: null,
+			});
+		});
+
+	container
+		.querySelector(`.${styles.menuBtn}`)
+		?.addEventListener("click", () => {
+			store.set("screen", "menu");
 		});
 }

@@ -89,7 +89,10 @@ export function renderMainMenu(
 
 			${seededNoticeHtml}
 
-			<button class="btn btn-secondary ${styles.settingsBtn}">${s.menu.settings}</button>
+			<div class="${styles.secondaryActions}">
+				${screenInfo.patternsUnlocked ? `<button class="btn btn-secondary ${styles.patternsBtn}">${s.patterns.title}</button>` : ""}
+				<button class="btn btn-secondary ${styles.settingsBtn}">${s.menu.settings}</button>
+			</div>
 		</div>
 	`;
 
@@ -144,6 +147,14 @@ export function renderMainMenu(
 		if (savedGame) {
 			store.setState(savedGame);
 		}
+	});
+
+	// Patterns button
+	const patternsBtn = container.querySelector<HTMLElement>(
+		`.${styles.patternsBtn}`,
+	);
+	patternsBtn?.addEventListener("click", () => {
+		store.set("screen", "patterns");
 	});
 
 	// Settings button

@@ -1,4 +1,6 @@
 declare const styles: {
+	readonly actions: string;
+	readonly menuBtn: string;
 	readonly narrative: string;
 	readonly patternItem: string;
 	readonly patternList: string;

@@ -372,6 +372,8 @@ export const en = {
 
 	patterns: {
 		title: "Your Patterns",
+		runsCompleted: "Runs",
+		tasks: "Tasks",
 		personality: "Personality",
 		seed: "Seed",
 		successRate: "Success Rate",
@@ -382,6 +384,7 @@ export const en = {
 		friendRescues: "Friend Rescues",
 		variantsUsed: "Variants Tried",
 		none: "None",
+		back: "Back",
 		personalities: {
 			nightOwl: "Night Owl",
 			earlyBird: "Early Bird",

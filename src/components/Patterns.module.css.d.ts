@@ -1,0 +1,20 @@
+declare const styles: {
+	readonly backBtn: string;
+	readonly container: string;
+	readonly content: string;
+	readonly extras: string;
+	readonly footer: string;
+	readonly header: string;
+	readonly personalities: string;
+	readonly personalityRow: string;
+	readonly stat: string;
+	readonly statLabel: string;
+	readonly statValue: string;
+	readonly stats: string;
+	readonly timeBlock: string;
+	readonly timeBlocks: string;
+	readonly timeLabel: string;
+	readonly timeValue: string;
+	readonly title: string;
+};
+export default styles;
