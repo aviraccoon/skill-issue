@@ -23,6 +23,10 @@
 	--attempt-btn-background: #003300;
 	--attempt-btn-color: #00ff00;
 	--attempt-btn-border: 1px solid #00ff00;
+	--attempt-btn-hover-background: #00ff00;
+	--attempt-btn-hover-color: #0a0a0a;
+	--attempt-btn-hover-border: 1px solid #00ff00;
+	--attempt-btn-hover-opacity: 1;
 
 	font-family: "Courier New", monospace;
 }
@@ -60,6 +64,7 @@
 	--muted: #01cdfe;
 	--border: #b967ff;
 	--accent: #05ffa1;
+	--accent-fg: #1a1a2e;
 	--success: #05ffa1;
 	--slot-empty: #2d2d44;
 	--slot-used: #ff71ce;
@@ -75,6 +80,7 @@
 	--panel-background: linear-gradient(135deg, #1a1a2e, #16213e);
 	--attempt-btn-background: linear-gradient(90deg, #ff71ce, #01cdfe);
 	--attempt-btn-color: #1a1a2e;
+	--attempt-btn-hover-background: linear-gradient(90deg, #ff71ce, #01cdfe);
 	--title-background: linear-gradient(90deg, #ff71ce, #01cdfe, #05ffa1);
 	--title-text-fill: transparent;
 

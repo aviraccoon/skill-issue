@@ -213,34 +213,42 @@ export function renderApp(store: Store<GameState>) {
 	switch (screenInfo.type) {
 		case "splash":
 			gameInitialized = false;
+			delete app.dataset.time;
 			renderSplash(screenInfo, app, store);
 			break;
 		case "menu":
 			gameInitialized = false;
+			delete app.dataset.time;
 			renderMainMenu(screenInfo, app, store);
 			break;
 		case "intro":
 			gameInitialized = false;
+			delete app.dataset.time;
 			renderIntro(app, store);
 			break;
 		case "nightChoice":
 			gameInitialized = false;
+			app.dataset.time = "night";
 			renderNightChoice(screenInfo, app, handleDecision);
 			break;
 		case "friendRescue":
 			gameInitialized = false;
+			app.dataset.time = state.timeBlock;
 			renderFriendRescue(screenInfo, app, handleDecision, store);
 			break;
 		case "daySummary":
 			gameInitialized = false;
+			delete app.dataset.time;
 			renderDaySummary(screenInfo, app, store);
 			break;
 		case "weekComplete":
 			gameInitialized = false;
+			delete app.dataset.time;
 			renderWeekComplete(screenInfo, app, store);
 			break;
 		case "patterns":
 			gameInitialized = false;
+			delete app.dataset.time;
 			renderPatterns(screenInfo, app, store);
 			break;
 		default:

@@ -61,6 +61,7 @@ textarea {
 	--attempt-btn-border: none;
 	--attempt-btn-shadow: none;
 	--attempt-btn-hover-background: var(--accent);
+	--attempt-btn-hover-color: var(--attempt-btn-color);
 	--attempt-btn-hover-border: none;
 	--attempt-btn-hover-opacity: 0.9;
 	--attempt-btn-active-background: var(--accent);
@@ -87,25 +88,25 @@ body {
 	min-height: 100vh;
 }
 
-/* Time block theming */
-[data-time="morning"] {
-	--bg: var(--morning-bg);
+/* Subtle ambient tints per time block */
+body:has(#app[data-time="morning"]) {
+	background: color-mix(in oklch, var(--bg) 92%, oklch(0.95 0.08 90));
+	filter: brightness(1.02);
 }
 
-[data-time="afternoon"] {
-	--bg: var(--afternoon-bg);
+body:has(#app[data-time="afternoon"]) {
+	background: color-mix(in oklch, var(--bg) 94%, oklch(0.9 0.02 90));
+	filter: brightness(1.01);
 }
 
-[data-time="evening"] {
-	--bg: var(--evening-bg);
+body:has(#app[data-time="evening"]) {
+	background: color-mix(in oklch, var(--bg) 90%, oklch(0.8 0.08 55));
+	filter: brightness(0.98);
 }
 
-[data-time="night"] {
-	--bg: var(--night-bg);
-	--fg: var(--night-fg);
-	--border: #334155;
-	--muted: #94a3b8;
-	--surface: #1e293b;
+body:has(#app[data-time="night"]) {
+	background: color-mix(in oklch, var(--bg) 85%, oklch(0.2 0.04 260));
+	filter: brightness(0.95) saturate(0.95);
 }
 
 /* Screen reader only - visually hidden but available to assistive tech */
@@ -174,6 +175,7 @@ body {
 
 .btn-primary:hover {
 	background: var(--attempt-btn-hover-background);
+	color: var(--attempt-btn-hover-color);
 	border: var(--attempt-btn-hover-border);
 	opacity: var(--attempt-btn-hover-opacity);
 }
