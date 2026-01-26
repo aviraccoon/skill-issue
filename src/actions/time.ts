@@ -6,6 +6,10 @@ import { getEnergyDecayPerBlock } from "../systems/energy";
 import { getMomentumDecayPerBlock } from "../systems/momentum";
 import { calculateSleepQuality } from "../systems/sleep";
 import { clamp } from "../utils/math";
+import { nextRoll } from "../utils/random";
+
+/** Probability of phone notification appearing on time block change. */
+const PHONE_NOTIFICATION_CHANCE = 0.15;
 
 /**
  * Advances to the next time block. Resets action slots.
@@ -29,6 +33,11 @@ export function skipTimeBlock(store: Store<GameState>) {
 		store.set("slotsRemaining", 3);
 		// Clear selection - task may not be available in new block
 		store.set("selectedTaskId", null);
+
+		// Random chance to trigger phone notification (scroll trap temptation)
+		if (nextRoll(store) < PHONE_NOTIFICATION_CHANCE) {
+			store.update("phoneNotificationCount", (c) => c + 1);
+		}
 	} else {
 		// End of day - show summary
 		showDaySummary(store);

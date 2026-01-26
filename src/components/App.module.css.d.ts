@@ -7,6 +7,11 @@ declare const styles: {
 	readonly notification: string;
 	readonly notificationVisible: string;
 	readonly phoneBtn: string;
+	readonly phoneDot: string;
+	readonly phoneDotPulse: string;
+	readonly phoneDotUrgent: string;
+	readonly phoneDotVisible: string;
+	readonly phoneIcon: string;
 	readonly points: string;
 	readonly skipBtn: string;
 	readonly slot: string;

@@ -64,6 +64,8 @@ export interface GameScreenInfo {
 	decisions: Decision[];
 	/** Next time block key, or null if end of day. */
 	nextTimeBlock: TimeBlock | null;
+	/** Phone notification count (0 = no dot, 1+ = dot with escalating animation). */
+	phoneNotificationCount: number;
 }
 
 /** Night choice screen info. */
@@ -406,6 +408,7 @@ function getGameScreenInfo(state: GameState): GameScreenInfo {
 		selectedTask,
 		decisions,
 		nextTimeBlock,
+		phoneNotificationCount: state.phoneNotificationCount,
 	};
 }
 

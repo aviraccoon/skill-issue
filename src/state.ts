@@ -132,6 +132,9 @@ export interface GameState {
 	// Task variants (unlocked through friend hints)
 	variantsUnlocked: TaskCategory[]; // categories where minimal variants are visible
 
+	// Phone notification state (for scroll trap discoverability)
+	phoneNotificationCount: number; // 0 = no dot, 1+ = dot visible (higher = more urgent animation)
+
 	// Run statistics (for "Your Patterns" reveal)
 	runStats: RunStats;
 
@@ -178,6 +181,7 @@ export function createInitialState(
 		friendRescueChanceBonus: 0,
 		rollCount: 0,
 		variantsUnlocked: [],
+		phoneNotificationCount: 0,
 		runStats: createInitialRunStats(),
 		gameMode: mode,
 	};

@@ -174,6 +174,14 @@ export function attemptTask(
 		store.update("momentum", (m) => Math.max(m - penalty, 0));
 		store.update("consecutiveFailures", (c) => c + 1);
 
+		// Random chance to trigger phone notification on failure
+		// Base 25%, +15% per consecutive failure, capped at 60%
+		const failures = store.getState().consecutiveFailures;
+		const phoneChance = Math.min(0.25 + 0.15 * (failures - 1), 0.6);
+		if (nextRoll(store) < phoneChance) {
+			store.update("phoneNotificationCount", (c) => c + 1);
+		}
+
 		// Trigger failure callback if provided (browser animations)
 		callbacks?.onFailure?.(taskId);
 

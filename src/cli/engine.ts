@@ -8,19 +8,8 @@ import {
 	isComplete,
 } from "../core/controller";
 import type { DecisionContext, Strategy } from "../core/strategies";
-import { initialTasks } from "../data/tasks";
-import {
-	createInitialRunStats,
-	DAYS,
-	type Day,
-	type GameState,
-} from "../state";
+import { createInitialState, DAYS, type Day, type GameState } from "../state";
 import { createStore } from "../store";
-import {
-	getPersonalityFromSeed,
-	getStartingEnergyFromSeed,
-	getStartingMomentumFromSeed,
-} from "../systems/personality";
 import { nextRoll } from "../utils/random";
 import type { RunStats } from "./stats";
 
@@ -74,30 +63,7 @@ export interface SimulationObserver {
  * Creates an initial game state with a specific seed.
  */
 export function createStateFromSeed(seed: number): GameState {
-	return {
-		day: "monday",
-		dayIndex: 0,
-		timeBlock: "morning",
-		slotsRemaining: 3,
-		weekendPointsRemaining: 8,
-		tasks: structuredClone(initialTasks),
-		selectedTaskId: null,
-		screen: "game",
-		energy: getStartingEnergyFromSeed(seed),
-		momentum: getStartingMomentumFromSeed(seed),
-		runSeed: seed,
-		personality: getPersonalityFromSeed(seed),
-		dogFailedYesterday: false,
-		pushedThroughLastNight: false,
-		inExtendedNight: false,
-		consecutiveFailures: 0,
-		friendRescueUsedToday: false,
-		friendRescueChanceBonus: 0,
-		rollCount: 0,
-		variantsUnlocked: [],
-		runStats: createInitialRunStats(),
-		gameMode: "main",
-	};
+	return createInitialState(seed, "main");
 }
 
 /**

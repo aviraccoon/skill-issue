@@ -64,22 +64,69 @@
 .footer {
 	display: flex;
 	flex-wrap: wrap;
-	align-items: center;
+	align-items: stretch;
 	gap: 0.5rem;
 	padding: 1rem 0;
 	border-top: 1px solid var(--border);
 	margin-top: 1rem;
 }
 
-.skipBtn,
-.phoneBtn {
+.skipBtn {
 	padding: 0.5rem 1rem;
 	color: var(--muted);
 }
 
-.skipBtn:hover,
+.skipBtn:hover {
+	color: var(--fg);
+}
+
+/* Phone button with icon */
+.phoneBtn {
+	position: relative;
+	padding: 0.5rem;
+	color: var(--muted);
+}
+
 .phoneBtn:hover {
 	color: var(--fg);
+}
+
+.phoneIcon {
+	width: 1.25rem;
+	height: 1.25rem;
+	display: block;
+}
+
+/* Notification dot */
+.phoneDot {
+	position: absolute;
+	top: 0.25rem;
+	right: 0.25rem;
+	width: 0.5rem;
+	height: 0.5rem;
+	background: var(--accent);
+	border-radius: 50%;
+	opacity: 0;
+	transform: scale(0);
+	transition:
+		opacity 0.15s ease-out,
+		transform 0.15s ease-out;
+}
+
+.phoneDotVisible {
+	opacity: 1;
+	transform: scale(1);
+	animation: phoneDotAppear 0.3s ease-out;
+}
+
+/* Gentle pulse after 3+ triggers - keyframes in base.css (Bun bug #18921) */
+.phoneDotPulse {
+	animation: phoneDotPulse 2s ease-in-out infinite;
+}
+
+/* More urgent pulse after 5+ triggers */
+.phoneDotUrgent {
+	animation: phoneDotUrgent 1s ease-in-out infinite;
 }
 
 .points {

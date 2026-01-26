@@ -195,7 +195,12 @@ export class InteractiveStrategy implements Strategy {
 		const hasAcceptRescue = decisions.some((d) => d.type === "acceptRescue");
 		const hasDeclineRescue = decisions.some((d) => d.type === "declineRescue");
 
-		if (hasPhone) console.log("  p, phone  - Check your phone");
+		if (hasPhone) {
+			const count = state.phoneNotificationCount;
+			const indicator =
+				count >= 5 ? " [!!!]" : count >= 3 ? " [!!]" : count >= 1 ? " [!]" : "";
+			console.log(`  p, phone  - Check your phone${indicator}`);
+		}
 		if (hasSkip) console.log("  s, skip   - Skip to next time block");
 		if (hasEndDay) console.log("  e, end    - End the day");
 		if (hasSleep) console.log("  sleep     - Go to sleep");

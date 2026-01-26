@@ -236,3 +236,42 @@ body {
 	/* No backdrop for tooltips */
 	display: none;
 }
+
+/* Phone notification dot animations (in base.css due to Bun bug #18921) */
+@keyframes phoneDotAppear {
+	0% {
+		opacity: 0;
+		transform: scale(0);
+	}
+	50% {
+		transform: scale(1.3);
+	}
+	100% {
+		opacity: 1;
+		transform: scale(1);
+	}
+}
+
+@keyframes phoneDotPulse {
+	0%,
+	100% {
+		transform: scale(1);
+		opacity: 1;
+	}
+	50% {
+		transform: scale(1.2);
+		opacity: 0.7;
+	}
+}
+
+@keyframes phoneDotUrgent {
+	0%,
+	100% {
+		transform: scale(1);
+		background: var(--accent);
+	}
+	50% {
+		transform: scale(1.25);
+		background: var(--error);
+	}
+}

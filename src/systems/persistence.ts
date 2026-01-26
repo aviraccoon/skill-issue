@@ -56,6 +56,7 @@ export interface SavedState {
 	friendRescueChanceBonus?: number;
 	rollCount: number;
 	variantsUnlocked: TaskCategory[];
+	phoneNotificationCount?: number;
 	runStats: RunStats;
 	gameMode: GameMode;
 }
@@ -144,6 +145,7 @@ function toSavedState(state: GameState): SavedState {
 		friendRescueChanceBonus: state.friendRescueChanceBonus,
 		rollCount: state.rollCount,
 		variantsUnlocked: state.variantsUnlocked,
+		phoneNotificationCount: state.phoneNotificationCount,
 		runStats: state.runStats,
 		gameMode: state.gameMode,
 	};
@@ -321,6 +323,7 @@ function fromSavedState(saved: SavedState): GameState {
 		friendRescueChanceBonus: saved.friendRescueChanceBonus ?? 0,
 		rollCount: saved.rollCount,
 		variantsUnlocked: saved.variantsUnlocked,
+		phoneNotificationCount: saved.phoneNotificationCount ?? 0,
 		runStats: saved.runStats ?? createInitialRunStats(),
 		gameMode: saved.gameMode ?? "main", // Fallback for migrated saves
 	};

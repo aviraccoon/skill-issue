@@ -431,7 +431,13 @@ function createAppStructure(screenInfo: GameScreenInfo): string {
 		</main>
 
 		<footer class="${appStyles.footer}">
-			<button class="btn btn-secondary ${appStyles.phoneBtn}">${s.game.checkPhone}</button>
+			<button class="btn btn-secondary ${appStyles.phoneBtn}" aria-label="${s.game.checkPhone}">
+				<svg class="${appStyles.phoneIcon}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+					<rect x="5" y="2" width="14" height="20" rx="2" ry="2"/>
+					<line x1="12" y1="18" x2="12" y2="18"/>
+				</svg>
+				<span class="${appStyles.phoneDot}"></span>
+			</button>
 			<button class="btn btn-secondary ${appStyles.skipBtn}"></button>
 			<button class="btn btn-secondary ${appStyles.menuBtn}">${s.game.menu}</button>
 		</footer>
@@ -745,6 +751,15 @@ function renderFooter(
 			newPhoneBtn.dataset.tooltip =
 				phoneTips[Math.floor(Math.random() * phoneTips.length)];
 		});
+
+		// Update notification dot visibility and animation intensity
+		const dot = newPhoneBtn.querySelector(`.${appStyles.phoneDot}`);
+		if (dot) {
+			const count = screenInfo.phoneNotificationCount;
+			dot.classList.toggle(appStyles.phoneDotVisible, count > 0);
+			dot.classList.toggle(appStyles.phoneDotPulse, count >= 3);
+			dot.classList.toggle(appStyles.phoneDotUrgent, count >= 5);
+		}
 	}
 
 	if (!skipBtn) return;

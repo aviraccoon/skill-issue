@@ -36,6 +36,9 @@ export function checkPhone(store: Store<GameState>): PhoneCheckResult {
 	store.update("momentum", (m) => Math.max(m + momentumChange, 0));
 	store.update("energy", (e) => Math.max(0, Math.min(1, e + energyChange)));
 
+	// Clear phone notification (player "checked" it)
+	store.set("phoneNotificationCount", 0);
+
 	// Track phone check in run stats
 	store.update("runStats", (stats) => ({
 		...stats,
