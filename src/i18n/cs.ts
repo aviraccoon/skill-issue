@@ -71,6 +71,7 @@ export const cs = {
 		// Task panel
 		selectTask: "Vyber úkol",
 		attempt: "Zkusit",
+		attempting: "Zkouším...",
 		done: "Hotovo",
 		failedCount: (n: number) => `Nepovedlo se ${n}x tento týden`,
 		costPoints: (n: number) => pl(n, "bod", "body", "bodů"),
@@ -212,6 +213,7 @@ export const cs = {
 		taskList: "Úkoly",
 		taskPanel: "Vybraný úkol",
 		gameActions: "Akce",
+		gameArea: "Pohled na místnost s postavou",
 
 		// Live announcements
 		taskSucceeded: (name: string) => `${name} splněno`,

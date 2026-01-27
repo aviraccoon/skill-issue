@@ -12,6 +12,7 @@ import {
 	getDogNote,
 } from "../data/daySummary";
 import { getRandomRescueMessage } from "../data/friendRescue";
+import type { TaskId } from "../data/tasks";
 import { generateWeekStory } from "../data/weekStory";
 import { strings } from "../i18n";
 import type { Day, GameState, Screen, Task, TimeBlock } from "../state";
@@ -31,7 +32,7 @@ import { getAvailableDecisions } from "./controller";
 
 /** Task display info for rendering. */
 export interface TaskDisplay {
-	id: string;
+	id: TaskId;
 	name: string;
 	evolvedName: string;
 	failureCount: number;

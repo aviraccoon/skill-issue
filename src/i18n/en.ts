@@ -34,6 +34,7 @@ export const en = {
 		// Task panel
 		selectTask: "Select a task",
 		attempt: "Attempt",
+		attempting: "Attempting...",
 		done: "Done",
 		failedCount: (n: number) => `Failed ${pl(n, "time")} this week`,
 		costPoints: (n: number) => `${n} points`,
@@ -175,6 +176,7 @@ export const en = {
 		taskList: "Tasks",
 		taskPanel: "Selected task",
 		gameActions: "Actions",
+		gameArea: "Room view showing your character",
 
 		// Live announcements
 		taskSucceeded: (name: string) => `${name} succeeded`,

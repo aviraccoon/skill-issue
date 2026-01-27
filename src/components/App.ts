@@ -6,14 +6,24 @@ import {
 	type ScreenInfo,
 	type TaskDisplay,
 } from "../core/screenInfo";
+import { ROOM } from "../data/roomLayout";
+import type { TaskId } from "../data/tasks";
 import { strings } from "../i18n";
 import { type GameState, isWeekend } from "../state";
 import type { Store } from "../store";
+import {
+	type AnimationController,
+	createAnimationController,
+	pickFailureTiming,
+} from "../systems/animation";
+import { getDogUrgency } from "../systems/dog";
 import { announce } from "../utils/announce";
 import { initTooltips } from "../utils/tooltip";
 import appStyles from "./App.module.css";
 import { renderDaySummary } from "./DaySummary";
 import { renderFriendRescue } from "./FriendRescue";
+import { renderGameArea } from "./GameArea";
+import gameAreaStyles from "./GameArea.module.css";
 import { renderIntro } from "./Intro";
 import { renderMainMenu } from "./MainMenu";
 import { renderNightChoice } from "./NightChoice";
@@ -68,6 +78,91 @@ let keyboardHandlersSetup = false;
 
 /** Tracks the last announced screen to avoid re-announcing. */
 let lastAnnouncedScreen: string | null = null;
+
+/** Animation controller for the game area. */
+let animationController: AnimationController | null = null;
+
+/** Whether an attempt animation is currently playing. */
+let isAnimating = false;
+
+/** Pre-attempt task display values (shown during animation before result is revealed). */
+let preAttemptFailureCount: number | null = null;
+let preAttemptEvolvedName: string | null = null;
+
+/** Current store reference for animation rendering. */
+let currentStore: Store<GameState> | null = null;
+
+/** How long dog reacts to phone checks - must match GameArea.ts */
+const PHONE_REACTION_DURATION = 2500;
+
+/** Timeout for dog reaction reset after phone check. */
+let phoneReactionTimeout: ReturnType<typeof setTimeout> | null = null;
+
+/** Animation frame ID for dog animation loop. */
+let dogAnimationFrameId: number | null = null;
+
+/** How long dog reacts to task outcomes - must match GameArea.ts */
+const TASK_REACTION_DURATION = 2000;
+
+/**
+ * Starts a continuous render loop for dog animations (restless pacing, reaction wags).
+ * Runs when dog has urgency or is reacting to a task outcome.
+ */
+function startDogAnimationLoop(
+	canvas: HTMLCanvasElement,
+	store: Store<GameState>,
+): void {
+	// Don't start if already running or if task animation is active
+	if (dogAnimationFrameId !== null || isAnimating) return;
+
+	function frame() {
+		const s = store.getState();
+		const urgency = getDogUrgency(s);
+		const timeSinceTask = performance.now() - s.lastTaskTime;
+		const isReactingToTask =
+			s.lastTaskOutcome !== null && timeSinceTask < TASK_REACTION_DURATION;
+
+		// Stop if task animation started, or no longer urgent and not reacting
+		if (isAnimating || (urgency === "normal" && !isReactingToTask)) {
+			dogAnimationFrameId = null;
+			return;
+		}
+
+		rerenderGameArea(canvas, store);
+		dogAnimationFrameId = requestAnimationFrame(frame);
+	}
+
+	dogAnimationFrameId = requestAnimationFrame(frame);
+}
+
+/** Stops the dog animation loop. */
+function stopDogAnimationLoop(): void {
+	if (dogAnimationFrameId !== null) {
+		cancelAnimationFrame(dogAnimationFrameId);
+		dogAnimationFrameId = null;
+	}
+}
+
+/**
+ * Re-renders the game area canvas with current state.
+ * Encapsulates state gathering and prop passing.
+ */
+function rerenderGameArea(
+	canvas: HTMLCanvasElement,
+	store: Store<GameState>,
+): void {
+	const s = store.getState();
+	renderGameArea(canvas, {
+		animationState: animationController?.getState() ?? null,
+		energy: s.energy,
+		selectedTaskId: s.selectedTaskId,
+		lastPhoneOutcome: s.lastPhoneOutcome,
+		lastPhoneTime: s.lastPhoneTime,
+		lastTaskOutcome: s.lastTaskOutcome,
+		lastTaskTime: s.lastTaskTime,
+		dogUrgency: getDogUrgency(s),
+	});
+}
 
 /**
  * Focuses the main action in the panel: Continue button, or panel itself.
@@ -136,12 +231,73 @@ export function renderApp(store: Store<GameState>) {
 	const screenInfo = getScreenInfo(state);
 
 	// Create decision handler that wraps executeDecision
-	const handleDecision = (decision: Decision) => {
+	const handleDecision = async (decision: Decision) => {
 		const s = strings();
-		const result = executeDecision(store, decision, browserAttemptCallbacks);
 
-		// Handle focus after task attempt
-		if (decision.type === "attempt") {
+		// For attempt decisions, coordinate with game area animation
+		if (decision.type === "attempt" && animationController && !isAnimating) {
+			isAnimating = true;
+			const taskId = decision.taskId;
+
+			// Cache pre-attempt display values (shown during animation)
+			// Get fresh screen info - the closure's screenInfo may be stale
+			const currentScreenInfo = getScreenInfo(store.getState());
+			const preAttemptTask =
+				currentScreenInfo.type === "game"
+					? currentScreenInfo.selectedTask
+					: null;
+			preAttemptFailureCount = preAttemptTask?.failureCount ?? null;
+			preAttemptEvolvedName = preAttemptTask?.evolvedName ?? null;
+
+			// Start the animation (character walks toward task)
+			const animPromise = animationController.playTaskAttempt(taskId);
+
+			// Execute the decision with callbacks for animation coordination
+			const result = executeDecision(store, decision, {
+				onAttemptStart: () => {
+					// Animation already started above
+				},
+				onFailure: (failedTaskId: string) => {
+					// Set failure timing for animation
+					const currentState = store.getState();
+					const timing = pickFailureTiming(
+						currentState.runSeed + currentState.rollCount,
+					);
+					animationController?.setResult(false, timing);
+					// Also trigger CSS animations on task/button
+					browserAttemptCallbacks.onFailure?.(failedTaskId);
+				},
+				onAttemptComplete: (_completedTaskId: string, succeeded: boolean) => {
+					if (succeeded) {
+						animationController?.setResult(true);
+					}
+					// Failure already handled in onFailure
+
+					// Dog reacts after a random delay (300-800ms) during the animation
+					// This gives a subtle hint without immediately spoiling the result
+					const reactionDelay = 300 + Math.random() * 500;
+					setTimeout(() => {
+						store.set("lastTaskOutcome", succeeded ? "success" : "failure");
+						store.set("lastTaskTime", performance.now());
+					}, reactionDelay);
+				},
+			});
+
+			// Wait for animation to complete
+			await animPromise;
+			isAnimating = false;
+
+			// Clear cached pre-attempt values
+			preAttemptFailureCount = null;
+			preAttemptEvolvedName = null;
+
+			// Re-render panel now that animation is done (shows "Done" instead of "Attempting...")
+			const updatedScreenInfo = getScreenInfo(store.getState());
+			if (updatedScreenInfo.type === "game") {
+				renderTaskPanel(updatedScreenInfo, handleDecision, null);
+			}
+
+			// Now handle focus and announcements
 			const newState = store.getState();
 			const hasActionsLeft = isWeekend(newState)
 				? newState.weekendPointsRemaining > 0
@@ -154,15 +310,21 @@ export function renderApp(store: Store<GameState>) {
 				}
 
 				// Move focus to next uncompleted task if there are more actions available
+				// Brief delay to show "Done" before deselecting
 				if (hasActionsLeft) {
-					// Deselect first, then focus after re-render
-					store.set("selectedTaskId", null);
+					const succeededTaskId = decision.taskId;
 					setTimeout(() => {
-						const taskBtns = document.querySelectorAll<HTMLElement>(
-							`.${taskStyles.task}:not(.${taskStyles.succeeded})`,
-						);
-						taskBtns[0]?.focus();
-					}, 0);
+						// Only deselect if user hasn't selected something else
+						if (store.getState().selectedTaskId === succeededTaskId) {
+							store.set("selectedTaskId", null);
+							setTimeout(() => {
+								const taskBtns = document.querySelectorAll<HTMLElement>(
+									`.${taskStyles.task}:not(.${taskStyles.succeeded})`,
+								);
+								taskBtns[0]?.focus();
+							}, 0);
+						}
+					}, 1000);
 				}
 			} else if (hasActionsLeft) {
 				// Failed - keep focus on panel
@@ -173,7 +335,17 @@ export function renderApp(store: Store<GameState>) {
 					panel?.focus();
 				}, 0);
 			}
+
+			// Show phone buzz notification if present
+			if (result.phoneBuzzText) {
+				showNotification(result.phoneBuzzText);
+			}
+
+			return;
 		}
+
+		// Non-attempt decisions: no animation, execute immediately
+		const result = executeDecision(store, decision, browserAttemptCallbacks);
 
 		// Handle focus after skip/continue (advancing to next time block)
 		if (decision.type === "skip") {
@@ -198,6 +370,20 @@ export function renderApp(store: Store<GameState>) {
 		// Show scroll trap flavor text if present
 		if (result.scrollTrapText) {
 			showNotification(result.scrollTrapText);
+
+			// Cancel any pending dog reaction reset
+			if (phoneReactionTimeout) {
+				clearTimeout(phoneReactionTimeout);
+			}
+
+			// Schedule canvas re-render after dog reaction expires
+			phoneReactionTimeout = setTimeout(() => {
+				phoneReactionTimeout = null;
+				const canvas = app.querySelector<HTMLCanvasElement>("canvas");
+				if (canvas && store.getState().screen === "game") {
+					rerenderGameArea(canvas, store);
+				}
+			}, PHONE_REACTION_DURATION + 100);
 		}
 	};
 
@@ -209,6 +395,10 @@ export function renderApp(store: Store<GameState>) {
 		}
 		lastAnnouncedScreen = screenInfo.type;
 	}
+
+	// Stop dog animation loop when leaving game screen
+	// (will be restarted by game screen if dog is still urgent)
+	stopDogAnimationLoop();
 
 	switch (screenInfo.type) {
 		case "splash":
@@ -357,6 +547,22 @@ function renderGameScreen(
 			});
 			keyboardHandlersSetup = true;
 		}
+
+		// Set up animation controller and game area
+		currentStore = store;
+		animationController = createAnimationController(() => {
+			// Render callback - update canvas each frame
+			const canvas = app.querySelector<HTMLCanvasElement>("canvas");
+			if (canvas && currentStore) {
+				rerenderGameArea(canvas, currentStore);
+			}
+		});
+
+		// Initial render of game area
+		const canvas = app.querySelector<HTMLCanvasElement>("canvas");
+		if (canvas) {
+			rerenderGameArea(canvas, store);
+		}
 	}
 
 	// Set time-based theme (use evening for weekend default)
@@ -366,9 +572,31 @@ function renderGameScreen(
 	renderHeader(screenInfo);
 	renderSlots(screenInfo);
 	renderTaskList(screenInfo, store);
-	renderTaskPanel(screenInfo, onDecision);
+	// Pass animating task ID so panel can show "Attempting..." state
+	const animatingTaskId = isAnimating
+		? (animationController?.getState().taskId ?? null)
+		: null;
+	renderTaskPanel(screenInfo, onDecision, animatingTaskId);
 	renderFooter(screenInfo, onDecision);
 	initTooltips();
+
+	// Re-render game area for selection highlight (when not animating)
+	if (!isAnimating) {
+		const canvas = app.querySelector<HTMLCanvasElement>("canvas");
+		if (canvas) {
+			rerenderGameArea(canvas, store);
+
+			// Start continuous render loop if dog needs animation (restless or reacting)
+			const s = store.getState();
+			const urgency = getDogUrgency(s);
+			const timeSinceTask = performance.now() - s.lastTaskTime;
+			const isReactingToTask =
+				s.lastTaskOutcome !== null && timeSinceTask < TASK_REACTION_DURATION;
+			if (urgency !== "normal" || isReactingToTask) {
+				startDogAnimationLoop(canvas, store);
+			}
+		}
+	}
 
 	// Focus and announce on initial render
 	if (isFirstRender) {
@@ -417,6 +645,14 @@ function createAppStructure(screenInfo: GameScreenInfo): string {
 		</header>
 
 		<main class="${appStyles.main}">
+			<canvas
+				class="${gameAreaStyles.gameArea} ${appStyles.gameArea}"
+				width="${ROOM.width * ROOM.scale}"
+				height="${ROOM.height * ROOM.scale}"
+				role="img"
+				aria-label="${s.a11y.gameArea ?? "Game area showing your room"}"
+			></canvas>
+
 			<section class="${appStyles.taskListContainer}">
 				<div class="${appStyles.slots}" ${screenInfo.isWeekend ? 'data-weekend="true"' : ""}>
 					${
@@ -615,16 +851,23 @@ function renderTaskList(screenInfo: GameScreenInfo, store: Store<GameState>) {
 	}
 }
 
-/** Renders the side panel showing selected task details. */
+/**
+ * Renders the side panel showing selected task details.
+ * @param animatingTaskId - Task currently being animated, or null if idle
+ */
 function renderTaskPanel(
 	screenInfo: GameScreenInfo,
 	onDecision: (decision: Decision) => void,
+	animatingTaskId: TaskId | null,
 ) {
 	const s = strings();
 	const panel = document.querySelector(`.${panelStyles.panel}`);
 	if (!panel) return;
 
 	const selectedTask = screenInfo.selectedTask;
+
+	// Check if this task is currently being attempted (animation in progress)
+	const isAttempting = selectedTask && animatingTaskId === selectedTask.id;
 
 	// Check if period is exhausted (no more actions possible)
 	const periodExhausted = screenInfo.isWeekend
@@ -633,7 +876,7 @@ function renderTaskPanel(
 
 	// Build continue button HTML if period is exhausted
 	let continueButtonHtml = "";
-	if (periodExhausted) {
+	if (periodExhausted && !isAttempting) {
 		const buttonText = screenInfo.isWeekend
 			? s.game.endDay
 			: screenInfo.nextTimeBlock
@@ -672,30 +915,50 @@ function renderTaskPanel(
 	}
 	const buttonDesc = descParts.join(" ");
 
+	// Don't show "Done" while animation is still playing
+	const showDone = selectedTask.succeededToday && !isAttempting;
+
+	// Use pre-attempt values during animation (don't reveal result early)
+	const displayEvolvedName =
+		isAttempting && preAttemptEvolvedName !== null
+			? preAttemptEvolvedName
+			: selectedTask.evolvedName;
+	const displayFailureCount =
+		isAttempting && preAttemptFailureCount !== null
+			? preAttemptFailureCount
+			: selectedTask.failureCount;
+
+	// Determine button state - show during animation even if task just succeeded
+	const showAttemptBtn =
+		(selectedTask.canAttempt && !periodExhausted) || isAttempting;
+	const attemptBtnText = isAttempting ? s.game.attempting : s.game.attempt;
+	const attemptBtnDisabled = isAttempting ? "disabled" : "";
+	const attemptBtnAria = isAttempting ? 'aria-busy="true"' : "";
+
 	panel.innerHTML = `
 		<span id="panel-desc" class="sr-only">${buttonDesc}</span>
-		<p class="${panelStyles.taskName}">${selectedTask.evolvedName}</p>
+		<p class="${panelStyles.taskName}">${displayEvolvedName}</p>
 		<p class="${panelStyles.stats}">
-			${s.game.failedCount(selectedTask.failureCount)}
+			${s.game.failedCount(displayFailureCount)}
 		</p>
 		${selectedTask.urgency ? `<p class="${panelStyles.urgency}" data-urgency="${selectedTask.urgency.level}">${selectedTask.urgency.text}</p>` : ""}
 ${costDisplay}
-		${selectedTask.succeededToday ? `<p class="${panelStyles.doneText}">${s.game.done}</p>` : ""}
+		${showDone ? `<p class="${panelStyles.doneText}">${s.game.done}</p>` : ""}
 		${
-			selectedTask.canAttempt && !periodExhausted
+			showAttemptBtn
 				? `
-			<button class="btn btn-primary ${panelStyles.attemptBtn}" aria-describedby="panel-desc">
-				${s.game.attempt}
+			<button class="btn btn-primary ${panelStyles.attemptBtn}" aria-describedby="panel-desc" ${attemptBtnDisabled} ${attemptBtnAria}>
+				${attemptBtnText}
 			</button>
 		`
 				: ""
 		}
-		${selectedTask.variant && selectedTask.canAttempt && !selectedTask.succeededToday && !periodExhausted ? `<button class="btn ${panelStyles.variantBtn}" aria-describedby="panel-desc">${selectedTask.variant.name}</button>` : ""}
+		${selectedTask.variant && selectedTask.canAttempt && !selectedTask.succeededToday && !periodExhausted && !isAttempting ? `<button class="btn ${panelStyles.variantBtn}" aria-describedby="panel-desc">${selectedTask.variant.name}</button>` : ""}
 		${continueButtonHtml}
 	`;
 
 	const attemptBtn = panel.querySelector(`.${panelStyles.attemptBtn}`);
-	if (attemptBtn && selectedTask.canAttempt) {
+	if (attemptBtn && selectedTask.canAttempt && !isAttempting) {
 		attemptBtn.addEventListener("click", () => {
 			onDecision({ type: "attempt", taskId: selectedTask.id });
 		});

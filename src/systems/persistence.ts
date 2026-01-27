@@ -42,7 +42,7 @@ export interface SavedState {
 	slotsRemaining: number;
 	weekendPointsRemaining: number;
 	tasks: SavedTask[];
-	selectedTaskId: string | null;
+	selectedTaskId: TaskId | null;
 	screen: GameState["screen"];
 	energy: number;
 	momentum: number;
@@ -324,6 +324,10 @@ function fromSavedState(saved: SavedState): GameState {
 		rollCount: saved.rollCount,
 		variantsUnlocked: saved.variantsUnlocked,
 		phoneNotificationCount: saved.phoneNotificationCount ?? 0,
+		lastPhoneOutcome: null, // Transient visual state, not persisted
+		lastPhoneTime: 0,
+		lastTaskOutcome: null, // Transient visual state, not persisted
+		lastTaskTime: 0,
 		runStats: saved.runStats ?? createInitialRunStats(),
 		gameMode: saved.gameMode ?? "main", // Fallback for migrated saves
 	};

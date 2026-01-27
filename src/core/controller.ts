@@ -14,7 +14,7 @@ import { checkPhone } from "../actions/phone";
 import { type AttemptCallbacks, attemptTask } from "../actions/tasks";
 import { endWeekendDay, skipTimeBlock } from "../actions/time";
 import type { PhoneOutcome } from "../data/scrollTrap";
-import type { TaskCategory } from "../data/tasks";
+import type { TaskCategory, TaskId } from "../data/tasks";
 import { type GameState, isWeekend, type Task } from "../state";
 import type { Store } from "../store";
 import { canPushThrough } from "../systems/allnighter";
@@ -23,7 +23,7 @@ import { canPushThrough } from "../systems/allnighter";
  * Possible decisions during gameplay.
  */
 export type Decision =
-	| { type: "attempt"; taskId: string; useVariant?: boolean }
+	| { type: "attempt"; taskId: TaskId; useVariant?: boolean }
 	| { type: "skip" }
 	| { type: "checkPhone" }
 	| { type: "endDay" } // weekend only

@@ -1,0 +1,24 @@
+/* Game area canvas container styles */
+
+.gameArea {
+	display: block;
+	border: 2px solid var(--border);
+	border-radius: var(--panel-radius, 8px);
+	background: var(--surface);
+
+	/* Output only - no interaction */
+	cursor: default;
+	user-select: none;
+	pointer-events: none;
+
+	/* Center the canvas if container is larger */
+	margin: 0 auto;
+}
+
+/* Reduced motion: hide game area or make it static */
+@media (prefers-reduced-motion: reduce) {
+	.gameArea {
+		/* Could hide entirely, but let's keep it visible as static scene */
+		opacity: 0.8;
+	}
+}

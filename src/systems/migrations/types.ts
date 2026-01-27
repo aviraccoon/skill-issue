@@ -27,7 +27,7 @@ export interface SavedStateV3 {
 	slotsRemaining: number;
 	weekendPointsRemaining: number;
 	tasks: SavedTaskV3[];
-	selectedTaskId: string | null;
+	selectedTaskId: TaskId | null;
 	screen:
 		| "game"
 		| "nightChoice"

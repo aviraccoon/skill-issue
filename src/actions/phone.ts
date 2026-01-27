@@ -39,6 +39,10 @@ export function checkPhone(store: Store<GameState>): PhoneCheckResult {
 	// Clear phone notification (player "checked" it)
 	store.set("phoneNotificationCount", 0);
 
+	// Record outcome for dog reactions
+	store.set("lastPhoneOutcome", outcome);
+	store.set("lastPhoneTime", performance.now());
+
 	// Track phone check in run stats
 	store.update("runStats", (stats) => ({
 		...stats,

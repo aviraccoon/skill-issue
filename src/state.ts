@@ -23,6 +23,7 @@ export interface TaskEvolution {
 	resigned: NonEmptyArray<string>;
 }
 
+import type { PhoneOutcome } from "./data/scrollTrap";
 import type { TaskCategory, TaskId } from "./data/tasks";
 import type { Personality } from "./systems/personality";
 
@@ -105,7 +106,7 @@ export interface GameState {
 	slotsRemaining: number; // weekday action slots per time block
 	weekendPointsRemaining: number; // weekend action points (8 total)
 	tasks: Task[];
-	selectedTaskId: string | null;
+	selectedTaskId: TaskId | null;
 	screen: Screen;
 
 	// Hidden from player
@@ -134,6 +135,14 @@ export interface GameState {
 
 	// Phone notification state (for scroll trap discoverability)
 	phoneNotificationCount: number; // 0 = no dot, 1+ = dot visible (higher = more urgent animation)
+
+	// Last phone outcome (for dog reactions, transient visual state)
+	lastPhoneOutcome: PhoneOutcome | null;
+	lastPhoneTime: number; // timestamp from performance.now()
+
+	// Last task outcome (for dog reactions, transient visual state)
+	lastTaskOutcome: "success" | "failure" | null;
+	lastTaskTime: number; // timestamp from performance.now()
 
 	// Run statistics (for "Your Patterns" reveal)
 	runStats: RunStats;
@@ -182,6 +191,10 @@ export function createInitialState(
 		rollCount: 0,
 		variantsUnlocked: [],
 		phoneNotificationCount: 0,
+		lastPhoneOutcome: null,
+		lastPhoneTime: 0,
+		lastTaskOutcome: null,
+		lastTaskTime: 0,
 		runStats: createInitialRunStats(),
 		gameMode: mode,
 	};

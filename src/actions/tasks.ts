@@ -1,4 +1,5 @@
 import { getPhoneBuzzText, getPhoneIgnoredText } from "../data/friendRescue";
+import type { TaskId } from "../data/tasks";
 import { type GameState, isWeekend } from "../state";
 import type { Store } from "../store";
 import {
@@ -24,7 +25,12 @@ import { nextRoll } from "../utils/random";
  * Optional - only provided in browser context.
  */
 export interface AttemptCallbacks {
+	/** Called when attempt starts (before result is known). */
+	onAttemptStart?: (taskId: string) => void;
+	/** Called when attempt fails (for failure animations). */
 	onFailure?: (taskId: string) => void;
+	/** Called when attempt completes (with result). */
+	onAttemptComplete?: (taskId: string, succeeded: boolean) => void;
 }
 
 /**
@@ -44,7 +50,7 @@ export interface AttemptResult {
 /**
  * Selects a task to view its details in the panel.
  */
-export function selectTask(store: Store<GameState>, taskId: string) {
+export function selectTask(store: Store<GameState>, taskId: TaskId) {
 	store.set("selectedTaskId", taskId);
 }
 
@@ -75,6 +81,9 @@ export function attemptTask(
 	} else {
 		if (state.slotsRemaining <= 0) return undefined;
 	}
+
+	// Notify that attempt is starting (for animation coordination)
+	callbacks?.onAttemptStart?.(taskId);
 
 	// Use variant's base rate if requested and available
 	const effectiveTask =
@@ -214,6 +223,11 @@ export function attemptTask(
 			phoneBuzzText = getPhoneIgnoredText(newState);
 		}
 	}
+
+	// Notify that attempt is complete (for animation coordination)
+	// Note: lastTaskOutcome/lastTaskTime for dog reactions are set by the browser
+	// after animation completes, with a random delay to avoid spoiling the result
+	callbacks?.onAttemptComplete?.(taskId, succeeded);
 
 	return { succeeded, probability, friendRescueTriggered, phoneBuzzText };
 }

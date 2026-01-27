@@ -4,7 +4,7 @@ import {
 	humanLikeStrategy,
 	type Strategy,
 } from "../core/strategies";
-import { CATEGORY_PRIORITIES } from "../data/tasks";
+import { CATEGORY_PRIORITIES, type TaskId } from "../data/tasks";
 
 /**
  * Random strategy - picks randomly from available options.
@@ -50,7 +50,7 @@ export const priorityStrategy: Strategy = {
 		// Find task attempts by priority
 		const taskAttempts = availableDecisions.filter(
 			(d) => d.type === "attempt",
-		) as Array<{ type: "attempt"; taskId: string }>;
+		) as Array<{ type: "attempt"; taskId: TaskId }>;
 
 		if (taskAttempts.length > 0) {
 			// Sort by category priority (highest first), then by base rate (highest first)
@@ -126,7 +126,7 @@ export const worstCaseStrategy: Strategy = {
 		// Pick hardest tasks (lowest base rate)
 		const taskAttempts = availableDecisions.filter(
 			(d) => d.type === "attempt",
-		) as Array<{ type: "attempt"; taskId: string }>;
+		) as Array<{ type: "attempt"; taskId: TaskId }>;
 
 		if (taskAttempts.length > 0) {
 			// Sort by difficulty (lowest base rate first)
@@ -184,7 +184,7 @@ export const bestCaseStrategy: Strategy = {
 		// Pick easiest tasks first (highest base rate)
 		const taskAttempts = availableDecisions.filter(
 			(d) => d.type === "attempt",
-		) as Array<{ type: "attempt"; taskId: string }>;
+		) as Array<{ type: "attempt"; taskId: TaskId }>;
 
 		if (taskAttempts.length > 0) {
 			// Sort by ease (highest base rate first)
@@ -254,11 +254,11 @@ export const realisticStrategy: Strategy = {
 		// Find task attempts
 		const taskAttempts = availableDecisions.filter(
 			(d) => d.type === "attempt",
-		) as Array<{ type: "attempt"; taskId: string }>;
+		) as Array<{ type: "attempt"; taskId: TaskId }>;
 
 		if (taskAttempts.length > 0) {
 			// Pick highest weighted available task that hasn't succeeded
-			let best: { type: "attempt"; taskId: string } | undefined;
+			let best: { type: "attempt"; taskId: TaskId } | undefined;
 			let bestWeight = -1;
 
 			for (const attempt of taskAttempts) {

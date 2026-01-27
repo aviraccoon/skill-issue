@@ -26,9 +26,30 @@
 
 .main {
 	display: grid;
-	grid-template-columns: 1fr 200px;
+	grid-template-columns: 1fr;
 	gap: 1.5rem;
 	flex: 1;
+}
+
+/* Side-by-side layout on wider screens */
+@media (min-width: 1024px) {
+	.main {
+		grid-template-columns: auto 1fr 280px;
+		grid-template-rows: 1fr;
+		align-items: start;
+	}
+
+	.gameArea {
+		grid-row: 1;
+	}
+
+	.taskListContainer {
+		grid-row: 1;
+	}
+}
+
+.gameArea {
+	justify-self: center;
 }
 
 .taskListContainer {

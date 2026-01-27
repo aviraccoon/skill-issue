@@ -43,6 +43,12 @@ textarea {
 	--title-background: none;
 	--title-text-fill: var(--fg);
 
+	/* Game area theming (canvas reads these via JS) */
+	--game-area-floor: #e8e4d9;
+	--game-area-wall: #d4cfc4;
+	--game-area-highlight: rgba(94, 106, 210, 0.15);
+	--game-area-highlight-border: rgba(94, 106, 210, 0.4);
+
 	/* Button theming */
 	--btn-radius: 0.25rem;
 	--btn-background: var(--surface);
@@ -86,6 +92,13 @@ body {
 	display: flex;
 	flex-direction: column;
 	min-height: 100vh;
+}
+
+/* Wider layout for side-by-side game area and task list */
+@media (min-width: 1024px) {
+	#app {
+		max-width: 1100px;
+	}
 }
 
 /* Subtle ambient tints per time block */

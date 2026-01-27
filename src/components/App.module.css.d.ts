@@ -1,5 +1,7 @@
 declare const styles: {
+	readonly css: string;
 	readonly footer: string;
+	readonly gameArea: string;
 	readonly header: string;
 	readonly lateNight: string;
 	readonly main: string;
