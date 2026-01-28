@@ -1,3 +1,19 @@
+/**
+ * Mulberry32 seeded PRNG. Returns a stateful function that produces
+ * sequential pseudo-random numbers in [0, 1).
+ * Use for layout generation where many sequential draws are needed.
+ */
+export function mulberry32(seed: number): () => number {
+	let s = seed;
+	return () => {
+		s |= 0;
+		s = (s + 0x6d2b79f5) | 0;
+		let t = Math.imul(s ^ (s >>> 15), 1 | s);
+		t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
+		return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+	};
+}
+
 /** Array type that guarantees at least one element. */
 export type NonEmptyArray<T> = readonly [T, ...T[]];
 

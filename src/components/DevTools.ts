@@ -28,6 +28,7 @@ import {
 	getWeekendWorkModifier,
 } from "../systems/probability";
 import { calculateSleepQuality } from "../systems/sleep";
+import { nextRoll } from "../utils/random";
 import styles from "./DevTools.module.css";
 
 const DEV_TOOLS_COLLAPSED_KEY = "skill-issue-devtools-collapsed";
@@ -376,6 +377,7 @@ export function simulateDay(store: Store<GameState>) {
 		if (decisions.length === 0) break;
 
 		// Build context for strategy
+		// Use seeded RNG for reproducible results matching CLI
 		const context: DecisionContext = {
 			state,
 			availableDecisions: decisions,
@@ -385,7 +387,7 @@ export function simulateDay(store: Store<GameState>) {
 					: state.screen === "nightChoice"
 						? "nightChoice"
 						: "game",
-			roll: Math.random,
+			roll: () => nextRoll(store),
 		};
 
 		// Use shared human-like strategy

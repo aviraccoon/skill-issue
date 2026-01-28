@@ -3,12 +3,9 @@
  * Handles character movement and task attempt animations.
  */
 
-import {
-	CHARACTER_START,
-	getTaskPosition,
-	type Position,
-} from "../data/roomLayout";
+import { getTaskPosition } from "../data/roomLayout";
 import type { TaskId } from "../data/tasks";
+import type { Position, RoomLayout } from "../rendering/types";
 
 /** When during the approach the failure becomes visible. */
 export type FailureTiming = "immediate" | "midway" | "atTask";
@@ -66,16 +63,20 @@ export function pickFailureTiming(seed: number): FailureTiming {
 /**
  * Creates an animation controller for the game area.
  * @param onFrame Callback to trigger re-render each frame
+ * @param layout Generated room layout (positions derived from furniture)
  */
 export function createAnimationController(
 	onFrame: () => void,
+	layout: RoomLayout,
 ): AnimationController {
+	const characterStart = layout.charPos;
+
 	const state: AnimationState = {
 		phase: "idle",
-		characterX: CHARACTER_START.x,
-		characterY: CHARACTER_START.y,
-		targetX: CHARACTER_START.x,
-		targetY: CHARACTER_START.y,
+		characterX: characterStart.x,
+		characterY: characterStart.y,
+		targetX: characterStart.x,
+		targetY: characterStart.y,
 		succeeded: null,
 		walkProgress: 0,
 		taskId: null,
@@ -110,10 +111,7 @@ export function createAnimationController(
 	}
 
 	/** Animate walking from current position to target. */
-	async function walkTo(
-		target: Position,
-		stopEarly?: number,
-	): Promise<boolean> {
+	async function walkTo(target: Position): Promise<boolean> {
 		const startX = state.characterX;
 		const startY = state.characterY;
 		const dist = distance({ x: startX, y: startY }, target);
@@ -126,19 +124,7 @@ export function createAnimationController(
 		return new Promise((resolve) => {
 			function frame() {
 				const elapsed = performance.now() - startTime;
-				let progress = Math.min(elapsed / duration, 1);
-
-				// Check if we should stop early (for failure timing)
-				if (stopEarly !== undefined && progress >= stopEarly) {
-					progress = stopEarly;
-					state.walkProgress = progress;
-					const eased = easeInOutQuad(progress);
-					state.characterX = lerp(startX, target.x, eased);
-					state.characterY = lerp(startY, target.y, eased);
-					onFrame();
-					resolve(false); // Didn't complete
-					return;
-				}
+				const progress = Math.min(elapsed / duration, 1);
 
 				state.walkProgress = progress;
 				const eased = easeInOutQuad(progress);
@@ -159,7 +145,7 @@ export function createAnimationController(
 
 	/** Main animation sequence for a task attempt. */
 	async function runAnimation(taskId: TaskId): Promise<void> {
-		const target = getTaskPosition(taskId);
+		const target = getTaskPosition(taskId, layout);
 		state.targetX = target.x;
 		state.targetY = target.y;
 		state.phase = "walking";
@@ -271,7 +257,7 @@ export function createAnimationController(
 
 			// Return to start
 			state.phase = "returning";
-			await walkTo(CHARACTER_START);
+			await walkTo(characterStart);
 		}
 
 		// Done
@@ -306,8 +292,8 @@ export function createAnimationController(
 				animationFrameId = null;
 			}
 			state.phase = "idle";
-			state.characterX = CHARACTER_START.x;
-			state.characterY = CHARACTER_START.y;
+			state.characterX = characterStart.x;
+			state.characterY = characterStart.y;
 			state.succeeded = null;
 			if (resolveAnimation) {
 				resolveAnimation();

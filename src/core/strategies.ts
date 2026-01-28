@@ -3,7 +3,8 @@
  * Used by both CLI simulation and DevTools.
  */
 
-import type { GameState } from "../state";
+import { CATEGORY_PRIORITIES } from "../data/tasks";
+import type { GameState, Task } from "../state";
 import { isWeekend } from "../state";
 import type { Decision } from "./controller";
 import { getAvailableTasks } from "./controller";
@@ -34,7 +35,12 @@ export interface Strategy {
  * Human-like strategy with realistic uncertainty.
  * Simulates a player who can't see hidden state and makes imperfect decisions.
  *
- * Game screen: 20% phone, 60% task (40% variant when available), 20% skip
+ * Uses a "feel" model where the player develops an imperfect sense of their
+ * state based on recent successes/failures. This creates realistic patterns:
+ * - Succeeding players keep going
+ * - Failing players spiral into phone checking
+ * - Players only give up when truly struggling
+ *
  * Night: 30% push through if energy >50% and able
  * Rescue: Guesses tier based on energy feel, with realistic error rates
  */
@@ -55,51 +61,281 @@ export const humanLikeStrategy: Strategy = {
 };
 
 /**
- * Picks a game screen decision.
- * 20% phone, 60% task attempt, 20% skip/end day.
+ * Player's perceived state based on recent outcomes.
+ * This is fuzzy - they can't see actual energy/momentum.
+ */
+interface PerceivedState {
+	/** Recent failures outweigh successes - feeling tired/frustrated */
+	feelingDrained: boolean;
+	/** Multiple consecutive failures - nothing seems to work */
+	feelingStuck: boolean;
+	/** Recent successes, no failures - in the zone */
+	onARoll: boolean;
+	/** How many tasks attempted today */
+	attemptsToday: number;
+	/** How many tasks succeeded today */
+	successesToday: number;
+}
+
+/**
+ * Derives perceived state from game state.
+ * Player can't see energy/momentum but can feel patterns.
+ */
+function getPerceivedState(state: GameState): PerceivedState {
+	const attemptsToday = state.tasks.filter((t) => t.attemptedToday).length;
+	const successesToday = state.tasks.filter((t) => t.succeededToday).length;
+	const failuresToday = attemptsToday - successesToday;
+
+	// Feeling drained: more failures than successes, and at least 2 failures
+	const feelingDrained = failuresToday > successesToday && failuresToday >= 2;
+
+	// Feeling stuck: 2+ consecutive failures (tracked globally)
+	const feelingStuck = state.consecutiveFailures >= 2;
+
+	// On a roll: 2+ successes today and no consecutive failures
+	const onARoll = successesToday >= 2 && state.consecutiveFailures === 0;
+
+	return {
+		feelingDrained,
+		feelingStuck,
+		onARoll,
+		attemptsToday,
+		successesToday,
+	};
+}
+
+/**
+ * Picks a game screen decision using the "feel" model.
+ * Decisions are influenced by perceived state, not random percentages.
  */
 function pickGameDecision(
 	state: GameState,
 	decisions: Decision[],
 	roll: () => number,
 ): Decision {
-	const r = roll();
+	const perceived = getPerceivedState(state);
+	const weekend = isWeekend(state);
+	const availableTasks = getAvailableTasks(state);
+	const freshTasks = availableTasks.filter((t) => !t.attemptedToday);
 
-	// 20% chance to check phone if available
-	if (r < 0.2) {
-		const phoneDecision = decisions.find((d) => d.type === "checkPhone");
-		if (phoneDecision) return phoneDecision;
-	}
+	// Check if we can actually attempt tasks (have slots/points)
+	const canAttempt = weekend
+		? state.weekendPointsRemaining > 0
+		: state.slotsRemaining > 0;
 
-	// 60% chance to attempt a random task
-	if (r < 0.8) {
-		const availableTasks = getAvailableTasks(state);
-		if (availableTasks.length > 0) {
-			const task = availableTasks[Math.floor(roll() * availableTasks.length)];
-			if (task) {
-				// Check if variant is available and decide whether to use it
-				const hasVariant =
-					task.minimalVariant && state.variantsUnlocked.includes(task.category);
-
-				// 40% chance to use variant when available
-				const useVariant = hasVariant && roll() < 0.4;
-
-				return { type: "attempt", taskId: task.id, useVariant };
-			}
+	// Check if we should skip/end day (give up on current block)
+	if (
+		shouldGiveUp(
+			state,
+			perceived,
+			weekend,
+			canAttempt ? availableTasks.length : 0,
+			canAttempt ? freshTasks.length : 0,
+			roll,
+		)
+	) {
+		if (weekend) {
+			const endDay = decisions.find((d) => d.type === "endDay");
+			if (endDay) return endDay;
+		} else {
+			const skip = decisions.find((d) => d.type === "skip");
+			if (skip) return skip;
 		}
 	}
 
-	// 20% skip (weekday) or end day (weekend)
-	if (isWeekend(state)) {
-		const endDay = decisions.find((d) => d.type === "endDay");
-		if (endDay) return endDay;
-	} else {
-		const skip = decisions.find((d) => d.type === "skip");
-		if (skip) return skip;
+	// Check if we should check phone (procrastination/distraction)
+	// Phone doesn't cost slots but we shouldn't loop on it forever
+	if (canAttempt && shouldCheckPhone(perceived, decisions, roll)) {
+		const phone = decisions.find((d) => d.type === "checkPhone");
+		if (phone) return phone;
 	}
 
-	// Fallback to first available decision
-	return decisions[0] as Decision;
+	// Try to attempt a task (only if we have slots/points)
+	if (canAttempt && availableTasks.length > 0) {
+		const task = pickTask(state, availableTasks, perceived, roll);
+		if (task) {
+			// Check if variant is available
+			const hasVariant =
+				task.minimalVariant && state.variantsUnlocked.includes(task.category);
+
+			// More likely to use variant when feeling drained (need easy win)
+			const variantChance = perceived.feelingDrained ? 0.6 : 0.35;
+			const useVariant = hasVariant && roll() < variantChance;
+
+			return { type: "attempt", taskId: task.id, useVariant };
+		}
+	}
+
+	// No tasks available - must skip/end
+	if (weekend) {
+		return (
+			decisions.find((d) => d.type === "endDay") ?? (decisions[0] as Decision)
+		);
+	}
+	return decisions.find((d) => d.type === "skip") ?? (decisions[0] as Decision);
+}
+
+/**
+ * Determines if player should give up on current time block / end day.
+ * Based on feeling drained/stuck, not random chance.
+ */
+function shouldGiveUp(
+	state: GameState,
+	perceived: PerceivedState,
+	weekend: boolean,
+	tasksAvailable: number,
+	freshTasksAvailable: number,
+	roll: () => number,
+): boolean {
+	// No tasks available - must give up
+	if (tasksAvailable === 0) return true;
+
+	// No fresh tasks left - only retries available
+	// This is a strong signal to move on (80% chance to skip)
+	if (freshTasksAvailable === 0) {
+		// Unless we haven't tried much yet this block
+		if (weekend) {
+			// Weekend: give up if we've done several attempts
+			if (perceived.attemptsToday >= 4) return roll() < 0.7;
+		} else {
+			// Weekday: used most slots, no fresh tasks → move on
+			if (state.slotsRemaining <= 1) return roll() < 0.8;
+		}
+	}
+
+	// Small base chance - sometimes people just don't feel like continuing
+	let giveUpChance = 0.03;
+
+	if (weekend) {
+		// Weekend: give up when tired and have done some tasks
+		if (perceived.feelingDrained && perceived.attemptsToday >= 4) {
+			giveUpChance += 0.2;
+		}
+		if (perceived.feelingStuck && perceived.feelingDrained) {
+			giveUpChance += 0.25;
+		}
+		// Less likely to give up early in the day
+		if (perceived.attemptsToday < 3) {
+			giveUpChance *= 0.3;
+		}
+	} else {
+		// Weekday: give up on block when really struggling
+		if (perceived.feelingDrained && perceived.feelingStuck) {
+			giveUpChance += 0.2;
+		}
+		// More likely to skip if few slots remain and struggling
+		if (state.slotsRemaining === 1 && perceived.feelingDrained) {
+			giveUpChance += 0.15;
+		}
+		// Very stuck (3+ consecutive failures) - strongly consider skipping
+		if (state.consecutiveFailures >= 3) {
+			giveUpChance += 0.25;
+		}
+	}
+
+	// On a roll - very unlikely to give up
+	if (perceived.onARoll) {
+		giveUpChance *= 0.1;
+	}
+
+	return roll() < giveUpChance;
+}
+
+/**
+ * Determines if player should check phone (procrastination).
+ * More likely when stuck or drained, but temptation exists even when doing well.
+ */
+function shouldCheckPhone(
+	perceived: PerceivedState,
+	decisions: Decision[],
+	roll: () => number,
+): boolean {
+	// Can't check phone if not available
+	if (!decisions.some((d) => d.type === "checkPhone")) return false;
+
+	// Base temptation exists even when doing well - phones are addictive
+	let phoneChance = 0.08;
+
+	// Feeling stuck - reach for phone when nothing works
+	if (perceived.feelingStuck) {
+		phoneChance += 0.18;
+	}
+
+	// Feeling drained - distraction seeking
+	if (perceived.feelingDrained) {
+		phoneChance += 0.1;
+	}
+
+	// On a roll - somewhat less likely to get distracted, but not immune
+	if (perceived.onARoll) {
+		phoneChance *= 0.5;
+	}
+
+	// Cap at reasonable maximum
+	phoneChance = Math.min(phoneChance, 0.35);
+
+	return roll() < phoneChance;
+}
+
+/**
+ * Picks which task to attempt.
+ * Prefers unattempted tasks, weights by priority with noise.
+ * When drained, prefers easier tasks.
+ */
+function pickTask(
+	state: GameState,
+	availableTasks: Task[],
+	perceived: PerceivedState,
+	roll: () => number,
+): Task | undefined {
+	if (availableTasks.length === 0) return undefined;
+
+	// Separate fresh tasks (not yet attempted today)
+	const freshTasks = availableTasks.filter((t) => !t.attemptedToday);
+
+	// Strongly prefer fresh tasks (80% of the time if available)
+	const preferFresh = freshTasks.length > 0 && roll() < 0.8;
+	const taskPool = preferFresh ? freshTasks : availableTasks;
+
+	// Weight tasks by priority + some noise
+	const weights = taskPool.map((task) => {
+		let weight = CATEGORY_PRIORITIES[task.category] ?? 50;
+
+		// Add randomness for individual variation (+-30)
+		weight += (roll() - 0.5) * 60;
+
+		// When drained, prefer easier tasks (higher base rate)
+		if (perceived.feelingDrained) {
+			weight += task.baseRate * 40;
+		}
+
+		// Slight preference for tasks that haven't been attempted
+		if (!task.attemptedToday) {
+			weight += 15;
+		}
+
+		// Dog gets urgency boost if failed yesterday
+		if (state.dogFailedYesterday && task.category === "dog") {
+			weight += 50;
+		}
+
+		return { task, weight };
+	});
+
+	// Pick weighted random
+	const totalWeight = weights.reduce(
+		(sum, w) => sum + Math.max(w.weight, 1),
+		0,
+	);
+	let pick = roll() * totalWeight;
+
+	for (const { task, weight } of weights) {
+		pick -= Math.max(weight, 1);
+		if (pick <= 0) return task;
+	}
+
+	// Fallback to first task
+	return taskPool[0];
 }
 
 /**

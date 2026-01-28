@@ -6,9 +6,21 @@ import {
 	type ScreenInfo,
 	type TaskDisplay,
 } from "../core/screenInfo";
-import { ROOM } from "../data/roomLayout";
+import { ROOM_SCALE } from "../data/roomLayout";
 import type { TaskId } from "../data/tasks";
 import { strings } from "../i18n";
+import { generateSingleRoomLayout } from "../rendering/layout";
+import { buildTimePalette } from "../rendering/palettes";
+import { getRenderer, pickArtStyle } from "../rendering/styles/index";
+import type {
+	ItemVariants,
+	RoomLayout,
+	RoomRenderer,
+	SeedPalette,
+	ThemeColors,
+	TimePalette,
+} from "../rendering/types";
+import { getItemVariants, getSeedPalette } from "../rendering/variants";
 import { type GameState, isWeekend } from "../state";
 import type { Store } from "../store";
 import {
@@ -18,6 +30,7 @@ import {
 } from "../systems/animation";
 import { getDogUrgency } from "../systems/dog";
 import { announce } from "../utils/announce";
+import { mulberry32 } from "../utils/random";
 import { initTooltips } from "../utils/tooltip";
 import appStyles from "./App.module.css";
 import { renderDaySummary } from "./DaySummary";
@@ -92,6 +105,88 @@ let preAttemptEvolvedName: string | null = null;
 /** Current store reference for animation rendering. */
 let currentStore: Store<GameState> | null = null;
 
+/** Cached rendering state (generated once per run from seed). */
+let cachedLayout: RoomLayout | null = null;
+let cachedRenderer: RoomRenderer | null = null;
+let cachedVariants: ItemVariants | null = null;
+let cachedSeedPalette: SeedPalette | null = null;
+let cachedRunSeed: number | null = null;
+
+/** Gets or generates rendering state for the current run seed. */
+function getRenderingState(runSeed: number): {
+	layout: RoomLayout;
+	renderer: RoomRenderer;
+	variants: ItemVariants;
+	seedPalette: SeedPalette;
+} {
+	if (
+		cachedRunSeed === runSeed &&
+		cachedLayout &&
+		cachedRenderer &&
+		cachedVariants &&
+		cachedSeedPalette
+	) {
+		return {
+			layout: cachedLayout,
+			renderer: cachedRenderer,
+			variants: cachedVariants,
+			seedPalette: cachedSeedPalette,
+		};
+	}
+	const rng = mulberry32(runSeed);
+	const layout = generateSingleRoomLayout(rng);
+	const variants = getItemVariants(rng);
+	const seedPalette = getSeedPalette(rng);
+	const artStyle = pickArtStyle(runSeed);
+	const renderer = getRenderer(artStyle);
+
+	cachedLayout = layout;
+	cachedRenderer = renderer;
+	cachedVariants = variants;
+	cachedSeedPalette = seedPalette;
+	cachedRunSeed = runSeed;
+
+	return { layout, renderer, variants, seedPalette };
+}
+
+/** Cached theme colors from CSS variables. */
+let cachedThemeColors: ThemeColors | null = null;
+let cachedThemeName: string | null = null;
+
+/** Reads theme colors from CSS custom properties, caching per theme. */
+function getThemeColors(): ThemeColors {
+	const currentTheme = document.documentElement.dataset.theme ?? null;
+	if (cachedThemeColors && cachedThemeName === currentTheme) {
+		return cachedThemeColors;
+	}
+
+	const style = getComputedStyle(document.documentElement);
+	const floor = style.getPropertyValue("--game-area-floor").trim();
+	const wall = style.getPropertyValue("--game-area-wall").trim();
+	const highlight = style.getPropertyValue("--game-area-highlight").trim();
+	const highlightBorder = style
+		.getPropertyValue("--game-area-highlight-border")
+		.trim();
+
+	cachedThemeColors = {
+		floor: floor || "#e8e4d9",
+		wall: wall || "#d4cfc4",
+		highlight: highlight || "rgba(94, 106, 210, 0.15)",
+		highlightBorder: highlightBorder || "rgba(94, 106, 210, 0.4)",
+	};
+	cachedThemeName = currentTheme;
+	return cachedThemeColors;
+}
+
+/** Builds the time palette for a time block using current theme colors. */
+function getTimePalette(
+	timeBlock: string,
+	inExtendedNight: boolean,
+): TimePalette {
+	const theme = getThemeColors();
+	return buildTimePalette(timeBlock, inExtendedNight, theme);
+}
+
 /** How long dog reacts to phone checks - must match GameArea.ts */
 const PHONE_REACTION_DURATION = 2500;
 
@@ -152,6 +247,11 @@ function rerenderGameArea(
 	store: Store<GameState>,
 ): void {
 	const s = store.getState();
+	const { layout, renderer, variants, seedPalette } = getRenderingState(
+		s.runSeed,
+	);
+	const timePalette = getTimePalette(s.timeBlock, s.inExtendedNight);
+	const themeColors = getThemeColors();
 	renderGameArea(canvas, {
 		animationState: animationController?.getState() ?? null,
 		energy: s.energy,
@@ -161,6 +261,12 @@ function rerenderGameArea(
 		lastTaskOutcome: s.lastTaskOutcome,
 		lastTaskTime: s.lastTaskTime,
 		dogUrgency: getDogUrgency(s),
+		layout,
+		renderer,
+		timePalette,
+		seedPalette,
+		variants,
+		themeColors,
 	});
 }
 
@@ -403,6 +509,7 @@ export function renderApp(store: Store<GameState>) {
 	switch (screenInfo.type) {
 		case "splash":
 			gameInitialized = false;
+			cachedRunSeed = null;
 			delete app.dataset.time;
 			renderSplash(screenInfo, app, store);
 			break;
@@ -459,7 +566,8 @@ function renderGameScreen(
 
 	// Create structure on first render of game screen
 	if (!gameInitialized) {
-		app.innerHTML = createAppStructure(screenInfo);
+		const { layout: initLayout } = getRenderingState(store.getState().runSeed);
+		app.innerHTML = createAppStructure(screenInfo, initLayout);
 		gameInitialized = true;
 
 		// Wire up menu button
@@ -550,13 +658,14 @@ function renderGameScreen(
 
 		// Set up animation controller and game area
 		currentStore = store;
+		const { layout } = getRenderingState(store.getState().runSeed);
 		animationController = createAnimationController(() => {
 			// Render callback - update canvas each frame
 			const canvas = app.querySelector<HTMLCanvasElement>("canvas");
 			if (canvas && currentStore) {
 				rerenderGameArea(canvas, currentStore);
 			}
-		});
+		}, layout);
 
 		// Initial render of game area
 		const canvas = app.querySelector<HTMLCanvasElement>("canvas");
@@ -635,7 +744,10 @@ function renderGameScreen(
 }
 
 /** Creates the initial HTML structure for the app. */
-function createAppStructure(screenInfo: GameScreenInfo): string {
+function createAppStructure(
+	screenInfo: GameScreenInfo,
+	layout: RoomLayout,
+): string {
 	const s = strings();
 
 	return `
@@ -647,8 +759,8 @@ function createAppStructure(screenInfo: GameScreenInfo): string {
 		<main class="${appStyles.main}">
 			<canvas
 				class="${gameAreaStyles.gameArea} ${appStyles.gameArea}"
-				width="${ROOM.width * ROOM.scale}"
-				height="${ROOM.height * ROOM.scale}"
+				width="${layout.roomWidth * ROOM_SCALE}"
+				height="${layout.roomHeight * ROOM_SCALE}"
 				role="img"
 				aria-label="${s.a11y.gameArea ?? "Game area showing your room"}"
 			></canvas>
