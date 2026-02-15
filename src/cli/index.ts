@@ -98,19 +98,37 @@ function tryParseArgs(): CliArgs {
 	const strategies = values.strategy ?? [];
 	const strategy = strategies[0] ?? "realistic";
 
-	// Parse optional numeric value
-	const parseNum = (v: string | undefined): number | null =>
-		v ? Number.parseFloat(v) : null;
+	// Parse optional numeric value, returning null for missing or invalid input
+	const parseNum = (v: string | undefined): number | null => {
+		if (!v) return null;
+		const n = Number.parseFloat(v);
+		return Number.isNaN(n) ? null : n;
+	};
 
 	// Parse energy as decimal (input is 0-100, store as 0-1)
-	const parseEnergy = (v: string | undefined): number | null =>
-		v ? Number.parseFloat(v) / 100 : null;
+	const parseEnergy = (v: string | undefined): number | null => {
+		if (!v) return null;
+		const n = Number.parseFloat(v);
+		return Number.isNaN(n) ? null : n / 100;
+	};
+
+	const runs = Number.parseInt(values.runs, 10);
+	if (Number.isNaN(runs) || runs < 1) {
+		console.error(`Invalid value for --runs: "${values.runs}"`);
+		process.exit(1);
+	}
+
+	const seed = values.seed ? Number.parseInt(values.seed, 10) : null;
+	if (values.seed && (seed === null || Number.isNaN(seed))) {
+		console.error(`Invalid value for --seed: "${values.seed}"`);
+		process.exit(1);
+	}
 
 	return {
 		command,
 		showHelp,
-		runs: Number.parseInt(values.runs, 10),
-		seed: values.seed ? Number.parseInt(values.seed, 10) : null,
+		runs,
+		seed,
 		strategy,
 		strategies,
 		verbosity,
@@ -130,7 +148,7 @@ function tryParseArgs(): CliArgs {
 			maxEnergy: parseEnergy(values["max-energy"]),
 			friendUnlocks: values["friend-unlocks"] ?? [],
 		},
-		limit: Number.parseInt(values.limit, 10),
+		limit: parseNum(values.limit) ?? 10,
 		groupBy,
 		debug: values.debug,
 	};

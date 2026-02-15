@@ -54,13 +54,26 @@ export function initDevTools(store: Store<GameState>) {
 	}
 
 	// Restore position
-	const savedPos = localStorage.getItem(DEV_TOOLS_POS_KEY);
-	if (savedPos) {
-		const { x, y } = JSON.parse(savedPos);
-		devTools.style.right = "auto";
-		devTools.style.bottom = "auto";
-		devTools.style.left = `${x}px`;
-		devTools.style.top = `${y}px`;
+	try {
+		const savedPos = localStorage.getItem(DEV_TOOLS_POS_KEY);
+		if (savedPos) {
+			const { x, y } = JSON.parse(savedPos);
+			if (
+				typeof x === "number" &&
+				typeof y === "number" &&
+				x >= 0 &&
+				x < window.innerWidth - 40 &&
+				y >= 0 &&
+				y < window.innerHeight - 40
+			) {
+				devTools.style.right = "auto";
+				devTools.style.bottom = "auto";
+				devTools.style.left = `${x}px`;
+				devTools.style.top = `${y}px`;
+			}
+		}
+	} catch {
+		localStorage.removeItem(DEV_TOOLS_POS_KEY);
 	}
 
 	devTools.innerHTML = `
