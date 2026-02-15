@@ -32,35 +32,6 @@ export interface Strategy {
 }
 
 /**
- * Human-like strategy with realistic uncertainty.
- * Simulates a player who can't see hidden state and makes imperfect decisions.
- *
- * Uses a "feel" model where the player develops an imperfect sense of their
- * state based on recent successes/failures. This creates realistic patterns:
- * - Succeeding players keep going
- * - Failing players spiral into phone checking
- * - Players only give up when truly struggling
- *
- * Night: 30% push through if energy >50% and able
- * Rescue: Guesses tier based on energy feel, with realistic error rates
- */
-export const humanLikeStrategy: Strategy = {
-	decide(context: DecisionContext): Decision {
-		const { state, availableDecisions, screen, roll } = context;
-
-		if (screen === "friendRescue") {
-			return pickRescueDecision(state, availableDecisions, roll);
-		}
-
-		if (screen === "nightChoice") {
-			return pickNightDecision(state, availableDecisions, roll);
-		}
-
-		return pickGameDecision(state, availableDecisions, roll);
-	},
-};
-
-/**
  * Player's perceived state based on recent outcomes.
  * This is fuzzy - they can't see actual energy/momentum.
  */
@@ -104,6 +75,80 @@ function getPerceivedState(state: GameState): PerceivedState {
 	};
 }
 
+/** Per-block phone tracking state for the human-like strategy. */
+interface PhoneTracking {
+	lastActionWasPhone: boolean;
+	phoneChecksThisBlock: number;
+}
+
+/**
+ * Creates a human-like strategy instance with per-run state.
+ *
+ * Simulates a player who can't see hidden state and makes imperfect decisions.
+ * Uses a "feel" model where the player develops an imperfect sense of their
+ * state based on recent successes/failures. This creates realistic patterns:
+ * - Succeeding players keep going
+ * - Failing players sometimes check phone but don't spiral
+ * - Players give up on blocks when truly struggling
+ *
+ * Night: Push through when feeling productive, not when drained.
+ * Rescue: Guesses tier based on feel, with realistic error rates.
+ *
+ * Phone checking is bounded per block to prevent the death spiral where
+ * early failures lead to phone → momentum loss → more failures → more phone.
+ * A real person checks once, maybe twice, then does something or moves on.
+ */
+export function createHumanLikeStrategy(): Strategy {
+	let phoneTracking: PhoneTracking = {
+		lastActionWasPhone: false,
+		phoneChecksThisBlock: 0,
+	};
+	let currentBlockKey = "";
+
+	return {
+		decide(context: DecisionContext): Decision {
+			const { state, availableDecisions, screen, roll } = context;
+
+			if (screen === "friendRescue") {
+				phoneTracking.lastActionWasPhone = false;
+				return pickRescueDecision(state, availableDecisions, roll);
+			}
+
+			if (screen === "nightChoice") {
+				phoneTracking.lastActionWasPhone = false;
+				return pickNightDecision(state, availableDecisions, roll);
+			}
+
+			// Track block changes to reset phone counter
+			const blockKey = `${state.dayIndex}-${state.timeBlock}-${state.inExtendedNight}`;
+			if (blockKey !== currentBlockKey) {
+				phoneTracking = {
+					lastActionWasPhone: false,
+					phoneChecksThisBlock: 0,
+				};
+				currentBlockKey = blockKey;
+			}
+
+			const decision = pickGameDecision(
+				state,
+				availableDecisions,
+				roll,
+				phoneTracking,
+			);
+
+			// Track the decision for next iteration
+			if (decision.type === "checkPhone") {
+				phoneTracking.lastActionWasPhone = true;
+				phoneTracking.phoneChecksThisBlock++;
+			} else {
+				phoneTracking.lastActionWasPhone = false;
+			}
+
+			return decision;
+		},
+	};
+}
+
 /**
  * Picks a game screen decision using the "feel" model.
  * Decisions are influenced by perceived state, not random percentages.
@@ -112,6 +157,7 @@ function pickGameDecision(
 	state: GameState,
 	decisions: Decision[],
 	roll: () => number,
+	phoneTracking: PhoneTracking,
 ): Decision {
 	const perceived = getPerceivedState(state);
 	const weekend = isWeekend(state);
@@ -144,8 +190,10 @@ function pickGameDecision(
 	}
 
 	// Check if we should check phone (procrastination/distraction)
-	// Phone doesn't cost slots but we shouldn't loop on it forever
-	if (canAttempt && shouldCheckPhone(perceived, decisions, roll)) {
+	if (
+		canAttempt &&
+		shouldCheckPhone(perceived, decisions, roll, phoneTracking)
+	) {
 		const phone = decisions.find((d) => d.type === "checkPhone");
 		if (phone) return phone;
 	}
@@ -198,7 +246,7 @@ function shouldGiveUp(
 			// Weekend: give up if we've done several attempts
 			if (perceived.attemptsToday >= 4) return roll() < 0.7;
 		} else {
-			// Weekday: used most slots, no fresh tasks → move on
+			// Weekday: used most slots, no fresh tasks -> move on
 			if (state.slotsRemaining <= 1) return roll() < 0.8;
 		}
 	}
@@ -243,36 +291,46 @@ function shouldGiveUp(
 
 /**
  * Determines if player should check phone (procrastination).
- * More likely when stuck or drained, but temptation exists even when doing well.
+ * Bounded per block to prevent the spiral where phone -> momentum loss ->
+ * more failures -> more phone. A real person checks once, maybe twice,
+ * then either does something or moves on.
  */
 function shouldCheckPhone(
 	perceived: PerceivedState,
 	decisions: Decision[],
 	roll: () => number,
+	tracking: PhoneTracking,
 ): boolean {
 	// Can't check phone if not available
 	if (!decisions.some((d) => d.type === "checkPhone")) return false;
+
+	// Never check phone back-to-back (diminishing returns - you just checked)
+	if (tracking.lastActionWasPhone) return false;
+
+	// Limit per block: max 1 normally, 2 when stuck
+	const maxChecks = perceived.feelingStuck ? 2 : 1;
+	if (tracking.phoneChecksThisBlock >= maxChecks) return false;
 
 	// Base temptation exists even when doing well - phones are addictive
 	let phoneChance = 0.08;
 
 	// Feeling stuck - reach for phone when nothing works
 	if (perceived.feelingStuck) {
-		phoneChance += 0.18;
+		phoneChance += 0.15;
 	}
 
 	// Feeling drained - distraction seeking
 	if (perceived.feelingDrained) {
-		phoneChance += 0.1;
+		phoneChance += 0.08;
 	}
 
-	// On a roll - somewhat less likely to get distracted, but not immune
+	// On a roll - less likely to get distracted
 	if (perceived.onARoll) {
-		phoneChance *= 0.5;
+		phoneChance *= 0.4;
 	}
 
 	// Cap at reasonable maximum
-	phoneChance = Math.min(phoneChance, 0.35);
+	phoneChance = Math.min(phoneChance, 0.3);
 
 	return roll() < phoneChance;
 }
@@ -339,65 +397,65 @@ function pickTask(
 }
 
 /**
- * Picks a night choice decision.
- * 30% chance to push through if energy is decent (>50%) and able.
+ * Picks a night choice decision based on perceived state.
+ * Player can't see energy, so they decide based on how the day felt.
  */
 function pickNightDecision(
 	state: GameState,
 	decisions: Decision[],
 	roll: () => number,
 ): Decision {
-	// Push through sometimes if energy is decent
 	if (
-		state.energy > 0.5 &&
 		!state.pushedThroughLastNight &&
 		!state.inExtendedNight &&
-		!isWeekend(state) &&
-		roll() < 0.3
+		!isWeekend(state)
 	) {
-		const pushThrough = decisions.find((d) => d.type === "pushThrough");
-		if (pushThrough) return pushThrough;
+		const perceived = getPerceivedState(state);
+
+		// Push through when feeling productive, avoid when struggling
+		let pushChance = 0.15;
+		if (perceived.onARoll) pushChance = 0.4;
+		if (perceived.feelingDrained) pushChance = 0.05;
+		if (perceived.feelingStuck) pushChance = 0.02;
+
+		if (roll() < pushChance) {
+			const pushThrough = decisions.find((d) => d.type === "pushThrough");
+			if (pushThrough) return pushThrough;
+		}
 	}
+
 	return decisions.find((d) => d.type === "sleep") as Decision;
 }
 
 /**
- * Picks a friend rescue activity with realistic uncertainty.
- * Player can't see energy, so they're guessing based on feel.
- * Tends toward correct tier but can misjudge.
+ * Picks a friend rescue activity based on perceived state.
+ * Player can't see energy, so they guess based on how they feel.
  */
 function pickRescueDecision(
 	state: GameState,
 	decisions: Decision[],
 	roll: () => number,
 ): Decision {
-	// Activity thresholds: low (0.2), medium (0.45), high (0.7)
-	// Player has a rough sense but doesn't know exactly
+	const perceived = getPerceivedState(state);
 	const r = roll();
 
-	if (state.energy >= 0.7) {
-		// High energy: usually pick high, sometimes medium
-		if (r < 0.7) return findRescue(decisions, "high");
-		if (r < 0.95) return findRescue(decisions, "medium");
-		return findRescue(decisions, "low");
-	}
-
-	if (state.energy >= 0.45) {
-		// Medium energy: usually pick medium, might misjudge either way
-		if (r < 0.2) return findRescue(decisions, "high");
+	if (perceived.onARoll) {
+		// Feeling good - lean toward high activity
+		if (r < 0.5) return findRescue(decisions, "high");
 		if (r < 0.85) return findRescue(decisions, "medium");
 		return findRescue(decisions, "low");
 	}
 
-	if (state.energy >= 0.2) {
-		// Low energy: usually pick low, might overestimate
+	if (perceived.feelingDrained) {
+		// Feeling tired - lean toward low activity
 		if (r < 0.1) return findRescue(decisions, "high");
 		if (r < 0.35) return findRescue(decisions, "medium");
 		return findRescue(decisions, "low");
 	}
 
-	// Critically low: mostly pick low, small chance of overestimating
-	if (r < 0.15) return findRescue(decisions, "medium");
+	// Neutral - lean medium
+	if (r < 0.2) return findRescue(decisions, "high");
+	if (r < 0.8) return findRescue(decisions, "medium");
 	return findRescue(decisions, "low");
 }
 

@@ -16,7 +16,7 @@ import {
 	getMomentumFailurePenalty,
 	getMomentumSuccessBonus,
 } from "../systems/momentum";
-import { isFirstEverAttempt, markFirstAttempt } from "../systems/persistence";
+import { markFirstAttempt } from "../systems/persistence";
 import { calculateSuccessProbability } from "../systems/probability";
 import { nextRoll } from "../utils/random";
 
@@ -92,8 +92,9 @@ export function attemptTask(
 			: task;
 
 	// First-ever attempt guarantee: 100% success to teach clicking works
-	const firstAttempt = isFirstEverAttempt();
+	const firstAttempt = state.firstAttemptAvailable;
 	if (firstAttempt) {
+		store.set("firstAttemptAvailable", false);
 		markFirstAttempt();
 	}
 

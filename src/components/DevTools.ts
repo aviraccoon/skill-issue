@@ -1,6 +1,9 @@
 import { continueToNextDay } from "../actions/time";
 import { executeDecision, getAvailableDecisions } from "../core/controller";
-import { type DecisionContext, humanLikeStrategy } from "../core/strategies";
+import {
+	createHumanLikeStrategy,
+	type DecisionContext,
+} from "../core/strategies";
 import type { GameState } from "../state";
 import { createInitialState } from "../state";
 import type { Store } from "../store";
@@ -362,6 +365,8 @@ export function simulateDay(store: Store<GameState>) {
 		return;
 	}
 
+	// Fresh strategy instance per simulation (stateful - tracks phone per block)
+	const strategy = createHumanLikeStrategy();
 	const startDayIndex = store.getState().dayIndex;
 
 	// Loop until we reach daySummary or a new day
@@ -390,8 +395,7 @@ export function simulateDay(store: Store<GameState>) {
 			roll: () => nextRoll(store),
 		};
 
-		// Use shared human-like strategy
-		const decision = humanLikeStrategy.decide(context);
+		const decision = strategy.decide(context);
 		executeDecision(store, decision);
 	}
 

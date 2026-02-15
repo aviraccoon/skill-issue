@@ -149,6 +149,9 @@ export interface GameState {
 
 	// Active game mode (determines which save slot to use)
 	gameMode: GameMode;
+
+	// First-attempt tutorial guarantee (set by persistence layer for new players)
+	firstAttemptAvailable: boolean;
 }
 
 /** Returns true if the current day is Saturday or Sunday. */
@@ -197,6 +200,7 @@ export function createInitialState(
 		lastTaskTime: 0,
 		runStats: createInitialRunStats(),
 		gameMode: mode,
+		firstAttemptAvailable: false,
 	};
 }
 

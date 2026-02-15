@@ -1,6 +1,11 @@
 import { createStateFromSeed, simulate } from "../engine";
 import { formatPercent } from "../stats";
-import { getStrategy, getStrategyNames } from "../strategies";
+import {
+	createStrategy,
+	getStrategyNames,
+	isValidStrategy,
+	type StrategyName,
+} from "../strategies";
 import type { CliArgs } from "../types";
 
 /**
@@ -8,19 +13,19 @@ import type { CliArgs } from "../types";
  */
 export function runCompare(args: CliArgs): void {
 	// Use specified strategies or default to all
-	const strategyNames =
+	const rawNames =
 		args.strategies.length > 0 ? args.strategies : getStrategyNames();
 
-	// Validate strategies
-	const strategies = strategyNames.map((name) => {
-		const strategy = getStrategy(name);
-		if (!strategy) {
+	// Validate and narrow strategy names
+	const strategyNames: StrategyName[] = [];
+	for (const name of rawNames) {
+		if (!isValidStrategy(name)) {
 			console.error(`Unknown strategy: ${name}`);
 			console.error(`Available: ${getStrategyNames().join(", ")}`);
 			process.exit(1);
 		}
-		return { name, strategy };
-	});
+		strategyNames.push(name);
+	}
 
 	if (args.runs === 1) {
 		// Single seed comparison - detailed view
@@ -36,14 +41,15 @@ export function runCompare(args: CliArgs): void {
 		console.log("");
 
 		// Table header
-		const nameWidth = Math.max(...strategies.map((s) => s.name.length), 8);
+		const nameWidth = Math.max(...strategyNames.map((s) => s.length), 8);
 		console.log(
 			`${"Strategy".padEnd(nameWidth)}  Result    Energy   Momentum  All-nighters  Phone  Unlocks`,
 		);
 		console.log("-".repeat(nameWidth + 64));
 
-		// Run each strategy
-		for (const { name, strategy } of strategies) {
+		// Run each strategy (fresh instance per seed)
+		for (const name of strategyNames) {
+			const strategy = createStrategy(name);
 			const result = simulate(seed, strategy);
 			const status = result.survived ? "SURVIVED" : "FAILED  ";
 			const energy = formatPercent(result.stats.energy.end).padStart(6);
@@ -62,7 +68,7 @@ export function runCompare(args: CliArgs): void {
 	} else {
 		// Multi-seed comparison - aggregate view
 		console.log(
-			`Comparing ${args.runs} seeds across ${strategies.length} strategies...`,
+			`Comparing ${args.runs} seeds across ${strategyNames.length} strategies...`,
 		);
 		console.log("");
 
@@ -78,7 +84,7 @@ export function runCompare(args: CliArgs): void {
 			}
 		> = {};
 
-		for (const { name } of strategies) {
+		for (const name of strategyNames) {
 			resultsByStrategy[name] = {
 				survived: 0,
 				energy: 0,
@@ -99,9 +105,10 @@ export function runCompare(args: CliArgs): void {
 			);
 		}
 
-		// Run each strategy on all seeds
-		for (const { name, strategy } of strategies) {
+		// Run each strategy on all seeds (fresh instance per seed)
+		for (const name of strategyNames) {
 			for (const seed of seeds) {
+				const strategy = createStrategy(name);
 				const result = simulate(seed, strategy);
 				const stats = resultsByStrategy[name];
 				if (stats) {
@@ -119,14 +126,14 @@ export function runCompare(args: CliArgs): void {
 		}
 
 		// Table header
-		const nameWidth = Math.max(...strategies.map((s) => s.name.length), 8);
+		const nameWidth = Math.max(...strategyNames.map((s) => s.length), 8);
 		console.log(
 			`${"Strategy".padEnd(nameWidth)}  Survival  Avg Energy  Avg Momentum  All-nighters  Phone`,
 		);
 		console.log("-".repeat(nameWidth + 62));
 
 		// Output results
-		for (const { name } of strategies) {
+		for (const name of strategyNames) {
 			const stats = resultsByStrategy[name];
 			if (stats) {
 				const n = args.runs;
@@ -144,7 +151,7 @@ export function runCompare(args: CliArgs): void {
 
 		// Collect all variant categories across strategies
 		const allCategories = new Set<string>();
-		for (const { name } of strategies) {
+		for (const name of strategyNames) {
 			const stats = resultsByStrategy[name];
 			if (stats) {
 				for (const category of Object.keys(stats.variantUnlocks)) {
@@ -162,7 +169,7 @@ export function runCompare(args: CliArgs): void {
 			console.log(`${"Strategy".padEnd(nameWidth)}  ${catHeader}`);
 			console.log("-".repeat(nameWidth + 2 + categories.length * 10));
 
-			for (const { name } of strategies) {
+			for (const name of strategyNames) {
 				const stats = resultsByStrategy[name];
 				if (stats) {
 					const n = args.runs;

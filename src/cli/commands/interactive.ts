@@ -25,7 +25,6 @@ import {
 	type DecisionContext,
 	executeDecision,
 	getAvailableDecisions,
-	hasLost,
 	isComplete,
 	type Strategy,
 } from "../engine";
@@ -435,7 +434,7 @@ export async function runInteractive(
 	console.log("");
 
 	try {
-		while (!isComplete(store.getState()) && !hasLost(store.getState())) {
+		while (!isComplete(store.getState())) {
 			const state = store.getState();
 
 			// Handle day summary screen - show it then continue
@@ -520,17 +519,11 @@ export async function runInteractive(
 		}
 
 		// Game over
-		const finalState = store.getState();
 		console.log("");
 		console.log("=".repeat(50));
 
-		if (hasLost(finalState)) {
-			console.log("WEEK FAILED");
-			console.log("Your energy hit zero. You couldn't keep going.");
-		} else {
-			console.log("WEEK COMPLETE!");
-			console.log("You made it through the week.");
-		}
+		console.log("WEEK COMPLETE!");
+		console.log("You made it through the week.");
 
 		console.log("=".repeat(50));
 	} finally {

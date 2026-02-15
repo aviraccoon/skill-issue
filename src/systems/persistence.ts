@@ -59,6 +59,7 @@ export interface SavedState {
 	phoneNotificationCount?: number;
 	runStats: RunStats;
 	gameMode: GameMode;
+	firstAttemptAvailable?: boolean;
 }
 
 /** A completed run stored in patterns history. */
@@ -148,6 +149,7 @@ function toSavedState(state: GameState): SavedState {
 		phoneNotificationCount: state.phoneNotificationCount,
 		runStats: state.runStats,
 		gameMode: state.gameMode,
+		firstAttemptAvailable: state.firstAttemptAvailable,
 	};
 }
 
@@ -234,6 +236,10 @@ export function createNewGame(
 	// Show intro screen for brand new players
 	if (!data.patterns.hasSeenIntro) {
 		state.screen = "intro";
+	}
+	// First-attempt guarantee for brand new players
+	if (!data.patterns.hasEverAttempted) {
+		state.firstAttemptAvailable = true;
 	}
 	return state;
 }
@@ -330,6 +336,7 @@ function fromSavedState(saved: SavedState): GameState {
 		lastTaskTime: 0,
 		runStats: saved.runStats ?? createInitialRunStats(),
 		gameMode: saved.gameMode ?? "main", // Fallback for migrated saves
+		firstAttemptAvailable: saved.firstAttemptAvailable ?? false,
 	};
 }
 
@@ -416,14 +423,6 @@ export function markFirstAttempt(): void {
 		savedAt: Date.now(),
 	};
 	writeSaveData(data);
-}
-
-/**
- * Returns true if this is the player's very first task attempt ever.
- */
-export function isFirstEverAttempt(): boolean {
-	const patterns = loadSaveData().patterns;
-	return !patterns.hasEverAttempted;
 }
 
 /**

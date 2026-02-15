@@ -1,7 +1,11 @@
 import { getPersonalityFromSeed } from "../../systems/personality";
 import { createStateFromSeed, simulate } from "../engine";
 import { formatPercent } from "../stats";
-import { getStrategy, getStrategyNames } from "../strategies";
+import {
+	createStrategy,
+	getStrategyNames,
+	isValidStrategy,
+} from "../strategies";
 import type { CliArgs, FilterOptions, SearchCriteria } from "../types";
 
 /**
@@ -147,9 +151,9 @@ function formatCriteria(
  * Runs seed search.
  */
 export function runFindSeed(args: CliArgs): void {
-	const strategy = getStrategy(args.strategy);
-	if (!strategy) {
-		console.error(`Unknown strategy: ${args.strategy}`);
+	const strategyName = args.strategy;
+	if (!isValidStrategy(strategyName)) {
+		console.error(`Unknown strategy: ${strategyName}`);
 		console.error(`Available: ${getStrategyNames().join(", ")}`);
 		process.exit(1);
 	}
@@ -183,6 +187,7 @@ export function runFindSeed(args: CliArgs): void {
 			}
 		}
 
+		const strategy = createStrategy(strategyName);
 		const result = simulate(seed, strategy);
 
 		if (matchesSearchCriteria(result, filters, searchCriteria)) {

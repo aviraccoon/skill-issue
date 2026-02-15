@@ -6,7 +6,11 @@ import {
 	outputSimulationHeader,
 } from "../output";
 import { aggregateStats, formatPercent } from "../stats";
-import { getStrategy, getStrategyNames } from "../strategies";
+import {
+	createStrategy,
+	getStrategyNames,
+	isValidStrategy,
+} from "../strategies";
 import type { CliArgs, FilterOptions } from "../types";
 
 /**
@@ -96,9 +100,9 @@ function formatFilters(filters: FilterOptions): string {
  * Runs batch simulation.
  */
 export function runBatchSimulation(args: CliArgs): void {
-	const strategy = getStrategy(args.strategy);
-	if (!strategy) {
-		console.error(`Unknown strategy: ${args.strategy}`);
+	const strategyName = args.strategy;
+	if (!isValidStrategy(strategyName)) {
+		console.error(`Unknown strategy: ${strategyName}`);
 		console.error(`Available: ${getStrategyNames().join(", ")}`);
 		process.exit(1);
 	}
@@ -121,13 +125,14 @@ export function runBatchSimulation(args: CliArgs): void {
 		);
 
 		const observer = createOutputObserver(args.verbosity);
+		const strategy = createStrategy(strategyName);
 		const result = simulate(seed, strategy, observer);
 		results.push(result);
 	} else {
 		// Batch run - show progress
 		const filterDesc = formatFilters(filters);
 		console.log(
-			`Simulating ${args.runs} runs with ${args.strategy} strategy...${filterDesc}`,
+			`Simulating ${args.runs} runs with ${strategyName} strategy...${filterDesc}`,
 		);
 		console.log("");
 
@@ -150,6 +155,7 @@ export function runBatchSimulation(args: CliArgs): void {
 				}
 			}
 
+			const strategy = createStrategy(strategyName);
 			const result = simulate(seed, strategy);
 
 			// Post-filter by outcome

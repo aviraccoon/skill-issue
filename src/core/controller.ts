@@ -235,13 +235,6 @@ export function executeDecision(
 }
 
 /**
- * Checks if the game has reached a losing condition.
- */
-export function hasLost(state: GameState): boolean {
-	return state.energy <= 0;
-}
-
-/**
  * Checks if the game is complete (reached week end).
  */
 export function isComplete(state: GameState): boolean {

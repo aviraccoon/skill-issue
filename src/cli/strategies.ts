@@ -1,7 +1,7 @@
 import type { Decision } from "../core/controller";
 import {
+	createHumanLikeStrategy,
 	type DecisionContext,
-	humanLikeStrategy,
 	type Strategy,
 } from "../core/strategies";
 import { CATEGORY_PRIORITIES, type TaskId } from "../data/tasks";
@@ -304,27 +304,36 @@ export const realisticStrategy: Strategy = {
 };
 
 /**
- * Available strategies by name.
+ * Strategy factories by name. Creates a fresh instance per call.
+ * Stateful strategies (humanLike) need fresh instances per simulation run.
  */
-export const STRATEGIES: Record<string, Strategy> = {
-	random: randomStrategy,
-	priority: priorityStrategy,
-	worstCase: worstCaseStrategy,
-	bestCase: bestCaseStrategy,
-	realistic: realisticStrategy,
-	humanLike: humanLikeStrategy,
-};
+const STRATEGY_FACTORIES = {
+	random: () => randomStrategy,
+	priority: () => priorityStrategy,
+	worstCase: () => worstCaseStrategy,
+	bestCase: () => bestCaseStrategy,
+	realistic: () => realisticStrategy,
+	humanLike: createHumanLikeStrategy,
+} satisfies Record<string, () => Strategy>;
+
+/** Valid strategy names. */
+export type StrategyName = keyof typeof STRATEGY_FACTORIES;
+
+/** Type guard for valid strategy names. */
+export function isValidStrategy(name: string): name is StrategyName {
+	return name in STRATEGY_FACTORIES;
+}
 
 /**
- * Gets a strategy by name.
+ * Creates a strategy by name. Returns a fresh instance.
  */
-export function getStrategy(name: string): Strategy | undefined {
-	return STRATEGIES[name];
+export function createStrategy(name: StrategyName): Strategy {
+	return STRATEGY_FACTORIES[name]();
 }
 
 /**
  * Gets all available strategy names.
  */
-export function getStrategyNames(): string[] {
-	return Object.keys(STRATEGIES);
+export function getStrategyNames(): StrategyName[] {
+	return Object.keys(STRATEGY_FACTORIES) as StrategyName[];
 }

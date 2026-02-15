@@ -4,7 +4,6 @@ import {
 	type Decision,
 	executeDecision,
 	getAvailableDecisions,
-	hasLost,
 	isComplete,
 } from "../core/controller";
 import type { DecisionContext, Strategy } from "../core/strategies";
@@ -16,7 +15,7 @@ import type { RunStats } from "./stats";
 // Re-export for consumers that import from engine.ts
 export type { ActionResult, Decision };
 export type { DecisionContext, Strategy };
-export { executeDecision, getAvailableDecisions, hasLost, isComplete };
+export { executeDecision, getAvailableDecisions, isComplete };
 
 /**
  * Summary of a single day in the simulation.
@@ -86,7 +85,7 @@ export function simulate(
 	let lastDayIndex = 0;
 
 	// Run simulation loop
-	while (!isComplete(store.getState()) && !hasLost(store.getState())) {
+	while (!isComplete(store.getState())) {
 		const state = store.getState();
 
 		// Check if we've moved to a new day
@@ -179,7 +178,7 @@ export function simulate(
 			time: finalState.personality.time,
 			social: finalState.personality.social,
 		},
-		survived: !hasLost(finalState) && isComplete(finalState),
+		survived: isComplete(finalState),
 		days,
 		stats: calculateRunStats(days, finalState),
 	};
