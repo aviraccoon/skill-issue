@@ -932,5 +932,343 @@ export const en = {
 				],
 			},
 		},
+		"go-out-to-eat": {
+			name: "Go Out To Eat",
+			evolution: {
+				aware: [
+					"Go Out To Eat - Food exists elsewhere",
+					"Go Out To Eat - The restaurant's still there",
+					"Go Out To Eat - You deserve a meal out",
+				],
+				honest: [
+					"Leave House For Food",
+					"Restaurant Ambitions",
+					"Eat Among Strangers",
+				],
+				resigned: [
+					"Food that someone else cooks AND serves? Revolutionary.",
+					"Going out implies going. Therein lies the problem.",
+					"The restaurant can't deliver itself. Wait. Actually...",
+				],
+			},
+		},
+		"make-coffee": {
+			name: "Make Coffee",
+			evolution: {
+				aware: [
+					"Make Coffee - The kettle's right there",
+					"Make Coffee - Caffeine would help",
+					"Make Coffee - You're thinking about it",
+				],
+				honest: [
+					"Caffeine Acquisition",
+					"The Coffee Ritual",
+					"Boil Water, Add Bean Juice",
+				],
+				resigned: [
+					"The kettle is three steps away. Might as well be Mars.",
+					"Coffee: the thing between you and functionality.",
+					"You've been thinking about making coffee for an hour now.",
+				],
+			},
+		},
+		laundry: {
+			name: "Do Laundry",
+			variant: {
+				name: "Just put in a load",
+				unlockHints: [
+					"You don't have to do the whole laundry thing. Just put stuff in the machine.",
+					"Throwing clothes in a machine is still laundry. You don't have to fold.",
+					"What if laundry just meant loading the machine? Folding is future you's problem.",
+					"One load. In the machine. That's it. The rest can wait.",
+				],
+			},
+			evolution: {
+				aware: [
+					"Do Laundry - The pile is growing",
+					"Do Laundry - Running out of socks",
+					"Do Laundry - It's becoming a situation",
+				],
+				honest: [
+					"The Laundry Mountain",
+					"Clothing Situation Management",
+					"Wrestle With Textiles",
+				],
+				resigned: [
+					"The laundry pile has its own zip code now.",
+					"You've been wearing that shirt for... nevermind.",
+					"Clean clothes: an aspiration wrapped in dirty fabric.",
+				],
+			},
+		},
+		"take-out-trash": {
+			name: "Take Out Trash",
+			evolution: {
+				aware: [
+					"Take Out Trash - It's getting full",
+					"Take Out Trash - The bag is straining",
+					"Take Out Trash - Before it becomes a problem",
+				],
+				honest: [
+					"The Trash Situation",
+					"Bag Disposal (Simple In Theory)",
+					"Walk To Bin And Back",
+				],
+				resigned: [
+					"The trash isn't heavy. Getting up is.",
+					"It's literally a walk to the bin. Why is this hard.",
+					"The bag's been tied shut for two days. Progress, technically.",
+				],
+			},
+		},
+		"tidy-up": {
+			name: "Tidy Up",
+			variant: {
+				name: "Clear one surface",
+				unlockHints: [
+					"One surface. Just one. The rest can stay chaotic.",
+					"What if tidy meant one table? One counter? That's enough.",
+					"Pick one surface. Clear it. Done. That's tidying.",
+					"The whole apartment doesn't need to happen. One surface counts.",
+				],
+			},
+			evolution: {
+				aware: [
+					"Tidy Up - Entropy is winning",
+					"Tidy Up - The surfaces are disappearing",
+					"Tidy Up - It's not that bad (it is)",
+				],
+				honest: [
+					"Fight Entropy",
+					"Surface Recovery Mission",
+					"Impose Order (Briefly)",
+				],
+				resigned: [
+					"The apartment has a vibe now. It's called chaos.",
+					"Tidying implies a before and after. Both look the same.",
+					"You know where everything is. It's on the floor.",
+				],
+			},
+		},
+		"feed-dog": {
+			name: "Feed Dog",
+			evolution: {
+				aware: [
+					"Feed Dog - He's watching you eat",
+					"Feed Dog - The bowl is empty",
+					"Feed Dog - Those eyes again",
+				],
+				honest: [
+					"Fill The Dog Bowl",
+					"Azor Requires Sustenance",
+					"The Dog Needs Food (Obvious)",
+				],
+				resigned: [
+					"He's staring at the bowl. Then at you. Then the bowl.",
+					"Even the dog eats more regularly than you.",
+					"His bowl, your guilt. A simple equation.",
+				],
+			},
+		},
+		"play-with-dog": {
+			name: "Play With Dog",
+			evolution: {
+				aware: [
+					"Play With Dog - He brought his toy",
+					"Play With Dog - The tail's going",
+					"Play With Dog - He's been waiting",
+				],
+				honest: [
+					"Dog Entertainment",
+					"Throw Thing, Dog Retrieves",
+					"Active Dog Engagement",
+				],
+				resigned: [
+					"He's been nudging the ball at you for twenty minutes.",
+					"The toy is at your feet. Again. The hope is relentless.",
+					"Fetch: a game that requires standing. Bold ask.",
+				],
+			},
+		},
+		"chill-with-dog": {
+			name: "Chill With Dog",
+			evolution: {
+				aware: [
+					"Chill With Dog - He's right there",
+					"Chill With Dog - Mutual relaxation",
+					"Chill With Dog - The couch awaits",
+				],
+				honest: [
+					"Couch Time With Azor",
+					"Exist Near The Dog",
+					"Passive Dog Comfort",
+				],
+				resigned: [
+					"The dog is warm. The couch is soft. You're almost there.",
+					"Just... be with the dog. That's allowed.",
+					"Lying on the couch with Azor counts as something. Probably.",
+				],
+			},
+		},
+		"draw-sketch": {
+			name: "Draw/Sketch",
+			evolution: {
+				aware: [
+					"Draw/Sketch - The sketchbook's dusty",
+					"Draw/Sketch - You used to doodle",
+					"Draw/Sketch - A blank page waits",
+				],
+				honest: [
+					"The Drawing Fantasy",
+					"Creative Marks On Paper",
+					"Art Attempt",
+				],
+				resigned: [
+					"Pencils exist. Paper exists. Art doesn't follow.",
+					"The blank page and your blank mind. A matching set.",
+					"Drawing: the thing you used to do before you stopped.",
+				],
+			},
+		},
+		write: {
+			name: "Write",
+			evolution: {
+				aware: [
+					"Write - The cursor blinks",
+					"Write - Words exist somewhere",
+					"Write - You have things to say",
+				],
+				honest: [
+					"The Writing Attempt",
+					"Words On Screen (Aspirational)",
+					"Put Thoughts Somewhere",
+				],
+				resigned: [
+					"The blank document judges silently.",
+					"Writing requires thinking. Thinking requires... something.",
+					"You have ideas. They're in there. Somewhere. Probably.",
+				],
+			},
+		},
+		exercise: {
+			name: "Exercise",
+			evolution: {
+				aware: [
+					"Exercise - Your body remembers movement",
+					"Exercise - The shoes are by the door",
+					"Exercise - It would feel good after",
+				],
+				honest: [
+					"Move Your Body",
+					"Physical Exertion (Voluntary)",
+					"The Exercise Concept",
+				],
+				resigned: [
+					"Your body is a temple. A neglected one.",
+					"Exercise: the plan that dies between intention and action.",
+					"You own workout clothes. They're very comfortable loungewear.",
+				],
+			},
+		},
+		"meet-friend": {
+			name: "Meet Friend",
+			evolution: {
+				aware: [
+					"Meet Friend - You keep meaning to",
+					"Meet Friend - They texted yesterday",
+					"Meet Friend - It's been a while",
+				],
+				honest: [
+					"Initiate Social Contact",
+					"Reach Out To A Human",
+					"The Meeting Intention",
+				],
+				resigned: [
+					"You want to see them. You also want to not leave.",
+					"Friendship requires maintenance. Maintenance requires leaving.",
+					"They're free. You're... available? You're available.",
+				],
+			},
+		},
+		"text-someone": {
+			name: "Text Someone",
+			evolution: {
+				aware: [
+					"Text Someone - It's just a message",
+					"Text Someone - They won't bite",
+					"Text Someone - Your phone's right there",
+				],
+				honest: [
+					"Send A Text (Any Text)",
+					"Type Words To A Human",
+					"Digital Social Interaction",
+				],
+				resigned: [
+					"One message. That's all. Type it. Send it. Done.",
+					"The keyboard is right there. The anxiety is also right there.",
+					"People text each other. Normal behavior. You can do normal.",
+				],
+			},
+		},
+		"take-meds": {
+			name: "Take Meds",
+			evolution: {
+				aware: [
+					"Take Meds - The pill box is right there",
+					"Take Meds - You'll feel it if you skip",
+					"Take Meds - Part of the routine",
+				],
+				honest: [
+					"The Meds Situation",
+					"Pill Consumption",
+					"Ingest Prescribed Chemicals",
+				],
+				resigned: [
+					"The pills don't take themselves. Unfortunately.",
+					"Chemistry keeps you functional. Take the chemistry.",
+					"Open bottle. Remove pill. Swallow. Why is this hard.",
+				],
+			},
+		},
+		read: {
+			name: "Read",
+			evolution: {
+				aware: [
+					"Read - The book is on the nightstand",
+					"Read - You used to love this",
+					"Read - One chapter. That's the plan.",
+				],
+				honest: [
+					"Stare At Words",
+					"The Reading Intention",
+					"Book Time (Ambitious)",
+				],
+				resigned: [
+					"Books: entertainment that requires sustained attention. Bold.",
+					"You've been on page 47 for three weeks.",
+					"The bookmark hasn't moved. It's become furniture.",
+				],
+			},
+		},
+		meditate: {
+			name: "Meditate",
+			evolution: {
+				aware: [
+					"Meditate - Five minutes would help",
+					"Meditate - Everyone says it helps",
+					"Meditate - Just sit. That's it.",
+				],
+				honest: [
+					"Sit Still (Deliberately)",
+					"The Meditation Attempt",
+					"Organized Breathing",
+				],
+				resigned: [
+					"Clear your mind. Step one: have a mind that clears.",
+					"Meditation: sitting still but with intention. The intention is the hard part.",
+					"Breathe in. Think about breathing. Think about thinking. Fail at meditating.",
+				],
+			},
+		},
 	},
 } as const;

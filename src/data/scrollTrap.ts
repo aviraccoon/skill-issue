@@ -152,12 +152,3 @@ export function getOutcomeFlavorText(
 ): string {
 	return pickVariant(strings().phoneOutcomes[outcome], rollCount);
 }
-
-/**
- * Legacy function for backward compatibility.
- * @deprecated Use getOutcomeFlavorText with outcome tier instead.
- */
-export function getScrollTrapFlavor(index: number): string {
-	// Fall back to void messages for legacy usage
-	return getOutcomeFlavorText(index, "void");
-}

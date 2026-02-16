@@ -764,7 +764,7 @@ export const cs = {
 			name: "Vyčistit zuby",
 			evolution: {
 				aware: [
-					"Vyčistit zuby - víš, že bys měl",
+					"Vyčistit zuby - víš, že je to potřeba",
 					"Vyčistit zuby - než půjdeš spát",
 					"Vyčistit zuby - ten pocit viny",
 				],
@@ -795,7 +795,7 @@ export const cs = {
 				aware: [
 					"Uvařit jídlo - teoreticky to jde",
 					"Uvařit jídlo - ingredience někde jsou",
-					"Uvařit jídlo - viděls to v TV",
+					"Uvařit jídlo - v TV to vypadá jednoduše",
 				],
 				honest: ["Ta věc s vařením", "Kuchyňské ambice", "Pokus o teplé jídlo"],
 				resigned: [
@@ -935,7 +935,7 @@ export const cs = {
 			evolution: {
 				aware: [
 					"Společenská akce - lidi tě čekají",
-					"Společenská akce - říkals, že přijdeš",
+					"Společenská akce - bylo přislíbeno, že přijdeš",
 					"Společenská akce - zeptají se, jak se máš",
 				],
 				honest: [
@@ -967,6 +967,320 @@ export const cs = {
 					"Venku je hezky, ale dveře jsou daleko",
 					"Vitamín D se sám nevyrobí",
 					"Vzduch je venku lepší, ale vyžaduje odejít",
+				],
+			},
+		},
+		"go-out-to-eat": {
+			name: "Jít někam na jídlo",
+			evolution: {
+				aware: [
+					"Jít někam na jídlo - venku vaří za tebe",
+					"Jít někam na jídlo - ta restaurace tam pořád je",
+					"Jít někam na jídlo - stálo by za to se najíst venku",
+				],
+				honest: [
+					"Opustit byt kvůli jídlu",
+					"Někam, kde vaří za tebe",
+					"Mezi lidi a k jídlu",
+				],
+				resigned: [
+					"Nechat si uvařit a přinést na stůl, na to by se dalo zvyknout.",
+					"Problém s jídlem venku není jídlo, je to to venku.",
+					"Restaurace se sama nedonese. Nebo vlastně...",
+				],
+			},
+		},
+		"make-coffee": {
+			name: "Udělat kafe",
+			evolution: {
+				aware: [
+					"Udělat kafe - myslíš na to už od rána",
+					"Udělat kafe - kofein by fakt pomohl",
+					"Udělat kafe - stačí dojít ke konvici",
+				],
+				honest: ["Ta věc s kafem", "Konvice čeká", "Jeden hrnek, to je celé"],
+				resigned: [
+					"Mezi tebou a kafem jsou tři kroky, což je momentálně dost.",
+					"Bez kafe to nejde, ale udělat kafe taky nejde.",
+					"Přemýšlíš o kafi už hodinu, udělat ho je jiná věc.",
+				],
+			},
+		},
+		laundry: {
+			name: "Vyprat prádlo",
+			variant: {
+				name: "Jen hodit prádlo do pračky",
+				unlockHints: [
+					"Celé praní nemusí být, stačí hodit prádlo do pračky.",
+					"Hodit prádlo do pračky je taky praní. Skládání nemusíš.",
+					"Co kdyby praní znamenalo jen naplnit pračku? Skládání je problém budoucího já.",
+					"Jedna várka do pračky a máš hotovo. Zbytek počká.",
+				],
+			},
+			evolution: {
+				aware: [
+					"Vyprat prádlo - ta hromada se nehne",
+					"Vyprat prádlo - ponožky jsou vzácnost",
+					"Vyprat prádlo - košile se dnes otáčely naruby",
+				],
+				honest: [
+					"Hora prádla",
+					"Ta situace s prádlem",
+					"Konfrontace s pračkou",
+				],
+				resigned: [
+					"Ta hromada prádla začíná žít vlastním životem.",
+					"To tričko nosíš už... vlastně radši ne.",
+					"Čisté oblečení je v současnosti teoretický koncept.",
+				],
+			},
+		},
+		"take-out-trash": {
+			name: "Vynést koš",
+			evolution: {
+				aware: [
+					"Vynést koš - pytel se sám nezavře",
+					"Vynést koš - praská ve švech",
+					"Vynést koš - než to bude problém",
+				],
+				honest: [
+					"Odpadková situace",
+					"Deset metrů ke kontejneru",
+					"Tam a zpátky, to je celé",
+				],
+				resigned: [
+					"Ten pytel neváží nic, ale vstát k němu je ten těžší krok.",
+					"Je to doslova cesta ke kontejneru, proč je to tak těžké.",
+					"Pytel je zavázaný už dva dny, což je technicky pokrok.",
+				],
+			},
+		},
+		"tidy-up": {
+			name: "Uklidit",
+			variant: {
+				name: "Odklidit jednu plochu",
+				unlockHints: [
+					"Jedna plocha, jen jedna, zbytek může zůstat v chaosu.",
+					"Co kdyby uklízení znamenalo jeden stůl? Jednu desku? To stačí.",
+					"Vyber jednu plochu, odkliď ji, hotovo. To je uklízení.",
+					"Celý byt nemusí být, jedna plocha se počítá.",
+				],
+			},
+			evolution: {
+				aware: [
+					"Uklidit - ani stůl už nevidíš",
+					"Uklidit - povrchy mizí pod věcmi",
+					"Uklidit - není to tak zlé (je)",
+				],
+				honest: [
+					"Hledání podlahy",
+					"Něco udělat s tím chaosem",
+					"Nastolit pořádek, aspoň dočasně",
+				],
+				resigned: [
+					"Byt má teď vlastní atmosféru, jmenuje se chaos.",
+					"Uklízení předpokládá, že je rozdíl mezi před a po, a ten tu není.",
+					"Všechno víš kde je, protože to leží na podlaze.",
+				],
+			},
+		},
+		"feed-dog": {
+			name: "Nakrmit psa",
+			evolution: {
+				aware: [
+					"Nakrmit psa - dívá se, jak jíš",
+					"Nakrmit psa - u misky stojí a čeká",
+					"Nakrmit psa - zase ten pohled",
+				],
+				honest: [
+					"Prázdná miska, plný pohled",
+					"Azor a ta miska",
+					"Pes čeká na jídlo, jako vždycky",
+				],
+				resigned: [
+					"Dívá se na misku, pak na tebe, pak zpátky na misku.",
+					"I pes jí pravidelněji než ty.",
+					"Jeho prázdná miska a tvoje plné svědomí, pěkná kombinace.",
+				],
+			},
+		},
+		"play-with-dog": {
+			name: "Hrát si s psem",
+			evolution: {
+				aware: [
+					"Hrát si s psem - přinesl hračku",
+					"Hrát si s psem - ocas se nezastaví",
+					"Hrát si s psem - vrtí ocasem a dívá se",
+				],
+				honest: [
+					"Udělat Azorovi radost",
+					"Hodit věc, pes donese",
+					"Něco s míčkem",
+				],
+				resigned: [
+					"Strká ti míček pod nohy už dvacet minut.",
+					"Hračka je u tvých nohou, zase, a ta psí naděje je neúnavná.",
+					"Aport vyžaduje stát, což je momentálně odvážný požadavek.",
+				],
+			},
+		},
+		"chill-with-dog": {
+			name: "Odpočívat s Azorem",
+			evolution: {
+				aware: [
+					"Odpočívat s Azorem - je hned vedle tebe",
+					"Odpočívat s Azorem - gauč pro dva",
+					"Odpočívat s Azorem - čeká na tebe na gauči",
+				],
+				honest: ["Gauč a Azor", "Nic nedělat, jen být", "Teplo vedle psa"],
+				resigned: [
+					"Azor hřeje a gauč je měkký, víc dneska nechceš.",
+					"Jen... být se psem, to se přece smí.",
+					"Ležet na gauči s Azorem, to se asi za něco počítá.",
+				],
+			},
+		},
+		"draw-sketch": {
+			name: "Kreslit",
+			evolution: {
+				aware: [
+					"Kreslit - skicák je zaprášený",
+					"Kreslit - dřív to šlo samo",
+					"Kreslit - tužka v ruce, a nic",
+				],
+				honest: ["Sáhnout na tužku", "Tvořivé čáry na papír", "Pokus o umění"],
+				resigned: [
+					"Tužky jsou, papír je, umění z toho ale automaticky nevznikne.",
+					"Prázdná stránka a prázdná hlava, k sobě se hodí.",
+					"Kreslení je ta věc, co se kdysi dělala.",
+				],
+			},
+		},
+		write: {
+			name: "Psát",
+			evolution: {
+				aware: [
+					"Psát - kurzor bliká",
+					"Psát - slova tam někde jsou",
+					"Psát - máš co říct",
+				],
+				honest: [
+					"Pokus o psaní",
+					"Slova na obrazovce, teoreticky",
+					"Dát myšlenky někam",
+				],
+				resigned: [
+					"Prázdný dokument tiše soudí.",
+					"Psaní vyžaduje myšlení a myšlení vyžaduje... něco.",
+					"Nápady tam někde jsou, asi, někde hodně hluboko.",
+				],
+			},
+		},
+		exercise: {
+			name: "Cvičit",
+			evolution: {
+				aware: [
+					"Cvičit - tělo si ještě pamatuje pohyb",
+					"Cvičit - boty jsou u dveří",
+					"Cvičit - pak by to bylo fajn",
+				],
+				honest: ["Něco pro tělo", "Ta sportovní věc", "Aspoň protáhnout"],
+				resigned: [
+					"Tělo je chrám, zanedbaný, ale pořád chrám.",
+					"Cvičení je plán, co nikdy nepřežije kontakt s realitou.",
+					"Sportovní oblečení máš a je fakt pohodlné na doma.",
+				],
+			},
+		},
+		"meet-friend": {
+			name: "Sejít se s někým",
+			evolution: {
+				aware: [
+					"Sejít se s někým - pořád to odkládáš",
+					"Sejít se s někým - včera psali",
+					"Sejít se s někým - už je to dlouho",
+				],
+				honest: ["Ozvat se někomu", "Oslovit člověka", "Plán jít mezi lidi"],
+				resigned: [
+					"Chceš je vidět, ale taky nechceš odcházet z bytu.",
+					"Přátelství vyžaduje údržbu a údržba vyžaduje odejít.",
+					"Mají volno. A ty... taky? No, taky.",
+				],
+			},
+		},
+		"text-someone": {
+			name: "Napsat někomu",
+			evolution: {
+				aware: [
+					"Napsat někomu - je to jen zpráva",
+					"Napsat někomu - nekousnou",
+					"Napsat někomu - telefon je hned tady",
+				],
+				honest: [
+					"Poslat jakoukoli zprávu",
+					"Ozvat se, aspoň textovkou",
+					"Napsat 'čau', to je celé",
+				],
+				resigned: [
+					"Jedna zpráva, to je celé, napsat a odeslat.",
+					"Klávesnice je hned tady, úzkost taky.",
+					"Lidi si píšou, normální chování, to se dá.",
+				],
+			},
+		},
+		"take-meds": {
+			name: "Vzít si léky",
+			evolution: {
+				aware: [
+					"Vzít si léky - krabička je hned tady",
+					"Vzít si léky - bez nich to bude znát",
+					"Vzít si léky - rutina, co se nějak vždycky vynechá",
+				],
+				honest: [
+					"Léková situace",
+					"Ta věc s prášky",
+					"Spolknout předepsanou chemii",
+				],
+				resigned: [
+					"Prášky se samy nespolknou, bohužel.",
+					"Chemie tě drží v chodu, vezmi si tu chemii.",
+					"Otevřít krabičku, vyndat prášek, spolknout, proč je to tak těžké.",
+				],
+			},
+		},
+		read: {
+			name: "Číst",
+			evolution: {
+				aware: [
+					"Číst - knížka leží na nočním stolku",
+					"Číst - dřív to bylo oblíbené",
+					"Číst - jedna kapitola, to je plán",
+				],
+				honest: ["Zírat na slova", "Pokus o čtení", "Čtení, aspoň v teorii"],
+				resigned: [
+					"Knihy jsou zábava, co vyžaduje trvalou pozornost, a to je odvážný plán.",
+					"Na straně 47 už tři týdny.",
+					"Záložka se nepohnula, stala se součástí nábytku.",
+				],
+			},
+		},
+		meditate: {
+			name: "Meditovat",
+			evolution: {
+				aware: [
+					"Meditovat - pět minut by pomohlo",
+					"Meditovat - všichni říkají, že to pomáhá",
+					"Meditovat - jen si sednout, to je celé",
+				],
+				honest: [
+					"Záměrné sezení v klidu",
+					"Pokus o meditaci",
+					"Organizované dýchání",
+				],
+				resigned: [
+					"Vyprázdnit mysl předpokládá mít mysl, co se vyprázdní.",
+					"Meditace je sedět v klidu, ale se záměrem, a ten záměr je právě ta těžká část.",
+					"Nádech, přemýšlet o dýchání, přemýšlet o přemýšlení, a meditace se nekoná.",
 				],
 			},
 		},

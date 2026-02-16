@@ -49,21 +49,45 @@ export interface MinimalVariant {
 
 /** Task ID type - all valid task identifiers. */
 export type TaskId =
+	// Hygiene
 	| "shower"
 	| "brush-teeth-morning"
 	| "brush-teeth-evening"
+	// Food
 	| "cook"
 	| "delivery"
+	| "go-out-to-eat"
+	| "make-coffee"
+	// Chores
 	| "dishes"
-	| "walk-dog"
-	| "work"
-	| "practice-music"
+	| "laundry"
+	| "take-out-trash"
+	| "tidy-up"
 	| "shopping"
+	// Dog
+	| "walk-dog"
+	| "feed-dog"
+	| "play-with-dog"
+	| "chill-with-dog"
+	// Work
+	| "work"
+	// Creative
+	| "practice-music"
+	| "draw-sketch"
+	| "write"
+	| "exercise"
+	// Social
 	| "social-event"
-	| "go-outside";
+	| "meet-friend"
+	| "text-someone"
+	// Self-care
+	| "go-outside"
+	| "take-meds"
+	| "read"
+	| "meditate";
 
 /** Static task data that doesn't change (rates, blocks, category). */
-interface TaskStatic {
+export interface TaskStatic {
 	id: TaskId;
 	category: TaskCategory;
 	baseRate: number;
@@ -72,16 +96,24 @@ interface TaskStatic {
 	weekendCost?: number;
 	energyEffect?: TaskEnergyEffect;
 	autoSatisfies?: string;
+	/** Core tasks are always included in every run's task pool. */
+	core?: boolean;
+	/** Selection pool override. Defaults to category if not set. */
+	selectionPool?: string;
+	/** Sub-group tag within pool for selection constraints (e.g., food "high"/"low"). */
+	selectionTag?: string;
 }
 
 /** Static task definitions - rates, timing, categories. Strings come from i18n. */
-const taskStatics: readonly TaskStatic[] = [
+export const taskStatics: readonly TaskStatic[] = [
+	// --- Hygiene ---
 	{
 		id: "shower",
 		category: "hygiene",
 		baseRate: 0.35,
 		variantBaseRate: 0.7,
 		availableBlocks: ["morning", "evening"],
+		core: true,
 	},
 	{
 		id: "brush-teeth-morning",
@@ -95,6 +127,7 @@ const taskStatics: readonly TaskStatic[] = [
 		baseRate: 0.2,
 		availableBlocks: ["evening", "night"],
 	},
+	// --- Food ---
 	{
 		id: "cook",
 		category: "food",
@@ -102,13 +135,30 @@ const taskStatics: readonly TaskStatic[] = [
 		variantBaseRate: 0.5,
 		availableBlocks: ["morning", "afternoon", "evening"],
 		energyEffect: { success: -0.02 },
+		selectionTag: "low",
 	},
 	{
 		id: "delivery",
 		category: "food",
 		baseRate: 0.75,
 		availableBlocks: ["afternoon", "evening", "night"],
+		selectionTag: "high",
 	},
+	{
+		id: "go-out-to-eat",
+		category: "food",
+		baseRate: 0.35,
+		availableBlocks: ["afternoon", "evening"],
+		weekendCost: 2,
+	},
+	{
+		id: "make-coffee",
+		category: "food",
+		baseRate: 0.6,
+		availableBlocks: ["morning", "afternoon", "evening"],
+		selectionTag: "high",
+	},
+	// --- Chores ---
 	{
 		id: "dishes",
 		category: "chores",
@@ -117,25 +167,24 @@ const taskStatics: readonly TaskStatic[] = [
 		availableBlocks: ["morning", "afternoon", "evening"],
 	},
 	{
-		id: "walk-dog",
-		category: "dog",
-		baseRate: 0.85,
-		availableBlocks: ["morning", "afternoon", "evening", "night"],
-		energyEffect: { success: 0.04 },
-		autoSatisfies: "go-outside",
+		id: "laundry",
+		category: "chores",
+		baseRate: 0.25,
+		variantBaseRate: 0.55,
+		availableBlocks: ["morning", "afternoon", "evening"],
 	},
 	{
-		id: "work",
-		category: "work",
+		id: "take-out-trash",
+		category: "chores",
 		baseRate: 0.4,
-		availableBlocks: ["morning", "afternoon"],
+		availableBlocks: ["morning", "afternoon", "evening"],
 	},
 	{
-		id: "practice-music",
-		category: "creative",
-		baseRate: 0.05,
-		availableBlocks: ["afternoon", "evening", "night"],
-		energyEffect: { success: 0.05 },
+		id: "tidy-up",
+		category: "chores",
+		baseRate: 0.2,
+		variantBaseRate: 0.5,
+		availableBlocks: ["morning", "afternoon", "evening"],
 	},
 	{
 		id: "shopping",
@@ -144,6 +193,74 @@ const taskStatics: readonly TaskStatic[] = [
 		availableBlocks: ["morning", "afternoon", "evening"],
 		weekendCost: 2,
 	},
+	// --- Dog ---
+	{
+		id: "walk-dog",
+		category: "dog",
+		baseRate: 0.85,
+		availableBlocks: ["morning", "afternoon", "evening", "night"],
+		energyEffect: { success: 0.04 },
+		autoSatisfies: "go-outside",
+		core: true,
+	},
+	{
+		id: "feed-dog",
+		category: "dog",
+		baseRate: 0.92,
+		availableBlocks: ["morning", "afternoon", "evening"],
+	},
+	{
+		id: "play-with-dog",
+		category: "dog",
+		baseRate: 0.75,
+		availableBlocks: ["morning", "afternoon", "evening"],
+		energyEffect: { success: 0.03 },
+	},
+	{
+		id: "chill-with-dog",
+		category: "dog",
+		baseRate: 0.8,
+		availableBlocks: ["afternoon", "evening", "night"],
+		energyEffect: { success: 0.02 },
+	},
+	// --- Work ---
+	{
+		id: "work",
+		category: "work",
+		baseRate: 0.4,
+		availableBlocks: ["morning", "afternoon"],
+		core: true,
+	},
+	// --- Creative ---
+	{
+		id: "practice-music",
+		category: "creative",
+		baseRate: 0.05,
+		availableBlocks: ["afternoon", "evening", "night"],
+		energyEffect: { success: 0.05 },
+	},
+	{
+		id: "draw-sketch",
+		category: "creative",
+		baseRate: 0.05,
+		availableBlocks: ["afternoon", "evening", "night"],
+		energyEffect: { success: 0.05 },
+	},
+	{
+		id: "write",
+		category: "creative",
+		baseRate: 0.05,
+		availableBlocks: ["evening", "night"],
+		energyEffect: { success: 0.05 },
+	},
+	{
+		id: "exercise",
+		category: "creative",
+		baseRate: 0.08,
+		availableBlocks: ["morning", "afternoon", "evening"],
+		energyEffect: { success: 0.04 },
+	},
+	// --- Social ---
 	{
 		id: "social-event",
 		category: "social",
@@ -152,12 +269,50 @@ const taskStatics: readonly TaskStatic[] = [
 		weekendCost: 3,
 	},
 	{
+		id: "meet-friend",
+		category: "social",
+		baseRate: 0.45,
+		availableBlocks: ["afternoon", "evening"],
+		weekendCost: 2,
+	},
+	{
+		id: "text-someone",
+		category: "social",
+		baseRate: 0.5,
+		availableBlocks: ["morning", "afternoon", "evening", "night"],
+	},
+	// --- Self-care ---
+	{
 		id: "go-outside",
 		category: "selfcare",
 		baseRate: 0.4,
 		availableBlocks: ["morning", "afternoon", "evening"],
 	},
+	{
+		id: "take-meds",
+		category: "selfcare",
+		baseRate: 0.45,
+		availableBlocks: ["morning", "evening"],
+		selectionPool: "hygiene",
+	},
+	{
+		id: "read",
+		category: "selfcare",
+		baseRate: 0.15,
+		availableBlocks: ["afternoon", "evening", "night"],
+	},
+	{
+		id: "meditate",
+		category: "selfcare",
+		baseRate: 0.1,
+		availableBlocks: ["morning", "evening", "night"],
+	},
 ];
+
+/** Gets a task's static data by ID. */
+export function getTaskStatic(id: TaskId): TaskStatic | undefined {
+	return taskStatics.find((ts) => ts.id === id);
+}
 
 /** Gets task content from i18n by task ID. */
 function getTaskContent(id: TaskId) {
@@ -189,9 +344,15 @@ function buildEvolution(id: TaskId): TaskEvolution {
 	};
 }
 
-/** Creates initial tasks with runtime state fields. */
-export function createInitialTasks(): Task[] {
-	return taskStatics.map((ts) => {
+/** Creates initial tasks with runtime state fields. Optionally filters to specific task IDs. */
+export function createInitialTasks(taskIds?: TaskId[]): Task[] {
+	const statics = taskIds
+		? taskIds
+				.map((id) => taskStatics.find((ts) => ts.id === id))
+				.filter((ts): ts is TaskStatic => ts !== undefined)
+		: taskStatics;
+
+	return statics.map((ts) => {
 		const content = getTaskContent(ts.id);
 		return {
 			id: ts.id,
@@ -210,12 +371,6 @@ export function createInitialTasks(): Task[] {
 		};
 	});
 }
-
-/**
- * Initial tasks - for backwards compatibility.
- * Prefer createInitialTasks() for fresh state to ensure i18n is applied.
- */
-export const initialTasks: Task[] = createInitialTasks();
 
 /** Info about a task with a variant, for friend rescue hint generation. */
 export interface TaskVariantInfo {
@@ -241,9 +396,3 @@ export function getTasksWithVariants(): TaskVariantInfo[] {
 			};
 		});
 }
-
-/**
- * Static export for backwards compatibility.
- * Prefer getTasksWithVariants() to ensure i18n is applied.
- */
-export const tasksWithVariants: TaskVariantInfo[] = getTasksWithVariants();

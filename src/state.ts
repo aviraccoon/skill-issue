@@ -165,6 +165,7 @@ import {
 	getStartingEnergyFromSeed,
 	getStartingMomentumFromSeed,
 } from "./systems/personality";
+import { selectTasksForSeed } from "./systems/taskSelection";
 
 /** Generates a fresh initial state. Uses provided seed or generates random one. */
 export function createInitialState(
@@ -172,19 +173,21 @@ export function createInitialState(
 	mode: GameMode = "main",
 ): GameState {
 	const runSeed = seed ?? Math.floor(Math.random() * 2147483647);
+	const personality = getPersonalityFromSeed(runSeed);
+	const taskIds = selectTasksForSeed(runSeed, personality);
 	return {
 		day: "monday",
 		dayIndex: 0,
 		timeBlock: "morning",
 		slotsRemaining: 3,
 		weekendPointsRemaining: 8,
-		tasks: createInitialTasks(), // Fresh tasks with current locale
+		tasks: createInitialTasks(taskIds),
 		selectedTaskId: null,
 		screen: "game",
 		energy: getStartingEnergyFromSeed(runSeed),
 		momentum: getStartingMomentumFromSeed(runSeed),
 		runSeed,
-		personality: getPersonalityFromSeed(runSeed),
+		personality,
 		dogFailedYesterday: false,
 		pushedThroughLastNight: false,
 		inExtendedNight: false,

@@ -2,7 +2,7 @@ import { describe, expect, test } from "bun:test";
 import { strings } from "../i18n";
 import { createInitialState, type GameState } from "../state";
 import { getPatternHint } from "./friendRescue";
-import { tasksWithVariants } from "./tasks";
+import { getTasksWithVariants } from "./tasks";
 
 /**
  * Creates a test state with neutral personality by default.
@@ -131,7 +131,7 @@ describe("getPatternHint", () => {
 
 describe("variant unlock hints", () => {
 	// Find the cook task variant info for tests
-	const cookVariant = tasksWithVariants.find((t) => t.id === "cook");
+	const cookVariant = getTasksWithVariants().find((t) => t.id === "cook");
 
 	test("variant hint can return unlocksVariant when task has failures", () => {
 		// Use a seed and state that triggers the variant hint

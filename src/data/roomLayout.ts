@@ -11,18 +11,42 @@ export const ROOM_SCALE = 2;
 
 /** Maps task IDs to furniture names. */
 const TASK_FURNITURE_MAP: Record<TaskId, FurnitureName> = {
+	// Hygiene
 	shower: "bathroom",
 	"brush-teeth-morning": "bathroom",
 	"brush-teeth-evening": "bathroom",
+	// Food
 	cook: "kitchen",
 	delivery: "couch",
+	"go-out-to-eat": "door",
+	"make-coffee": "kitchen",
+	// Chores
 	dishes: "kitchen",
-	"walk-dog": "door",
-	work: "desk",
-	"practice-music": "desk",
-	"go-outside": "door",
+	laundry: "bathroom",
+	"take-out-trash": "door",
+	"tidy-up": "couch",
 	shopping: "door",
+	// Dog
+	"walk-dog": "door",
+	"feed-dog": "kitchen",
+	"play-with-dog": "couch",
+	"chill-with-dog": "couch",
+	// Work
+	work: "desk",
+	// Creative
+	"practice-music": "desk",
+	"draw-sketch": "desk",
+	write: "desk",
+	exercise: "door",
+	// Social
 	"social-event": "door",
+	"meet-friend": "door",
+	"text-someone": "couch",
+	// Self-care
+	"go-outside": "door",
+	"take-meds": "bathroom",
+	read: "couch",
+	meditate: "bed",
 };
 
 /**

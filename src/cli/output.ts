@@ -1,4 +1,4 @@
-import { getScrollTrapFlavor } from "../data/scrollTrap";
+import { getOutcomeFlavorText } from "../data/scrollTrap";
 import type { GameState } from "../state";
 import { getEvolvedDescription } from "../systems/evolution";
 import type {
@@ -108,7 +108,7 @@ const verboseObserver: SimulationObserver = {
 
 		// Add scroll trap flavor
 		if (decision.type === "checkPhone") {
-			line += ` "${getScrollTrapFlavor(state.rollCount)}"`;
+			line += ` "${getOutcomeFlavorText(state.rollCount, "void")}"`;
 		}
 
 		console.log(line);

@@ -27,7 +27,7 @@ export function getRescueResultMessage(
 
 // --- Pattern Hints ---
 
-import { type TaskCategory, tasksWithVariants } from "./tasks";
+import { getTasksWithVariants, type TaskCategory } from "./tasks";
 
 /**
  * Pattern hint with multiple message variants.
@@ -92,7 +92,7 @@ function getVariantUnlockWeight(
  * Variant unlock hint groups generated from task definitions.
  * Weight increases with failure count, making them more likely when struggling.
  */
-const VARIANT_UNLOCK_HINTS: PatternHintGroup[] = tasksWithVariants.map(
+const VARIANT_UNLOCK_HINTS: PatternHintGroup[] = getTasksWithVariants().map(
 	(task) => ({
 		condition: (state: GameState) =>
 			!state.variantsUnlocked.includes(task.category) &&

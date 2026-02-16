@@ -20,6 +20,8 @@ import {
 } from "../state";
 import { CURRENT_SAVE_VERSION, runMigrations } from "./migrations";
 import type { Personality } from "./personality";
+import { getPersonalityFromSeed } from "./personality";
+import { selectTasksForSeed } from "./taskSelection";
 
 const STORAGE_KEY = "skill-issue-save";
 
@@ -286,10 +288,13 @@ export function getSavedGameSummaries(): {
 
 /**
  * Reconstructs full game state from saved state.
- * Creates fresh task objects from i18n, then applies saved runtime state.
+ * Rebuilds task pool from seed, then applies saved runtime state.
  */
 function fromSavedState(saved: SavedState): GameState {
-	const freshTasks = createInitialTasks();
+	const personality =
+		saved.personality ?? getPersonalityFromSeed(saved.runSeed);
+	const taskIds = selectTasksForSeed(saved.runSeed, personality);
+	const freshTasks = createInitialTasks(taskIds);
 	const savedTaskMap = new Map(saved.tasks.map((t) => [t.id, t]));
 
 	// Merge saved runtime state into fresh tasks

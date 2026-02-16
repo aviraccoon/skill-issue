@@ -12,7 +12,7 @@ import {
 	getRandomRescueMessage,
 	getRescueResultMessage,
 } from "../../data/friendRescue";
-import { getScrollTrapFlavor } from "../../data/scrollTrap";
+import { getOutcomeFlavorText } from "../../data/scrollTrap";
 import type { GameState, Task } from "../../state";
 import { createStore } from "../../store";
 import { getExtendedNightDescription } from "../../systems/allnighter";
@@ -504,7 +504,7 @@ export async function runInteractive(
 				}
 			} else if (decision.type === "checkPhone") {
 				console.log("");
-				console.log(getScrollTrapFlavor(store.getState().rollCount));
+				console.log(getOutcomeFlavorText(store.getState().rollCount, "void"));
 			} else if (decision.type === "acceptRescue") {
 				const resultMessage = getRescueResultMessage(
 					store.getState(),
