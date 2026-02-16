@@ -97,9 +97,9 @@ export function continueToNextDay(store: Store<GameState>) {
 	store.update("energy", (e) => clamp(e + sleepMod.energy, 0, 1));
 	store.update("momentum", (m) => clamp(m + sleepMod.momentum, 0, 1));
 
-	// Apply all-nighter penalty if player pushed through (varies by seed)
+	// Apply all-nighter penalty if player pushed through (varies by seed + personality)
 	if (pulledAllNighter) {
-		const penalty = getAllNighterPenalty(state.runSeed);
+		const penalty = getAllNighterPenalty(state.runSeed, state.personality.time);
 		store.update("energy", (e) => clamp(e - penalty, 0, 1));
 	}
 

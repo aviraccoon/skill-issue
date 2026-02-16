@@ -337,7 +337,7 @@ function renderDevState(state: GameState) {
 		</div>
 		<div class="${styles.row}">
 			<span class="${styles.key}">All-Nighter</span>
-			<span class="${styles.valueHidden}">-${(getAllNighterPenalty(state.runSeed) * 100).toFixed(0)}%</span>
+			<span class="${styles.valueHidden}">-${(getAllNighterPenalty(state.runSeed, state.personality.time) * 100).toFixed(0)}%</span>
 		</div>
 		<div class="${styles.row}">
 			<span class="${styles.key}">Rescue %</span>

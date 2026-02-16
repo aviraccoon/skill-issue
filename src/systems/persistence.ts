@@ -294,7 +294,7 @@ function fromSavedState(saved: SavedState): GameState {
 	const personality =
 		saved.personality ?? getPersonalityFromSeed(saved.runSeed);
 	const taskIds = selectTasksForSeed(saved.runSeed, personality);
-	const freshTasks = createInitialTasks(taskIds);
+	const freshTasks = createInitialTasks(taskIds, personality.time);
 	const savedTaskMap = new Map(saved.tasks.map((t) => [t.id, t]));
 
 	// Merge saved runtime state into fresh tasks

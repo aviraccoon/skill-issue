@@ -2,9 +2,7 @@ import { describe, expect, test } from "bun:test";
 import { strings } from "../i18n";
 import { createInitialState, type GameState } from "../state";
 import {
-	ALL_NIGHTER_ENERGY_PENALTY,
-	ALL_NIGHTER_PENALTY_BASE,
-	ALL_NIGHTER_PENALTY_VARIANCE,
+	ALL_NIGHTER_PENALTY,
 	calculateExtendedNightSlots,
 	canPushThrough,
 	getAllNighterPenalty,
@@ -123,32 +121,45 @@ describe("getExtendedNightDescription", () => {
 	});
 });
 
-describe("ALL_NIGHTER_ENERGY_PENALTY", () => {
-	test("is a reasonable penalty value", () => {
-		expect(ALL_NIGHTER_ENERGY_PENALTY).toBeGreaterThan(0);
-		expect(ALL_NIGHTER_ENERGY_PENALTY).toBeLessThanOrEqual(0.5);
-	});
-});
-
 describe("getAllNighterPenalty", () => {
-	test("varies by seed within range (20-30%)", () => {
-		const minPenalty = ALL_NIGHTER_PENALTY_BASE - ALL_NIGHTER_PENALTY_VARIANCE;
-		const maxPenalty = ALL_NIGHTER_PENALTY_BASE + ALL_NIGHTER_PENALTY_VARIANCE;
-		for (let i = 0; i < 100; i++) {
-			const penalty = getAllNighterPenalty(i * 12345);
-			expect(penalty).toBeGreaterThanOrEqual(minPenalty);
-			expect(penalty).toBeLessThanOrEqual(maxPenalty);
+	test("varies by seed within personality range", () => {
+		for (const pref of ["nightOwl", "earlyBird", "neutral"] as const) {
+			const { base, variance } = ALL_NIGHTER_PENALTY[pref];
+			for (let i = 0; i < 100; i++) {
+				const penalty = getAllNighterPenalty(i * 12345, pref);
+				expect(penalty).toBeGreaterThanOrEqual(base - variance);
+				expect(penalty).toBeLessThanOrEqual(base + variance);
+			}
 		}
 	});
 
-	test("same seed gives same penalty", () => {
-		const p1 = getAllNighterPenalty(42);
-		const p2 = getAllNighterPenalty(42);
+	test("same seed and personality gives same penalty", () => {
+		const p1 = getAllNighterPenalty(42, "nightOwl");
+		const p2 = getAllNighterPenalty(42, "nightOwl");
 		expect(p1).toBe(p2);
 	});
 
-	test("base and variance are correct", () => {
-		expect(ALL_NIGHTER_PENALTY_BASE).toBe(0.25);
-		expect(ALL_NIGHTER_PENALTY_VARIANCE).toBe(0.05);
+	test("night owls pay less than early birds", () => {
+		expect(ALL_NIGHTER_PENALTY.nightOwl.base).toBeLessThan(
+			ALL_NIGHTER_PENALTY.neutral.base,
+		);
+		expect(ALL_NIGHTER_PENALTY.neutral.base).toBeLessThan(
+			ALL_NIGHTER_PENALTY.earlyBird.base,
+		);
+	});
+
+	test("penalty ranges are correct", () => {
+		expect(ALL_NIGHTER_PENALTY.nightOwl).toEqual({
+			base: 0.15,
+			variance: 0.05,
+		});
+		expect(ALL_NIGHTER_PENALTY.neutral).toEqual({
+			base: 0.25,
+			variance: 0.05,
+		});
+		expect(ALL_NIGHTER_PENALTY.earlyBird).toEqual({
+			base: 0.35,
+			variance: 0.05,
+		});
 	});
 });

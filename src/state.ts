@@ -1,6 +1,7 @@
+import type { TimeBlock } from "./data/timeBlocks";
 import type { NonEmptyArray } from "./utils/random";
 
-export type TimeBlock = "morning" | "afternoon" | "evening" | "night";
+export { TIME_BLOCKS, type TimeBlock } from "./data/timeBlocks";
 export type Day =
 	| "monday"
 	| "tuesday"
@@ -181,7 +182,7 @@ export function createInitialState(
 		timeBlock: "morning",
 		slotsRemaining: 3,
 		weekendPointsRemaining: 8,
-		tasks: createInitialTasks(taskIds),
+		tasks: createInitialTasks(taskIds, personality.time),
 		selectedTaskId: null,
 		screen: "game",
 		energy: getStartingEnergyFromSeed(runSeed),
@@ -217,11 +218,4 @@ export const DAYS: Day[] = [
 	"friday",
 	"saturday",
 	"sunday",
-];
-
-export const TIME_BLOCKS: TimeBlock[] = [
-	"morning",
-	"afternoon",
-	"evening",
-	"night",
 ];

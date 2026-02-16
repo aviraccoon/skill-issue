@@ -1,30 +1,33 @@
 import { strings } from "../i18n";
 import { type GameState, isWeekend } from "../state";
 import { pickVariant, seededVariation } from "../utils/random";
+import type { TimePreference } from "./personality";
 
 const SALT_ALL_NIGHTER_PENALTY = 4001;
 
 /**
- * Base energy penalty after pushing through the night.
- * Varies by seed: 20-30%.
+ * All-nighter energy penalty bases by time preference.
+ * Night Owls handle it better; Early Birds crash harder.
  */
-export const ALL_NIGHTER_PENALTY_BASE = 0.25;
-export const ALL_NIGHTER_PENALTY_VARIANCE = 0.05;
+export const ALL_NIGHTER_PENALTY: Record<
+	TimePreference,
+	{ base: number; variance: number }
+> = {
+	nightOwl: { base: 0.15, variance: 0.05 }, // 10-20%
+	neutral: { base: 0.25, variance: 0.05 }, // 20-30%
+	earlyBird: { base: 0.35, variance: 0.05 }, // 30-40%
+};
 
 /**
- * Returns the energy penalty for all-nighter this run (20-30%).
+ * Returns the energy penalty for all-nighter based on personality and seed.
  */
-export function getAllNighterPenalty(seed: number): number {
-	return seededVariation(
-		seed,
-		ALL_NIGHTER_PENALTY_BASE,
-		ALL_NIGHTER_PENALTY_VARIANCE,
-		SALT_ALL_NIGHTER_PENALTY,
-	);
+export function getAllNighterPenalty(
+	seed: number,
+	timePref: TimePreference,
+): number {
+	const { base, variance } = ALL_NIGHTER_PENALTY[timePref];
+	return seededVariation(seed, base, variance, SALT_ALL_NIGHTER_PENALTY);
 }
-
-/** @deprecated Use getAllNighterPenalty(seed) instead. Kept for test compatibility. */
-export const ALL_NIGHTER_ENERGY_PENALTY = 0.25;
 
 /**
  * Calculates how many extended night slots you get based on current energy.

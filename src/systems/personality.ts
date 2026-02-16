@@ -1,4 +1,4 @@
-import type { TimeBlock } from "../state";
+import { TIME_BLOCKS, type TimeBlock } from "../data/timeBlocks";
 import { seededVariation } from "../utils/random";
 
 /**
@@ -182,6 +182,56 @@ export function getStartingMomentumFromSeed(seed: number): number {
 	const momentumBits = Math.floor(seed / 10000000) % 1000;
 	const normalized = momentumBits / 999; // 0 to 1
 	return 0.45 + normalized * 0.1; // 0.45 to 0.55
+}
+
+/**
+ * Adjusts task availability blocks based on time preference.
+ * Night Owl: drops morning from 3+ block tasks, extends into night.
+ * Early Bird: drops night from 3+ block tasks, extends into morning.
+ * 2-block tasks expand (gain a block) without losing one.
+ * Single-block tasks are never modified.
+ */
+export function adjustBlocksForPersonality(
+	blocks: readonly TimeBlock[],
+	timePref: TimePreference,
+): TimeBlock[] {
+	if (timePref === "neutral" || blocks.length <= 1) {
+		return [...blocks];
+	}
+
+	const result = [...blocks];
+
+	if (timePref === "nightOwl") {
+		// Only remove morning from tasks with 3+ blocks (2-block tasks just expand)
+		if (blocks.length >= 3) {
+			const morningIdx = result.indexOf("morning");
+			if (morningIdx !== -1) {
+				result.splice(morningIdx, 1);
+			}
+		}
+		// Add the block after the current latest
+		const latestIdx = Math.max(...result.map((b) => TIME_BLOCKS.indexOf(b)));
+		const nextBlock = TIME_BLOCKS[latestIdx + 1];
+		if (nextBlock && !result.includes(nextBlock)) {
+			result.push(nextBlock);
+		}
+	} else {
+		// earlyBird: only remove night from tasks with 3+ blocks
+		if (blocks.length >= 3) {
+			const nightIdx = result.indexOf("night");
+			if (nightIdx !== -1) {
+				result.splice(nightIdx, 1);
+			}
+		}
+		// Add the block before the current earliest
+		const earliestIdx = Math.min(...result.map((b) => TIME_BLOCKS.indexOf(b)));
+		const prevBlock = TIME_BLOCKS[earliestIdx - 1];
+		if (prevBlock && !result.includes(prevBlock)) {
+			result.unshift(prevBlock);
+		}
+	}
+
+	return result;
 }
 
 /**

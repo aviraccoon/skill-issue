@@ -1,5 +1,10 @@
 import { strings } from "../i18n";
-import type { Task, TaskEvolution, TimeBlock } from "../state";
+import type { Task, TaskEvolution } from "../state";
+import {
+	adjustBlocksForPersonality,
+	type TimePreference,
+} from "../systems/personality";
+import type { TimeBlock } from "./timeBlocks";
 
 /** Task category for grouping and modifiers. */
 export type TaskCategory =
@@ -102,6 +107,8 @@ export interface TaskStatic {
 	selectionPool?: string;
 	/** Sub-group tag within pool for selection constraints (e.g., food "high"/"low"). */
 	selectionTag?: string;
+	/** If true, personality time-block shifts don't apply. */
+	noBlockShift?: boolean;
 }
 
 /** Static task definitions - rates, timing, categories. Strings come from i18n. */
@@ -202,6 +209,7 @@ export const taskStatics: readonly TaskStatic[] = [
 		energyEffect: { success: 0.04 },
 		autoSatisfies: "go-outside",
 		core: true,
+		noBlockShift: true,
 	},
 	{
 		id: "feed-dog",
@@ -345,7 +353,10 @@ function buildEvolution(id: TaskId): TaskEvolution {
 }
 
 /** Creates initial tasks with runtime state fields. Optionally filters to specific task IDs. */
-export function createInitialTasks(taskIds?: TaskId[]): Task[] {
+export function createInitialTasks(
+	taskIds?: TaskId[],
+	timePref?: TimePreference,
+): Task[] {
 	const statics = taskIds
 		? taskIds
 				.map((id) => taskStatics.find((ts) => ts.id === id))
@@ -354,13 +365,17 @@ export function createInitialTasks(taskIds?: TaskId[]): Task[] {
 
 	return statics.map((ts) => {
 		const content = getTaskContent(ts.id);
+		const blocks =
+			timePref && !ts.noBlockShift
+				? adjustBlocksForPersonality(ts.availableBlocks, timePref)
+				: [...ts.availableBlocks];
 		return {
 			id: ts.id,
 			name: content.name,
 			category: ts.category,
 			baseRate: ts.baseRate,
 			minimalVariant: buildVariant(ts),
-			availableBlocks: [...ts.availableBlocks],
+			availableBlocks: blocks,
 			weekendCost: ts.weekendCost,
 			evolution: buildEvolution(ts.id),
 			energyEffect: ts.energyEffect,

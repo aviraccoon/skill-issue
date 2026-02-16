@@ -1,5 +1,8 @@
 import { describe, expect, test } from "bun:test";
+import { createInitialTasks, taskStatics } from "../data/tasks";
+import { TIME_BLOCKS } from "../data/timeBlocks";
 import {
+	adjustBlocksForPersonality,
 	describePersonality,
 	getBaseTimeModifier,
 	getFriendRescueEnergyEffect,
@@ -11,6 +14,7 @@ import {
 	getStartingMomentumFromSeed,
 	type Personality,
 } from "./personality";
+import { selectTasksForSeed } from "./taskSelection";
 
 describe("getPersonalityFromSeed", () => {
 	test("returns valid personality types", () => {
@@ -163,6 +167,134 @@ describe("social personality effects", () => {
 			social: "socialBattery",
 		};
 		expect(getSoloSuccessEnergyEffect(personality)).toBe(0);
+	});
+});
+
+describe("adjustBlocksForPersonality", () => {
+	test("returns blocks unchanged for neutral", () => {
+		expect(
+			adjustBlocksForPersonality(["morning", "evening"], "neutral"),
+		).toEqual(["morning", "evening"]);
+	});
+
+	test("does not modify single-block tasks", () => {
+		expect(adjustBlocksForPersonality(["morning"], "nightOwl")).toEqual([
+			"morning",
+		]);
+		expect(adjustBlocksForPersonality(["night"], "earlyBird")).toEqual([
+			"night",
+		]);
+	});
+
+	describe("nightOwl", () => {
+		test("2-block tasks expand: shower [morning, evening] -> [morning, evening, night]", () => {
+			expect(
+				adjustBlocksForPersonality(["morning", "evening"], "nightOwl"),
+			).toEqual(["morning", "evening", "night"]);
+		});
+
+		test("2-block tasks expand: work [morning, afternoon] -> [morning, afternoon, evening]", () => {
+			expect(
+				adjustBlocksForPersonality(["morning", "afternoon"], "nightOwl"),
+			).toEqual(["morning", "afternoon", "evening"]);
+		});
+
+		test("3-block tasks shift: cook [morning, afternoon, evening] -> [afternoon, evening, night]", () => {
+			expect(
+				adjustBlocksForPersonality(
+					["morning", "afternoon", "evening"],
+					"nightOwl",
+				),
+			).toEqual(["afternoon", "evening", "night"]);
+		});
+
+		test("tasks already at night without morning stay unchanged", () => {
+			expect(
+				adjustBlocksForPersonality(
+					["afternoon", "evening", "night"],
+					"nightOwl",
+				),
+			).toEqual(["afternoon", "evening", "night"]);
+		});
+
+		test("4-block tasks lose morning", () => {
+			expect(
+				adjustBlocksForPersonality(
+					["morning", "afternoon", "evening", "night"],
+					"nightOwl",
+				),
+			).toEqual(["afternoon", "evening", "night"]);
+		});
+	});
+
+	describe("earlyBird", () => {
+		test("3-block tasks shift: [afternoon, evening, night] -> [morning, afternoon, evening]", () => {
+			expect(
+				adjustBlocksForPersonality(
+					["afternoon", "evening", "night"],
+					"earlyBird",
+				),
+			).toEqual(["morning", "afternoon", "evening"]);
+		});
+
+		test("2-block tasks expand: [evening, night] -> [afternoon, evening, night]", () => {
+			expect(
+				adjustBlocksForPersonality(["evening", "night"], "earlyBird"),
+			).toEqual(["afternoon", "evening", "night"]);
+		});
+
+		test("tasks already at morning without night stay unchanged", () => {
+			expect(
+				adjustBlocksForPersonality(
+					["morning", "afternoon", "evening"],
+					"earlyBird",
+				),
+			).toEqual(["morning", "afternoon", "evening"]);
+		});
+
+		test("4-block tasks lose night", () => {
+			expect(
+				adjustBlocksForPersonality(
+					["morning", "afternoon", "evening", "night"],
+					"earlyBird",
+				),
+			).toEqual(["morning", "afternoon", "evening"]);
+		});
+	});
+
+	test("never produces empty blocks for any task static", () => {
+		for (const ts of taskStatics) {
+			for (const pref of ["nightOwl", "earlyBird", "neutral"] as const) {
+				const result = adjustBlocksForPersonality(ts.availableBlocks, pref);
+				expect(result.length).toBeGreaterThan(0);
+			}
+		}
+	});
+
+	test("never produces duplicate blocks for any task static", () => {
+		for (const ts of taskStatics) {
+			for (const pref of ["nightOwl", "earlyBird"] as const) {
+				const result = adjustBlocksForPersonality(ts.availableBlocks, pref);
+				expect(new Set(result).size).toBe(result.length);
+			}
+		}
+	});
+});
+
+describe("time-block coverage after shifts", () => {
+	test("every seed has at least one task in every time block", () => {
+		for (let seed = 0; seed < 300; seed++) {
+			const p = getPersonalityFromSeed(seed);
+			const taskIds = selectTasksForSeed(seed, p);
+			const tasks = createInitialTasks(taskIds, p.time);
+
+			for (const block of TIME_BLOCKS) {
+				const available = tasks.filter((t) =>
+					t.availableBlocks.includes(block),
+				);
+				expect(available.length).toBeGreaterThan(0);
+			}
+		}
 	});
 });
 
