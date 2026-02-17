@@ -4,6 +4,7 @@
  */
 
 import {
+	getEventPhoneFragment,
 	getOutcomeFlavorText,
 	type PhoneCheckResult,
 	selectPhoneOutcome,
@@ -74,8 +75,19 @@ export function checkPhone(store: Store<GameState>): PhoneCheckResult {
 	}
 
 	// Get flavor text for this outcome
+	// For "somethingNice" / "usefulFind", sometimes reference run events
 	const rollCountBefore = store.getState().rollCount;
-	const flavorText = getOutcomeFlavorText(rollCountBefore, outcome);
+	let flavorText: string;
+	if (outcome === "somethingNice" || outcome === "usefulFind") {
+		const fragment = getEventPhoneFragment(
+			state.events,
+			rollCountBefore,
+			state.runSeed,
+		);
+		flavorText = fragment ?? getOutcomeFlavorText(rollCountBefore, outcome);
+	} else {
+		flavorText = getOutcomeFlavorText(rollCountBefore, outcome);
+	}
 	store.update("rollCount", (c) => c + 1);
 
 	return {

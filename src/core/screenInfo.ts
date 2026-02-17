@@ -11,11 +11,23 @@ import {
 	getAllNighterTitle,
 	getDogNote,
 } from "../data/daySummary";
+import {
+	type EventType,
+	getEventContent,
+	getEventDefinition,
+} from "../data/events";
 import { getRandomRescueMessage } from "../data/friendRescue";
 import type { TaskId } from "../data/tasks";
 import { generateWeekStory } from "../data/weekStory";
 import { strings } from "../i18n";
-import type { Day, GameState, Screen, Task, TimeBlock } from "../state";
+import type {
+	Day,
+	EventId,
+	GameState,
+	Screen,
+	Task,
+	TimeBlock,
+} from "../state";
 import { isWeekend, TIME_BLOCKS } from "../state";
 import { getExtendedNightDescription } from "../systems/allnighter";
 import {
@@ -184,6 +196,22 @@ export interface PatternsScreenInfo {
 	lifetime: LifetimeStats;
 }
 
+/** Narrative event screen info (minor interstitial or major choice). */
+export interface NarrativeEventInfo {
+	type: "narrativeEvent";
+	eventType: EventType;
+	eventId: EventId;
+	/** Notification text (minor events). */
+	text: string;
+	/** Screen title (major events). */
+	title: string;
+	/** Description text (major events). */
+	description: string;
+	/** Available choices (major events). */
+	choices: { id: string; label: string; description: string }[];
+	decisions: Decision[];
+}
+
 /** Union of all screen info types. */
 export type ScreenInfo =
 	| SplashInfo
@@ -194,7 +222,8 @@ export type ScreenInfo =
 	| FriendRescueInfo
 	| DaySummaryInfo
 	| WeekCompleteInfo
-	| PatternsScreenInfo;
+	| PatternsScreenInfo
+	| NarrativeEventInfo;
 
 /** Screens that are menu/navigation, not gameplay. Should not be restored on "Continue". */
 export const MENU_SCREENS: ReadonlySet<Screen> = new Set<Screen>([
@@ -225,6 +254,8 @@ export function getScreenInfo(state: GameState): ScreenInfo {
 			return getWeekCompleteInfo(state);
 		case "patterns":
 			return getPatternsScreenInfo();
+		case "narrativeEvent":
+			return getNarrativeEventInfo(state);
 		default:
 			return getGameScreenInfo(state);
 	}
@@ -599,5 +630,72 @@ function getWeekCompleteInfo(state: GameState): WeekCompleteInfo {
 			friendRescues: runStats.friendRescues,
 			variantsUsed,
 		},
+	};
+}
+
+function getNarrativeEventInfo(state: GameState): NarrativeEventInfo {
+	const eventId = state.activeEventId;
+	const decisions = getAvailableDecisions(state);
+
+	// Fallback for missing event (shouldn't happen in normal play)
+	if (!eventId) {
+		return {
+			type: "narrativeEvent",
+			eventType: "minor",
+			eventId: "rain",
+			text: "",
+			title: "",
+			description: "",
+			choices: [],
+			decisions,
+		};
+	}
+
+	const definition = getEventDefinition(eventId);
+	const content = getEventContent(eventId);
+
+	if (definition?.type === "major" && "choices" in content) {
+		// Filter choices by flag requirements
+		const choiceEntries = (definition.choices ?? []).filter(
+			(c) => !c.requiresFlag || state.eventFlags.includes(c.requiresFlag),
+		);
+		return {
+			type: "narrativeEvent",
+			eventType: "major",
+			eventId,
+			text: "",
+			title: content.title,
+			description: content.description,
+			choices: choiceEntries.map((c) => {
+				const choices = content.choices as Record<
+					string,
+					{ label: string; description: string } | undefined
+				>;
+				const choiceContent = choices[c.id];
+				return {
+					id: c.id,
+					label: choiceContent?.label ?? c.id,
+					description: choiceContent?.description ?? "",
+				};
+			}),
+			decisions,
+		};
+	}
+
+	// Minor event
+	let text = "";
+	if ("notification" in content && Array.isArray(content.notification)) {
+		const variants = [...content.notification] as [string, ...string[]];
+		text = pickVariant(variants, state.runSeed + state.dayIndex);
+	}
+	return {
+		type: "narrativeEvent",
+		eventType: "minor",
+		eventId,
+		text,
+		title: "",
+		description: "",
+		choices: [],
+		decisions,
 	};
 }

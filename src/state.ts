@@ -28,6 +28,48 @@ import type { PhoneOutcome } from "./data/scrollTrap";
 import type { TaskCategory, TaskId } from "./data/tasks";
 import type { Personality } from "./systems/personality";
 
+/** Event ID type - all valid event identifiers. Re-exported for use in data/events.ts. */
+export type EventId =
+	// Tier 0: Flavor
+	| "rain"
+	| "neighbors-music"
+	| "nice-weather"
+	| "morning-bird"
+	| "car-alarm"
+	| "sunset"
+	| "hallway-noise"
+	| "wind"
+	// Tier 1: Standalone
+	| "cold-apartment"
+	| "surprise-package"
+	| "hot-water-out"
+	| "upstairs-party"
+	| "found-cash"
+	| "good-smell"
+	| "neighbor-cookies"
+	// Tier 1: Arc - Leak
+	| "leak-drip"
+	| "leak-found"
+	| "leak-fixed"
+	| "leak-worse"
+	// Tier 1: Arc - Delivery
+	| "missed-delivery"
+	| "delivery-deadline"
+	// Tier 1: Arc - Construction
+	| "construction-start"
+	| "construction-weekend"
+	// Tier 1: Arc - Neighbor
+	| "neighbor-hello"
+	| "neighbor-invite";
+
+/** Runtime state of an event instance during a run. */
+export interface EventInstance {
+	id: EventId;
+	status: "pending" | "active" | "resolved";
+	/** For major events: which choice the player made. */
+	choiceId?: string;
+}
+
 /**
  * Statistics tracked during a run for "Your Patterns" reveal.
  */
@@ -95,6 +137,7 @@ export type Screen =
 	| "daySummary"
 	| "weekComplete"
 	| "friendRescue"
+	| "narrativeEvent"
 	| "patterns";
 
 /** Game mode determines which save slot to use. */
@@ -153,6 +196,11 @@ export interface GameState {
 
 	// First-attempt tutorial guarantee (set by persistence layer for new players)
 	firstAttemptAvailable: boolean;
+
+	// Narrative events (seed-determined, checked at transition points)
+	events: EventInstance[]; // events selected for this run, with status
+	eventFlags: string[]; // flags set by event choices (for consequence chains)
+	activeEventId: EventId | null; // event currently being displayed
 }
 
 /** Returns true if the current day is Saturday or Sunday. */
@@ -205,6 +253,9 @@ export function createInitialState(
 		runStats: createInitialRunStats(),
 		gameMode: mode,
 		firstAttemptAvailable: false,
+		events: [], // populated by event selection system
+		eventFlags: [],
+		activeEventId: null,
 	};
 }
 

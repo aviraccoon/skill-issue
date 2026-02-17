@@ -1,10 +1,11 @@
 import { cs } from "./cs";
 import { en } from "./en";
-import type { Strings } from "./types";
+import type { PartialStrings, Strings } from "./types";
 
 type Locale = "en" | "cs";
 
-const locales: Record<Locale, Strings> = {
+/** Non-English locales may be partial; the proxy provides English fallback. */
+const locales: Record<Locale, PartialStrings> = {
 	en,
 	cs,
 };
@@ -70,7 +71,7 @@ function getWithFallback<T>(
  * Usage: strings.game.attempt or strings.a11y.taskSucceeded('Shower')
  */
 function createStringsProxy(
-	current: Strings,
+	current: PartialStrings,
 	fallback: Strings,
 	path: string[] = [],
 ): Strings {
@@ -82,7 +83,7 @@ function createStringsProxy(
 			// If it's an object (namespace), return another proxy
 			if (value !== null && typeof value === "object") {
 				return createStringsProxy(
-					value as Strings,
+					value as PartialStrings,
 					getWithFallback<Strings>(newPath, fallback, fallback),
 					[],
 				);
@@ -98,15 +99,13 @@ function createStringsProxy(
  * Automatically falls back to English for missing translations.
  */
 export function strings(): Strings {
-	const current = locales[currentLocale];
-	const fallback = locales.en;
-
-	// If current is English, no proxy needed
+	// English is always complete -- return directly, no proxy needed
 	if (currentLocale === "en") {
-		return current;
+		return en;
 	}
 
-	return createStringsProxy(current, fallback);
+	// Non-English locales go through the proxy for English fallback
+	return createStringsProxy(locales[currentLocale], en);
 }
 
 /**

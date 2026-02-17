@@ -20,10 +20,9 @@ export function renderWeekComplete(
 	const { patterns } = screenInfo;
 
 	// Save completed run to patterns history (once per run)
-	// TODO: Get active mode from state when menu is implemented
 	const state = store.getState();
 	if (savedRunSeed !== state.runSeed) {
-		saveCompletedRun(state, "main");
+		saveCompletedRun(state, state.gameMode);
 		savedRunSeed = state.runSeed;
 	}
 

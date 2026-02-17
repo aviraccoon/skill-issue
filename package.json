@@ -7,6 +7,7 @@
 		"dev": "bun run --hot src/server.ts",
 		"build": "bun build index.html --outdir dist --minify",
 		"check": "biome check && tsc --noEmit",
+		"check:i18n": "bun scripts/check-translations.ts",
 		"format": "biome check --write",
 		"test": "bun test",
 		"gen:css-types": "bun scripts/gen-css-types.ts",

@@ -13,11 +13,14 @@ import {
 	createInitialRunStats,
 	createInitialState,
 	type Day,
+	type EventId,
+	type EventInstance,
 	type GameState,
 	type RunStats,
 	type Task,
 	type TimeBlock,
 } from "../state";
+import { selectEventsForSeed } from "./eventSelection";
 import { CURRENT_SAVE_VERSION, runMigrations } from "./migrations";
 import type { Personality } from "./personality";
 import { getPersonalityFromSeed } from "./personality";
@@ -34,6 +37,13 @@ interface SavedTask {
 	failureCount: number;
 	attemptedToday: boolean;
 	succeededToday: boolean;
+}
+
+/** Persisted event instance state (status + player choice). */
+interface SavedEventInstance {
+	id: EventId;
+	status: EventInstance["status"];
+	choiceId?: string;
 }
 
 /** Minimal game state for persistence - no translatable content. */
@@ -62,6 +72,8 @@ export interface SavedState {
 	runStats: RunStats;
 	gameMode: GameMode;
 	firstAttemptAvailable?: boolean;
+	events?: SavedEventInstance[];
+	eventFlags?: string[];
 }
 
 /** A completed run stored in patterns history. */
@@ -70,6 +82,8 @@ export interface CompletedRun {
 	personality: Personality;
 	stats: RunStats;
 	completedAt: number;
+	/** Game mode this run was played in. Used to filter progression calculations. */
+	gameMode?: GameMode;
 }
 
 /** Persistent patterns data that survives across runs. */
@@ -152,6 +166,12 @@ function toSavedState(state: GameState): SavedState {
 		runStats: state.runStats,
 		gameMode: state.gameMode,
 		firstAttemptAvailable: state.firstAttemptAvailable,
+		events: state.events.map((e) => ({
+			id: e.id,
+			status: e.status,
+			choiceId: e.choiceId,
+		})),
+		eventFlags: state.eventFlags,
 	};
 }
 
@@ -222,7 +242,25 @@ export function loadGame(mode: GameMode): GameState | null {
 	if (!saved) {
 		return null;
 	}
-	return fromSavedState(saved);
+	const state = fromSavedState(saved);
+	// Merge saved event state with seed-selected canonical list
+	const bypassProgression = (saved.gameMode ?? "main") === "seeded";
+	const freshEvents = selectEventsForSeed(
+		state.runSeed,
+		data.patterns,
+		bypassProgression,
+	);
+	const savedEventMap = new Map(state.events.map((e) => [e.id, e]));
+	state.events = freshEvents.map((fresh) => {
+		const savedEvent = savedEventMap.get(fresh.id);
+		if (!savedEvent) return fresh;
+		return {
+			...fresh,
+			status: savedEvent.status,
+			choiceId: savedEvent.choiceId,
+		};
+	});
+	return state;
 }
 
 /**
@@ -243,6 +281,13 @@ export function createNewGame(
 	if (!data.patterns.hasEverAttempted) {
 		state.firstAttemptAvailable = true;
 	}
+	// Select narrative events for this run
+	const bypassProgression = mode === "seeded";
+	state.events = selectEventsForSeed(
+		state.runSeed,
+		data.patterns,
+		bypassProgression,
+	);
 	return state;
 }
 
@@ -313,6 +358,17 @@ function fromSavedState(saved: SavedState): GameState {
 	// Menu screens shouldn't be restored - go to game instead
 	const screen = MENU_SCREENS.has(saved.screen) ? "game" : saved.screen;
 
+	// Restore event state
+	const events: EventInstance[] = (saved.events ?? []).map((e) => ({
+		id: e.id,
+		status: e.status,
+		choiceId: e.choiceId,
+	}));
+
+	// Derive activeEventId from the events array
+	const activeEvent = events.find((e) => e.status === "active");
+	const activeEventId = activeEvent?.id ?? null;
+
 	return {
 		day: saved.day,
 		dayIndex: saved.dayIndex,
@@ -342,6 +398,9 @@ function fromSavedState(saved: SavedState): GameState {
 		runStats: saved.runStats ?? createInitialRunStats(),
 		gameMode: saved.gameMode ?? "main", // Fallback for migrated saves
 		firstAttemptAvailable: saved.firstAttemptAvailable ?? false,
+		events, // Saved state merged with seed selection in loadGame
+		eventFlags: saved.eventFlags ?? [],
+		activeEventId,
 	};
 }
 
@@ -372,6 +431,7 @@ export function saveCompletedRun(state: GameState, mode: GameMode): void {
 		personality: state.personality,
 		stats: state.runStats,
 		completedAt: Date.now(),
+		gameMode: mode,
 	};
 
 	const data: SaveDataV4 = {

@@ -1,5 +1,6 @@
+import { getEventDefinition } from "../data/events";
 import { getOutcomeFlavorText } from "../data/scrollTrap";
-import type { GameState } from "../state";
+import type { EventInstance, GameState } from "../state";
 import { getEvolvedDescription } from "../systems/evolution";
 import type {
 	ActionResult,
@@ -75,7 +76,7 @@ const normalObserver: SimulationObserver = {
  */
 const verboseObserver: SimulationObserver = {
 	onAction(state: GameState, decision: Decision, result: ActionResult) {
-		const action = formatDecisionWithState(decision, state);
+		const action = formatDecisionWithState(decision, state, result);
 		const energyDelta = result.energyAfter - result.energyBefore;
 		const momentumDelta = result.momentumAfter - result.momentumBefore;
 
@@ -154,6 +155,21 @@ const verboseObserver: SimulationObserver = {
 		console.log(
 			`  Friend rescues: ${result.stats.friendRescues.triggered} triggered, ${result.stats.friendRescues.accepted} accepted`,
 		);
+
+		// Event summary
+		const firedEvents = result.events.filter((e) => e.status !== "pending");
+		if (firedEvents.length > 0) {
+			console.log(`  Events: ${firedEvents.length} fired`);
+			for (const event of firedEvents) {
+				console.log(`    ${formatEventSummary(event)}`);
+			}
+		}
+
+		// Week narrative
+		console.log("");
+		console.log("--- Week Story ---");
+		console.log("");
+		console.log(result.narrative);
 	},
 };
 
@@ -187,13 +203,21 @@ function formatDecision(decision: Decision): string {
 			return `Accept rescue (${decision.activity})`;
 		case "declineRescue":
 			return "Decline rescue";
+		case "dismissEvent":
+			return "Dismiss event";
+		case "eventChoice":
+			return `Event choice: ${decision.choiceId}`;
 	}
 }
 
 /**
- * Formats a decision for display with state context (evolved task names).
+ * Formats a decision for display with state context (evolved task names, event IDs).
  */
-function formatDecisionWithState(decision: Decision, state: GameState): string {
+function formatDecisionWithState(
+	decision: Decision,
+	state: GameState,
+	result?: ActionResult,
+): string {
 	if (decision.type === "attempt") {
 		const task = state.tasks.find((t) => t.id === decision.taskId);
 		if (task) {
@@ -202,7 +226,56 @@ function formatDecisionWithState(decision: Decision, state: GameState): string {
 		}
 		return `Attempt: ${decision.taskId}`;
 	}
+	if (decision.type === "dismissEvent" && result?.eventId) {
+		return `Event [${result.eventId}]: (dismissed)`;
+	}
+	if (decision.type === "eventChoice" && result?.eventId) {
+		return `Event [${result.eventId}]: ${decision.choiceId}`;
+	}
 	return formatDecision(decision);
+}
+
+/** Formats an event instance for the final stats summary. */
+function formatEventSummary(event: EventInstance): string {
+	const def = getEventDefinition(event.id);
+	const type = def?.type === "major" ? "major" : "minor";
+	const status = event.status === "resolved" ? "done" : event.status;
+
+	let detail = `${event.id} (${type}, ${status})`;
+
+	// Show choice and effects for resolved major events
+	if (event.choiceId && def?.choices) {
+		const choice = def.choices.find((c) => c.id === event.choiceId);
+		const parts: string[] = [event.choiceId];
+		if (choice?.effects) {
+			const fx: string[] = [];
+			if (choice.effects.energy)
+				fx.push(
+					`E:${choice.effects.energy > 0 ? "+" : ""}${formatPercent(choice.effects.energy)}`,
+				);
+			if (choice.effects.momentum)
+				fx.push(
+					`M:${choice.effects.momentum > 0 ? "+" : ""}${formatPercent(choice.effects.momentum)}`,
+				);
+			if (fx.length > 0) parts.push(fx.join(", "));
+		}
+		detail = `${event.id} (${type}) [${parts.join(" ")}]`;
+	} else if (def?.effects) {
+		const fx: string[] = [];
+		if (def.effects.energy)
+			fx.push(
+				`E:${def.effects.energy > 0 ? "+" : ""}${formatPercent(def.effects.energy)}`,
+			);
+		if (def.effects.momentum)
+			fx.push(
+				`M:${def.effects.momentum > 0 ? "+" : ""}${formatPercent(def.effects.momentum)}`,
+			);
+		if (fx.length > 0) {
+			detail = `${event.id} (${type}) [${fx.join(", ")}]`;
+		}
+	}
+
+	return detail;
 }
 
 /**

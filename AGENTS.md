@@ -64,6 +64,14 @@ Component styles use CSS modules (`.module.css` files). Type declarations are co
 
 After adding/removing/renaming CSS classes, run `bun run gen:css-types` to update the type declarations. This keeps TypeScript happy with `noUncheckedIndexedAccess` enabled.
 
+## Save Persistence
+
+Save data lives in localStorage under a versioned structure. The migration system in `src/systems/migrations/` handles version bumps.
+
+**When to bump the save version:** Only when the top-level structure changes incompatibly (e.g., renaming/restructuring fields). Write a migration function, add old types to `migrations/types.ts`, register in `migrations/index.ts`.
+
+**When NOT to bump:** Adding new optional fields to `SavedState`. Use `?` on the field and `?? default` in `fromSavedState`. Old saves load fine without the field.
+
 ## Testing
 
 Write tests when possible. This game has hidden mechanics that are easy to break without noticing.

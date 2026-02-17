@@ -4,9 +4,10 @@
  */
 
 import { strings } from "../i18n";
-import type { GameState } from "../state";
+import type { EventInstance, GameState } from "../state";
 import type { Store } from "../store";
 import { nextRoll, pickVariant, seededVariation } from "../utils/random";
+import { getEventContent } from "./events";
 import { getTasksWithVariants, type TaskCategory } from "./tasks";
 
 /** Phone check outcome tier. */
@@ -151,4 +152,40 @@ export function getOutcomeFlavorText(
 	outcome: PhoneOutcome,
 ): string {
 	return pickVariant(strings().phoneOutcomes[outcome], rollCount);
+}
+
+/**
+ * Gets a phone fragment referencing a resolved event, if available.
+ * For "somethingNice" / "usefulFind" outcomes, the phone sometimes shows
+ * something related to events happening in the run -- discovering weather
+ * from your phone instead of the window, a building chat about the noise, etc.
+ *
+ * Returns null if no fragments available or probability says generic instead.
+ * ~50% chance to return a fragment when eligible events exist.
+ */
+export function getEventPhoneFragment(
+	events: EventInstance[],
+	rollCount: number,
+	runSeed: number,
+): string | null {
+	// Collect all phone fragments from resolved events
+	const fragments: string[] = [];
+	for (const event of events) {
+		if (event.status !== "resolved") continue;
+		const content = getEventContent(event.id);
+		const frag = (content as Record<string, unknown>).phoneFragment;
+		if (Array.isArray(frag)) {
+			for (const f of frag) {
+				if (typeof f === "string") fragments.push(f);
+			}
+		}
+	}
+
+	if (fragments.length === 0) return null;
+
+	// ~50% chance to use event fragment vs generic
+	if ((rollCount * 31 + runSeed) % 100 >= 50) return null;
+
+	const index = rollCount % fragments.length;
+	return fragments[index] ?? null;
 }

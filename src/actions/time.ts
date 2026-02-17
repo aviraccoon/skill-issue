@@ -3,6 +3,7 @@ import type { Store } from "../store";
 import { canPushThrough, getAllNighterPenalty } from "../systems/allnighter";
 import { wasDogWalkedToday } from "../systems/dog";
 import { getEnergyDecayPerBlock } from "../systems/energy";
+import { activateEvent, checkForEvent } from "../systems/events";
 import { getMomentumDecayPerBlock } from "../systems/momentum";
 import { calculateSleepQuality } from "../systems/sleep";
 import { clamp } from "../utils/math";
@@ -38,6 +39,12 @@ export function skipTimeBlock(store: Store<GameState>) {
 		if (nextRoll(store) < PHONE_NOTIFICATION_CHANCE) {
 			store.update("phoneNotificationCount", (c) => c + 1);
 		}
+
+		// Check for blockStart events in the new block
+		const eventId = checkForEvent(store.getState(), "blockStart");
+		if (eventId) {
+			activateEvent(store, eventId);
+		}
 	} else {
 		// End of day - show summary
 		showDaySummary(store);
@@ -55,13 +62,21 @@ export function endWeekendDay(store: Store<GameState>) {
 /**
  * Handles end-of-day flow. May show night choice or day summary.
  * Called when night block ends or extended night ends.
+ * Also called by controller after a dayEnd event is dismissed (resumes flow).
  */
-function showDaySummary(store: Store<GameState>) {
+export function showDaySummary(store: Store<GameState>) {
 	const state = store.getState();
 
 	// Track if dog wasn't walked (affects next day urgency)
 	const dogWalked = wasDogWalkedToday(state);
 	store.set("dogFailedYesterday", !dogWalked);
+
+	// Check for dayEnd events before showing summary/night choice
+	const eventId = checkForEvent(store.getState(), "dayEnd");
+	if (eventId) {
+		activateEvent(store, eventId);
+		return; // Event shown; dismissal re-triggers this function
+	}
 
 	// Check if player can choose to push through
 	// Only offer choice at end of normal night (not extended night, not weekend)
@@ -142,4 +157,10 @@ export function continueToNextDay(store: Store<GameState>) {
 
 	// Clear task selection for new day
 	store.set("selectedTaskId", null);
+
+	// Check for dayStart events
+	const eventId = checkForEvent(store.getState(), "dayStart");
+	if (eventId) {
+		activateEvent(store, eventId);
+	}
 }

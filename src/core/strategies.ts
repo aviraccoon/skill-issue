@@ -18,7 +18,7 @@ export interface DecisionContext {
 	/** Available decisions at this point. */
 	availableDecisions: Decision[];
 	/** Which screen is active. */
-	screen: "game" | "nightChoice" | "friendRescue";
+	screen: "game" | "nightChoice" | "friendRescue" | "narrativeEvent";
 	/** Get next random value in [0, 1). May be deterministic or not. */
 	roll: () => number;
 }
@@ -117,6 +117,10 @@ export function createHumanLikeStrategy(): Strategy {
 			if (screen === "nightChoice") {
 				phoneTracking.lastActionWasPhone = false;
 				return pickNightDecision(state, availableDecisions, roll);
+			}
+
+			if (screen === "narrativeEvent") {
+				return pickEventDecision(availableDecisions, roll);
 			}
 
 			// Track block changes to reset phone counter
@@ -469,4 +473,26 @@ function findRescue(
 			(d) => d.type === "acceptRescue" && d.activity === activity,
 		) ?? (decisions[0] as Decision)
 	);
+}
+
+/**
+ * Picks a narrative event decision.
+ * Minor events: dismiss. Major events: random choice.
+ */
+function pickEventDecision(
+	decisions: Decision[],
+	roll: () => number,
+): Decision {
+	// Minor event - just dismiss
+	const dismiss = decisions.find((d) => d.type === "dismissEvent");
+	if (dismiss) return dismiss;
+
+	// Major event - pick a random choice
+	const choices = decisions.filter((d) => d.type === "eventChoice");
+	if (choices.length > 0) {
+		const index = Math.floor(roll() * choices.length);
+		return choices[index] ?? choices[0] ?? (decisions[0] as Decision);
+	}
+
+	return decisions[0] as Decision;
 }

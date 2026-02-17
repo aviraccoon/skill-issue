@@ -166,6 +166,7 @@ export const en = {
 		screenFriendRescue: "Friend reaching out",
 		screenDaySummary: "Day summary",
 		screenWeekComplete: "Week complete",
+		screenNarrativeEvent: "Something happened",
 
 		// Buttons
 		openA11yDialog: "Accessibility",
@@ -1269,6 +1270,544 @@ export const en = {
 					"Breathe in. Think about breathing. Think about thinking. Fail at meditating.",
 				],
 			},
+		},
+	},
+
+	events: {
+		// Tier 0: Flavor
+		rain: {
+			notification: [
+				"It started raining. The window's streaked and the light went gray.",
+				"Rain against the window. Rhythmic, almost nice. You could sit here and listen to it. You were going to sit here anyway.",
+				"Gray outside. The rain doesn't care about your plans either.",
+			],
+			phoneFragment: [
+				"Your weather app says rain. You could have just looked out the window.",
+				"Someone posted a rainy window photo. You have the same view. You learned about it here.",
+			],
+		},
+		"neighbors-music": {
+			notification: [
+				"Music through the wall. Someone's having a better evening.",
+				"The neighbor's playlist leaked through again. You can almost make out the words.",
+				"Muffled bass from next door. They're living their life over there.",
+			],
+			phoneFragment: [
+				"Someone in the building chat complaining about the bass. At least it's not just you.",
+				"You Shazam'd it through the wall. Now the algorithm thinks you like this genre.",
+			],
+		},
+		"nice-weather": {
+			notification: [
+				"It's actually nice outside today. The kind of nice that makes staying in feel deliberate.",
+				"Sun's out. Good weather for people who go outside.",
+				"The kind of day people post about. You noticed from the window, which counts for something.",
+			],
+			phoneFragment: [
+				"Everyone's posting park photos. The window is right there.",
+				"Weather app: sunny, warm. You're reading this indoors.",
+			],
+		},
+		"morning-bird": {
+			notification: [
+				"A bird outside the window. Aggressively cheerful for this hour.",
+				"Bird singing at the window. Bold of nature to assume the mood is right.",
+				"The bird is back. Same spot, same song, same time. At least someone's consistent.",
+			],
+		},
+		"car-alarm": {
+			notification: [
+				"A car alarm outside. It'll stop eventually. Everything does.",
+				"Car alarm going off. Someone's car is having a worse day than you. Probably.",
+				"The car alarm stopped. You hadn't noticed it was still going. You'd adapted to it, apparently.",
+			],
+			phoneFragment: [
+				"Neighborhood chat: 'whose car is that??' Three angry reacts.",
+				"Someone posted about the car alarm. The comments are doing more than anyone outside.",
+			],
+		},
+		sunset: {
+			notification: [
+				"The sky's doing something. Orange and pink, and you almost missed it.",
+				"Nice sunset. You caught it from the window. Didn't plan to, but there it was.",
+				"The light changed. For a moment everything looked warm, even your apartment.",
+			],
+			phoneFragment: [
+				"Someone posted a sunset photo. It's happening right outside your window.",
+				"Your camera roll has zero sunset photos. Someone else's has today's.",
+			],
+		},
+		"hallway-noise": {
+			notification: [
+				"Something happening in the hallway. Doesn't concern you.",
+				"Voices in the hallway. Someone's coming home. Someone's leaving. Normal building things.",
+				"The hallway is busy today. People going places, doing things. The usual.",
+			],
+		},
+		wind: {
+			notification: [
+				"The wind picked up. You can hear it finding every gap in the window frame.",
+				"Windy tonight. The apartment creaks. It feels smaller when it's loud outside.",
+				"Wind howling outside. Cozy in here. Relatively speaking.",
+			],
+		},
+
+		// Tier 1: Standalone
+		"cold-apartment": {
+			notification: [
+				"The apartment's cold. The heating is having some kind of existential crisis about its purpose in life.",
+				"Cold in here. The radiator's doing its best impression of a slightly cold radiator. You'd adjust it, but that would involve getting up.",
+				"You can almost see your breath. Almost. The heating's technically on. It's just not very committed to the concept.",
+			],
+			recap: [
+				"The apartment was cold all week. The heating had opinions about working.",
+				"It was cold enough to notice. You adapted, another layer, another small acceptance.",
+			],
+			phoneFragment: [
+				"A thread about tenant heating rights. Bookmarked. Won't read it.",
+				"Someone's apartment is also cold. Solidarity through screens.",
+			],
+		},
+		"surprise-package": {
+			notification: [
+				"A package arrived. You ordered it... when? Doesn't matter. Opening it felt like a tiny accomplishment. You'll take those where you can get them.",
+				"Package at the door. Past you bought present you something. That's thoughtful. Past you didn't leave a note about what it was, which is less thoughtful.",
+				"Something you forgot you ordered showed up. It's like a gift from a version of yourself that had plans.",
+			],
+			recap: [
+				"A package showed up from past-you. A small kindness from someone who still had plans.",
+				"That surprise delivery was a bright spot. Past-you was looking out for present-you.",
+			],
+		},
+		"hot-water-out": {
+			notification: [
+				"No hot water this morning. The shower barrier just got one notch higher. Not that it was exactly low before.",
+				"Hot water's out. Cold shower or no shower. The universe narrowing your options, as if you needed help with that.",
+				"The boiler gave up. Solidarity, honestly. Not everyone can perform on command.",
+			],
+			recap: [
+				"The hot water died. Cold showers or no showers -- the universe narrowing your options.",
+				"No hot water meant the shower barrier got higher. As if it needed help.",
+			],
+			phoneFragment: [
+				"Building maintenance posted: 'working on it.' Two hours ago.",
+				"You googled 'cold shower benefits.' The results were unconvincing.",
+			],
+		},
+		"upstairs-party": {
+			notification: [
+				"Bass from upstairs. Someone's celebrating something. Down here, surviving is more the vibe.",
+				"Party upstairs. The ceiling is vibrating with someone else's good time. Your patience is not vibrating with anything.",
+				"It's loud upstairs. Someone's having the night you planned to have. At some point. In theory.",
+			],
+			recap: [
+				"Someone upstairs had a party. Different floor, different reality. You survived it from below.",
+				"The upstairs party was loud. Your patience was not.",
+			],
+			phoneFragment: [
+				"Building chat: 'is anyone else hearing this??' Three people liked it.",
+				"You almost posted about the noise. Almost. Complaining requires energy too.",
+			],
+		},
+		"found-cash": {
+			notification: [
+				"Found money in your jacket pocket. Past you was weirdly thoughtful. Like leaving a tip for future you.",
+				"A crumpled bill in yesterday's pants. The only nice surprise today. You'll take it.",
+				"Money in the coat pocket. You don't remember putting it there. Small victories from a stranger who happens to be you.",
+			],
+			recap: [
+				"Found money in a jacket pocket. A tip from past-you to present-you. Small victories.",
+				"Cash appeared in your pocket. The kind of surprise that doesn't require leaving the apartment.",
+			],
+		},
+		"good-smell": {
+			notification: [
+				"Something smells incredible from next door. Someone's actually cooking. With ingredients and everything.",
+				"The neighbor's cooking smells so good it's almost aggressive. Your delivery app is right there, glowing on the counter.",
+				"Food smell drifting through the wall. Your kitchen is right there too. With pots and everything. Theoretically available.",
+			],
+		},
+		"neighbor-cookies": {
+			title: "A Knock at the Door",
+			description:
+				"Your neighbor is standing there holding a plate of cookies. Homemade, from the smell of it. They're smiling. You're in yesterday's clothes and you haven't spoken to another human since... when? But cookies.",
+			choices: {
+				accept: {
+					label: "Take the cookies",
+					description:
+						"They smell incredible. Also, free food you didn't have to make.",
+				},
+				decline: {
+					label: "Politely decline",
+					description:
+						"That would require a conversation. Right now. At the door.",
+				},
+			},
+			recap: {
+				accept: [
+					"Your neighbor brought cookies. You took them. The brief conversation at the door was more human contact than the rest of the week combined.",
+					"The cookies were good. Homemade, warm. The human connection was probably better.",
+				],
+				decline: [
+					"Your neighbor offered cookies. You said no. The smell lingered in the hallway.",
+					"Cookies were offered and declined. Sometimes even free kindness costs too much energy.",
+				],
+			},
+		},
+
+		// Tier 1: Arc - The Leak
+		"leak-drip": {
+			notification: [
+				"There's a dripping sound. Somewhere in the apartment. You can't quite place it, and honestly, you're not trying that hard.",
+				"Drip. Drip. Drip. It's coming from... the kitchen? Maybe. You could investigate. Or you could not.",
+				"A rhythmic dripping joined the background noise. You'll deal with it. Eventually. Probably.",
+			],
+			phoneFragment: [
+				"A DIY plumbing video in your feed. The algorithm knows.",
+				"You almost googled 'dripping sound apartment.' Almost.",
+			],
+		},
+		"leak-found": {
+			title: "The Source",
+			description:
+				"You found the dripping. Under the kitchen sink, a pipe fitting is weeping steadily onto the cabinet floor. There's already a dark stain spreading in the wood. It's not catastrophic yet. A towel would buy time. Making a phone call would fix it. Both require doing something.",
+			choices: {
+				call: {
+					label: "Call maintenance",
+					description:
+						"Pick up the phone. Explain the problem. Schedule a time. Like a person who handles things.",
+				},
+				towel: {
+					label: "Towel and forget",
+					description:
+						"A towel, some strategic denial, and the quiet hope that problems solve themselves.",
+				},
+			},
+		},
+		"leak-fixed": {
+			notification: [
+				"Maintenance came and fixed it. Twenty minutes. The whole ordeal took less effort than the week of not calling.",
+				"Leak's fixed. Twenty minutes of someone else's competence. Why was picking up the phone the hardest part?",
+			],
+			recap: [
+				"The leak got fixed. Twenty minutes of someone else's competence. The hardest part was picking up the phone.",
+				"You called about the leak and someone came. Why was the phone call the obstacle, not the actual pipe?",
+			],
+		},
+		"leak-worse": {
+			notification: [
+				"The towel is soaked through. The dripping sounds louder now, or maybe you're just more aware of it. This is becoming a situation.",
+				"The leak is worse. The towel solution has quietly reached its theoretical limits. Tomorrow. Definitely tomorrow.",
+			],
+			recap: [
+				"The leak got worse. The towel strategy reached its theoretical limits. Some problems don't solve themselves.",
+				"That dripping under the sink? Still going. Louder now. The towel is doing its best.",
+			],
+			phoneFragment: [
+				"You keep almost googling plumbers. The search bar remembers your hesitation.",
+				"A home repair thread. The comments all say 'call someone.' Noted.",
+			],
+		},
+
+		// Tier 1: Arc - Missed Delivery
+		"missed-delivery": {
+			notification: [
+				"Note on the door. Missed a package delivery. You were here the whole time. You heard the knock and everything.",
+				"Delivery attempt: failed. You were home. The door is eight steps away. You counted once.",
+			],
+			phoneFragment: [
+				"Tracking update: 'Delivery attempted.' You know.",
+				"The delivery notification is still there. Unread, technically. You just didn't open the door.",
+			],
+		},
+		"delivery-deadline": {
+			title: "Last Chance",
+			description:
+				"The pickup slip says today's the last day before they send it back. The post office closes at five. It's a fifteen-minute walk. The package is just sitting there, waiting. Like everything else on your list.",
+			choices: {
+				go: {
+					label: "Go get it",
+					description:
+						"Leave the apartment. On purpose. Walk there and back. It's not nothing.",
+				},
+				"let-go": {
+					label: "Let it go",
+					description:
+						"It'll get sent back. You'll reorder it eventually. Or you won't need it. Maybe.",
+				},
+			},
+			recap: {
+				go: [
+					"You went out and got the package. Fifteen-minute walk, round trip. The hardest part was the door.",
+					"The package was retrieved. You left the apartment on purpose, walked there and back. That counts.",
+				],
+				"let-go": [
+					"The package went back. You'll reorder it. Probably. It already feels like it never existed.",
+					"You let the delivery deadline pass. Another thing that almost happened.",
+				],
+			},
+		},
+
+		// Tier 1: Arc - Construction
+		"construction-start": {
+			notification: [
+				"Construction started on the building next door. Jackhammers, drills, shouting. It's going to be a loud week.",
+				"Jackhammers at eight AM. The city's version of an alarm clock. No snooze button.",
+			],
+			phoneFragment: [
+				"Noise complaint thread in the neighborhood group. Everyone's suffering together, online.",
+				"Someone posted a photo of the construction. It looks worse from the outside.",
+			],
+		},
+		"construction-weekend": {
+			notification: [
+				"The construction stopped for the weekend. The silence is almost unsettling. You adapted to the racket faster than you'd like to admit.",
+				"No jackhammers today. Saturday quiet. The absence of noise feels louder than the noise did. You'd gotten used to it without noticing.",
+			],
+			recap: [
+				"The construction noise stopped for the weekend. You'd adapted without noticing. The silence felt wrong.",
+				"Weekend quiet after a week of jackhammers. You adjusted to chaos faster than you'd admit.",
+			],
+		},
+
+		// Tier 1: Arc - Neighbor Introduction
+		"neighbor-hello": {
+			notification: [
+				"The new neighbor waved in the hallway. A wave happened back. Brief, noncommittal. Social interaction: technically complete.",
+				"Passed the new neighbor on the stairs. They said hi. Hi happened in return. Mutual acknowledgment achieved.",
+			],
+			phoneFragment: [
+				"A 'just moved in!' post in the building chat. That's probably them.",
+				"The building chat has a new member. Same floor, apparently.",
+			],
+		},
+		"neighbor-invite": {
+			title: "The Invite",
+			description:
+				"A knock at the door. It's the neighbor from the hallway -- the one who waved. There's a thing happening on the roof tonight. Casual, they said. Just a few people from the building, some drinks. You're invited. They seem like they mean it.",
+			choices: {
+				go: {
+					label: "Go up",
+					description:
+						"Roof thing with near-strangers. Could be nice. Could be draining. Hard to know in advance.",
+				},
+				pass: {
+					label: "Pass",
+					description:
+						"Not tonight. Something came up. Nothing specific, just... something.",
+				},
+			},
+			recap: {
+				go: [
+					"You went to the roof thing. Near-strangers, some drinks. It was fine. Maybe even nice. Hard to tell in the moment.",
+					"The neighbor's invite led to an evening on the roof with people from the building. You showed up. That's the part that mattered.",
+				],
+				pass: [
+					"The roof thing happened without you. You could hear them from your window. Sounded nice.",
+					"You passed on the neighbor's invite. Something came up. Nothing specific.",
+				],
+			},
+		},
+	},
+
+	weekStory: {
+		openings: {
+			good: [
+				"Monday started and you had a list. By Sunday, some of it was done. More than usual, actually. The week moved and you moved with it.",
+				"The week began like they all do\u2014with intentions. This time, some of them landed. Not all. But enough that you noticed.",
+				"Seven days. A list. Some attempts. This week, the math worked out better than expected. Things happened when you clicked them. Not always, but often enough.",
+				"You made it through. Not perfectly, not gracefully, but with something resembling momentum. The week had a shape to it.",
+			],
+			rough: [
+				"Monday started. That's the most generous thing you can say about it. The list existed. The tasks existed. The connection between wanting and doing? That was harder to find.",
+				"The week happened to you more than you happened to it. Days blurred. Tasks sat there, patient and untouched. You clicked buttons and watched nothing happen.",
+				"Seven days of trying. Seven days of the gap between intention and action being wider than you remembered. The buttons didn't work. They rarely do, but this week they really didn't.",
+				"It was a hard week. The kind where you look at a task, know you should do it, click it, and... nothing. Over and over. The mechanics of existence felt heavier than usual.",
+			],
+			survived: [
+				"Monday started. Sunday came. In between: a week. Some things worked. Many things didn't. That's the math of it.",
+				"The week had its moments. Brief windows where clicking a task actually did something. They didn't last, but they happened. That's not nothing.",
+				"Seven days of mixed results. Some wins scattered among the losses. The ratio wasn't great, but you've seen worse. Probably.",
+				"A week of attempts. The word 'attempt' doing a lot of heavy lifting there. Some succeeded. Most taught you what failure feels like again. As if you'd forgotten.",
+			],
+		},
+
+		rhythm: {
+			nightOwl: [
+				"The late hours carried you, as they always do. When the world gets quiet, something in you wakes up.",
+				"Night was where the work happened. The mornings were for recovering from being awake at the wrong times.",
+				"You're a creature of the dark hours. This week proved it again. The 2am productivity spike is real and it's yours.",
+				"Daytime was for surviving. Night was for actually getting things done. Your body knows its schedule even when the world disagrees.",
+			],
+			earlyBird: [
+				"Mornings were your window. That brief stretch where things felt possible before the day wore you down.",
+				"The early hours worked for you. By afternoon, the momentum had faded, but at least you had the morning.",
+				"You got things done before noon or you didn't get them done at all. That's just how your wiring works.",
+				"Something about morning light makes the tasks feel achievable. By evening, that feeling is a distant memory.",
+			],
+			neutralTime: [
+				"The days had their rhythms. Some hours worked better than others, but nothing dramatic. Just the usual ebb and flow.",
+				"Time moved. Tasks happened or didn't happen. No particular hour felt magical or cursed.",
+				"The clock kept turning. Some moments were better for getting things done. Most moments were just moments.",
+			],
+			timeBlockObservations: [
+				(best: TimeBlock, worst: TimeBlock) =>
+					`${timeBlocks[best]} was where things clicked, and ${timeBlocks[worst].toLowerCase()} was where they didn't. At least there's a pattern.`,
+				(best: TimeBlock, worst: TimeBlock) =>
+					`If you look at when things actually worked, ${timeBlocks[best].toLowerCase()} stands out. ${timeBlocks[worst]}? Better not to look too closely.`,
+				(best: TimeBlock, worst: TimeBlock) =>
+					`The data says ${timeBlocks[best].toLowerCase()} was your time. ${timeBlocks[worst]} says you should probably just... not, during those hours.`,
+			],
+			allNighterSingle: [
+				"One night you pushed through. Rode the wave past when you should have stopped. Worth it? Hard to say. The next day was a blur.",
+				"There was an all-nighter in there. The kind where sleep feels optional until suddenly it very much isn't.",
+				"You stayed up. All the way through. The 2am energy carried you until it didn't, and then morning was already happening.",
+			],
+			allNighterMultiple: [
+				"Multiple all-nighters. Your sleep schedule is more of a suggestion at this point. The nights blurred together.",
+				"You pushed through more than once. The late hours were productive. The following days were... less so.",
+				"All-nighters, plural. You rode the nocturnal productivity waves and paid for it in daylight confusion.",
+			],
+		},
+
+		basics: {
+			dogGood: [
+				"Azor got walked. Every time you tried, it worked. External accountability remains undefeated.",
+				"The dog got his walks. That's one thing you can count on\u2014the guilt of a waiting dog is a powerful motivator.",
+				"Azor didn't miss a walk. When another creature is depending on you, somehow the buttons work better.",
+				"Dog walks: success. Turns out having someone stare at you expectantly is excellent for task completion.",
+			],
+			dogMixed: [
+				"Azor got walked most of the time. Some days it was barely a walk\u2014more like standing outside briefly. But he got out.",
+				"The dog walks were... mostly successful. A few were more 'quick trip outside' than 'actual walk.' He didn't complain.",
+				"Azor got what he needed, more or less. Some proper walks, some minimal versions. He's patient like that.",
+			],
+			dogStruggled: [
+				"Azor deserved better this week. The walks happened, but barely. A lot of standing outside pretending that counts.",
+				"The dog walks were rough. More failures than successes. He still loves you, but there was definitely some canine disappointment.",
+				"Azor got short-changed this week. You tried. The trying didn't always translate to walking. He forgives you. Probably.",
+			],
+			foodCooked: [
+				"You cooked. Actually cooked. That's notable. The kitchen saw action beyond the microwave.",
+				"Food was made. By you. With ingredients. This happens rarely enough to be worth mentioning.",
+				"Cooking happened this week. Real cooking, not just heating. Mark the calendar.",
+			],
+			foodDelivery: [
+				"You ate, mostly via delivery. The apps know your order by now. It's still eating. It counts.",
+				"Food happened through delivery. Someone else did the cooking and brought it to your door. That's a valid system.",
+				"Delivery sustained you. The cooking ambition exists in theory. In practice, there are apps for this.",
+			],
+			foodStruggled: [
+				"Food was a challenge. The cooking didn't happen. The ordering didn't happen. You ate... probably.",
+				"The eating situation wasn't great. Tasks involving food didn't cooperate. You survived on whatever was already there.",
+			],
+			variantsUsed: [
+				"Sometimes you lowered the bar. Took the smaller version of the task. That's not giving up\u2014that's adapting.",
+				"The minimal versions helped. When the full task wouldn't click, the smaller one sometimes did. Good enough is good enough.",
+				"You used the easier options when they were available. That's what they're there for.",
+			],
+			survivalWrap: {
+				good: [
+					"The basics got covered. That's the foundation everything else sits on.",
+					"Survival needs: met. That's more than some weeks manage.",
+					"You kept yourself alive and functional. The baseline was maintained.",
+				],
+				rough: [
+					"The basics were a struggle, but they happened. Mostly. Enough.",
+					"Survival mode was engaged. It wasn't pretty, but you're still here.",
+					"The fundamentals barely held together. But they held.",
+				],
+				survived: [
+					"The basics were mixed. Some handled, some scraped by. A typical week, really.",
+					"Survival requirements: technically met. The bar was low but you cleared it.",
+					"The essentials got done, in their own imperfect way.",
+				],
+			},
+		},
+
+		attempts: {
+			creativeSucceeded: [
+				"The creative work happened. Actually happened. You clicked the task and it worked. That's rare enough to feel like magic. The odds were against you and you beat them.",
+				"You practiced. Made something. The aspirational task that usually sits there mocking you\u2014this week, it cooperated. Write that down somewhere.",
+				"Against all probability, the creative stuff clicked. The task that fails ninety-something percent of the time actually worked. You made something. Hold onto that.",
+				"The music happened. Or the project. Whatever the creative thing was\u2014it worked this week. Those tasks have terrible odds and you beat them. That matters.",
+			],
+			creativeFailed: [
+				"The creative tasks didn't happen. You clicked them. You tried. The connection between wanting to create and actually creating remains unreliable. It's not a new pattern.",
+				"Practice didn't happen. The creative work sat on the list, got clicked a few times, went nowhere. The aspirational tasks are like that. They promise everything and deliver rarely.",
+				"You tried the creative stuff. It didn't work. It usually doesn't. The gap between 'I want to make something' and actually making it is wide, and this week you couldn't cross it.",
+				"The creative tasks failed. Every attempt. That's how it goes with the aspirational stuff\u2014the base rates are brutal and this week the odds won.",
+			],
+		},
+
+		help: {
+			phoneHeavy: [
+				"Your phone saw a lot of this week. The scroll trap pulled you under again and again. It's always there, always ready to eat your momentum.",
+				"You checked your phone more than you'd like to count. The algorithm kept you company when the tasks wouldn't cooperate. It wasn't helpful, but it was easy.",
+				"The phone got a lot of attention. Scrolling through nothing, looking for something that wasn't there. The trap works because it's always available.",
+				"Heavy phone usage this week. The scroll hole was deep and you fell in repeatedly. It's the default behavior when nothing else is working.",
+			],
+			phoneModerate: [
+				"The phone pulled you in sometimes. Not constantly, but enough to notice. The scroll trap is patient\u2014it'll take whatever time you give it.",
+				"Some phone checking happened. Moderate. The usual dance of picking it up, losing time, putting it down, wondering where the minutes went.",
+				"You scrolled when things got hard. Not excessively, but it happened. The phone is always there with its promise of easy distraction.",
+			],
+			phoneLight: [
+				"The phone stayed mostly in your pocket. When you did check it, you didn't lose too much time. That's something.",
+				"Light phone usage. The scroll trap didn't get you much this week. Either things were working or you were too busy failing at tasks to scroll.",
+				"You kept the phone checking to a minimum. The trap didn't spring as often as usual. A small victory.",
+			],
+			friendAcceptedAll: [
+				"Your friend reached out and you said yes. Every time. Sometimes the rescue is the whole day. External momentum matters.",
+				"The friend showed up when things were rough. You let them. That's harder than it sounds, saying yes when you feel like hiding.",
+				"Friend rescue: accepted. All of them. Sometimes you need someone to pull you out of your own head. They did that.",
+			],
+			friendAcceptedSome: [
+				"Your friend tried to help. Sometimes you let them. The rescues that worked mattered more than the ones you declined.",
+				"The friend reached out. You said yes sometimes, no other times. Both are valid. At least some connection happened.",
+				"Some friend rescues accepted, some turned down. It's a balance. You needed help and you took it when you could.",
+			],
+			friendDeclinedAll: [
+				"Your friend tried to reach you. You said no. Every time. Sometimes you just can't, even when you know it would help.",
+				"The friend offered rescue. You declined. Not because you didn't need it\u2014because accepting felt like too much. That happens.",
+				"Friend reached out, you stayed in. It's not that you didn't want to see them. The gap between wanting and doing is wide.",
+			],
+			hermitSocialCost: [
+				"The social stuff helped, but it also cost. You're wired to need alone time. The friend visits meant energy spent.",
+				"Seeing people takes something out of you, even when it's good. The connection helped the momentum; your batteries needed recharging after.",
+				"Social interaction is expensive for you. The friend time was worth it, but you felt the cost.",
+			],
+			socialBatteryBoost: [
+				"Being around your friend charged you up. That's how you're wired\u2014people give you energy. The visits helped more than just the moment.",
+				"The social connection energized you. You're the type who gets fuel from other people. The friend time was medicine.",
+				"Friend time gave you more than it took. You run on social energy. The rescues were boosts, not just breaks.",
+			],
+			neutral: [
+				"You got through the week with the usual coping mechanisms. Nothing dramatic. Just the quiet work of managing yourself.",
+				"No major rescues needed. No major collapses either. Just a week of getting by.",
+				"You managed. Quietly. Without fanfare. The week happened and you handled it in your own way.",
+			],
+		},
+
+		closings: {
+			good: [
+				"You made it. The week ended and you're on the other side, intact. More got done than didn't. The dog is walked, the body is fed, the tasks have fewer checkmarks than you'd like but more than zero. That's a good week. That's enough.",
+				"Sunday came and you survived it. Better than survived\u2014you actually accomplished things. The list got shorter. The systems worked, more or less. Next week will be its own thing, but this one? This one was okay.",
+				"The week is over. You did things. Real things, not just existing. The buttons worked more often than they didn't. That's not nothing. That's actually kind of a lot. Take the win.",
+				"Seven days, done. More successes than failures. The basics covered, some extras achieved. The dog still loves you. The friend still checks in. You're still here, and you did okay. That matters.",
+			],
+			rough: [
+				"You survived. That's the word for it. Not thrived, not succeeded\u2014survived. The week threw everything at you and you're still here at the end of it. The dog still loves you. The tasks will still be there tomorrow. You made it through. That's enough. It has to be.",
+				"It's over. The week, finally, is over. You got through it. Barely, sometimes, but you did. The gap between wanting and doing was wide and you stood on the wrong side of it most days. But you're here. You're still here.",
+				"Seven days of rough. The buttons didn't work. The tasks sat there. You clicked and nothing happened, over and over. But it's done now. The week is behind you. Tomorrow is a new seed, a new set of odds. Maybe it'll be different. Maybe it won't. Either way, you'll try again.",
+				"The week is over and you're still standing. Not a high bar, but you cleared it. The systems failed you, or you failed them\u2014hard to tell the difference sometimes. What matters is it's done. You rest now. You try again later.",
+			],
+			survived: [
+				"The week ended. Somewhere in the middle between good and bad. Some things worked. Many things didn't. That's the typical math. The dog is walked enough, the food was eaten somehow, the creative stuff probably didn't happen but what else is new. You made it to Sunday. That's a complete week.",
+				"You made it through. Not gracefully, not terribly. Just... through. The buttons worked sometimes. The tasks got done sometimes. The pattern is familiar by now. Next week will be more of the same, probably. But that's next week. This one is done.",
+				"Seven days of mixed results. The ratio wasn't great but it wasn't disaster. The basics got covered, mostly. The aspirational stuff remains aspirational. The week happened and you happened with it. That's the deal.",
+				"The week is over. You survived it, which is the baseline. Some wins, some losses, mostly the muddy middle. The dog still loves you. The friend still texts. The tasks will still be there tomorrow, patient as ever. Another week in the books. Onto the next one.",
+			],
 		},
 	},
 } as const;

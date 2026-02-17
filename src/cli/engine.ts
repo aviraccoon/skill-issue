@@ -7,8 +7,16 @@ import {
 	isComplete,
 } from "../core/controller";
 import type { DecisionContext, Strategy } from "../core/strategies";
-import { createInitialState, DAYS, type Day, type GameState } from "../state";
+import { generateWeekStory } from "../data/weekStory";
+import {
+	createInitialState,
+	DAYS,
+	type Day,
+	type EventInstance,
+	type GameState,
+} from "../state";
 import { createStore } from "../store";
+import { selectEventsForSeed } from "../systems/eventSelection";
 import { nextRoll } from "../utils/random";
 import type { RunStats } from "./stats";
 
@@ -47,6 +55,9 @@ export interface SimulationResult {
 	survived: boolean;
 	days: DaySummary[];
 	stats: RunStats;
+	events: EventInstance[];
+	/** Week narrative generated from run state. */
+	narrative: string;
 }
 
 /**
@@ -62,7 +73,14 @@ export interface SimulationObserver {
  * Creates an initial game state with a specific seed.
  */
 export function createStateFromSeed(seed: number): GameState {
-	return createInitialState(seed, "main");
+	const state = createInitialState(seed, "main");
+	// CLI has no persistence/patterns -- use empty history, bypass progression
+	state.events = selectEventsForSeed(
+		seed,
+		{ unlocked: false, history: [] },
+		true,
+	);
+	return state;
 }
 
 /**
@@ -137,7 +155,9 @@ export function simulate(
 					? "friendRescue"
 					: state.screen === "nightChoice"
 						? "nightChoice"
-						: "game",
+						: state.screen === "narrativeEvent"
+							? "narrativeEvent"
+							: "game",
 			roll: () => nextRoll(store),
 		};
 
@@ -181,6 +201,8 @@ export function simulate(
 		survived: isComplete(finalState),
 		days,
 		stats: calculateRunStats(days, finalState),
+		events: finalState.events,
+		narrative: generateWeekStory(finalState),
 	};
 
 	observer?.onWeekEnd?.(result);

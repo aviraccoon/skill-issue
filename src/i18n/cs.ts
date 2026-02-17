@@ -13,7 +13,7 @@
 
 import type { Day, TimeBlock } from "../state";
 import { pickVariant } from "../utils/random";
-import type { Strings } from "./types";
+import type { PartialStrings } from "./types";
 
 /**
  * Czech plural: returns "1 bod", "3 body", "5 bodů".
@@ -203,6 +203,7 @@ export const cs = {
 		screenFriendRescue: "Kamarád se ozývá",
 		screenDaySummary: "Shrnutí dne",
 		screenWeekComplete: "Konec týdne",
+		screenNarrativeEvent: "Něco se stalo",
 
 		// Buttons
 		openA11yDialog: "Přístupnost",
@@ -1285,4 +1286,225 @@ export const cs = {
 			},
 		},
 	},
-} satisfies Strings;
+
+	events: {
+		// Tier 0: Atmosféra
+		rain: {
+			notification: [
+				"Venku začalo pršet. Okno je mokrý a světlo zešedlo.",
+				"Déšť bubnuje na okno, tak nějak uklidňující. Dalo by se to poslouchat. Stejně by se tu tak jenom sedělo.",
+				"Venku šedivo. Dešti je taky jedno, co je v plánu.",
+			],
+		},
+		"neighbors-music": {
+			notification: [
+				"Hudba přes zeď, někdo má evidentně lepší večer.",
+				"Od sousedů zase prosakuje playlist. Skoro jdou rozeznat slova. Skoro.",
+				"Tlumený basy od vedle. Žijou si tam svůj život, to se musí nechat.",
+			],
+		},
+		"nice-weather": {
+			notification: [
+				"Venku je fakt hezky. Takovej den, kdy zůstat doma vypadá skoro záměrně.",
+				"Svítí slunce. Ideální počasí pro lidi, co chodí ven.",
+				"Takovej den, co ho lidi dávají na stories. Z okna je taky vidět, to se počítá.",
+			],
+		},
+		"morning-bird": {
+			notification: [
+				"Pták za oknem, agresivně veselej na tuhle hodinu.",
+				"Ptáček zpívá na okně. Dost odvážný předpokládat, že je tu na to nálada.",
+				"Ten pták je zase tady. Stejný místo, stejná písnička, stejnej čas. Aspoň někdo je spolehlivej.",
+			],
+		},
+		"car-alarm": {
+			notification: [
+				"Alarm auta venku. Přestane, všechno přestane.",
+				"Někde venku řve autoalarm. Něčí auto má horší den. Asi.",
+				"Alarm přestal. Vlastně nebylo jasný, že vůbec ještě hraje. Zvyknout si šlo rychle.",
+			],
+		},
+		sunset: {
+			notification: [
+				"Obloha se rozjela, oranžová a růžová, a skoro to uniklo.",
+				"Hezký západ slunce, vidět z okna. Neplánovaný, ale prostě tam byl.",
+				"Světlo se změnilo, na chvilku vypadalo všechno teple, i tenhle byt.",
+			],
+		},
+		"hallway-noise": {
+			notification: [
+				"Něco se děje na chodbě. Nic, co by se mě týkalo.",
+				"Hlasy na chodbě. Někdo přichází, někdo odchází. Normální provoz.",
+				"Na chodbě je dneska rušno. Lidi jdou někam, dělaj něco. Normálka.",
+			],
+		},
+		wind: {
+			notification: [
+				"Vítr zesílil, je slyšet, jak si hledá každou škvíru v okně.",
+				"Fouká, okna drnčí. Když je venku hlučno, připadá mi menší.",
+				"Venku to řve větrem. Uvnitř je relativně útulno.",
+			],
+		},
+
+		// Tier 1: Samostatné
+		"cold-apartment": {
+			notification: [
+				"V bytě zima. Topení prochází nějakou existenciální krizí ohledně svýho smyslu.",
+				"Zima. Radiátor dělá, co umí, a umí toho momentálně přesně nic. Jít ho přenastavit by znamenalo vstát.",
+				"Skoro jde vidět vlastní dech. Skoro. Topení technicky běží, jen se k tomu moc nehlásí.",
+			],
+		},
+		"surprise-package": {
+			notification: [
+				"Přišel balíček. Objednaný... kdy vlastně? To je jedno. Otevřít ho je malý úspěch a ty se berou, kde jsou.",
+				"Balík u dveří. Objednávka z minula, takovej dárek do budoucna. Milé. Lísteček, co to je, chybí, to už je míň milé.",
+				"Přišlo něco, na co se dávno zapomnělo. Jako dárek z doby, kdy ještě existovaly plány.",
+			],
+		},
+		"hot-water-out": {
+			notification: [
+				"Ráno bez teplé vody. Bariéra ke sprše právě povyrostla, ne že by předtím byla nějak nízko.",
+				"Teplá voda nejde. Studená sprcha, nebo žádná. Jako by těch možností nebylo málo už předtím.",
+				"Bojler to vzdal. Solidarita, vlastně. Ne každý umí na povel.",
+			],
+		},
+		"upstairs-party": {
+			notification: [
+				"Basy shora. Někdo něco slaví. Tady dole se spíš přežívá.",
+				"Párty nahoře, strop vibruje cizím veselím. Trpělivost nevibruje vůbec.",
+				"Nahoře je hlučno. Někdo má ten večer, co byl v plánu. Jednou. V teorii.",
+			],
+		},
+		"found-cash": {
+			notification: [
+				"Prachy v kapse bundy. Podivně ohleduplnej tah, takový spropitný do budoucna.",
+				"Zmačkaná bankovka ve včerejších kalhotách. Jediný příjemný překvapení dneška. To beru.",
+				"Peníze v kapse kabátu, žádná vzpomínka, jak se tam dostaly. Malý vítězství od někoho, kdo je náhodou taky tady.",
+			],
+		},
+		"good-smell": {
+			notification: [
+				"Od sousedů to fantasticky voní. Někdo fakt vaří. S ingrediencema a vším.",
+				"Od sousedů to voní tak dobře, že je to skoro agresivní. Apka na rozvoz svítí na lince a čeká.",
+				"Vůně jídla přes zeď. Vlastní kuchyně je taky tady, s hrnci a vším. Teoreticky k dispozici.",
+			],
+		},
+		"neighbor-cookies": {
+			title: "Někdo klepe",
+			description:
+				"Ve dveřích soused s talířem sušenek. Domácí, soudě podle vůně. Na tváři úsměv. Tady včerejší oblečení a poslední rozhovor s živým člověkem... to je vlastně kdy? Ale sušenky.",
+			choices: {
+				accept: {
+					label: "Vzít sušenky",
+					description:
+						"Voní neuvěřitelně. A navíc jídlo, co není potřeba vařit.",
+				},
+				decline: {
+					label: "Slušně odmítnout",
+					description: "To by znamenalo konverzaci, teď hned, ve dveřích.",
+				},
+			},
+		},
+
+		// Tier 1: Oblouk - Kapání
+		"leak-drip": {
+			notification: [
+				"Odněkud z bytu kape. Těžko říct odkud, a upřímně, snaha to zjistit taky chybí.",
+				"Kap. Kap. Kap. Z kuchyně? Možná. Dalo by se to prozkoumat. Nebo taky ne.",
+				"K zvukům bytu přibylo rytmické kapání. Vyřeší se to, časem. Asi.",
+			],
+		},
+		"leak-found": {
+			title: "Zdroj",
+			description:
+				"Kapání je z kuchyně. Pod dřezem pomalu kape spojka přímo na dno skříňky, na dřevě už je tmavá skvrna, co se rozlézá. Katastrofa to zatím není. Ručník by získal čas. Telefonát by to vyřešil. Obojí znamená něco udělat.",
+			choices: {
+				call: {
+					label: "Zavolat správce",
+					description:
+						"Zvednout telefon, vysvětlit problém, domluvit termín. Jako člověk, co řeší věci.",
+				},
+				towel: {
+					label: "Ručník a zapomenout",
+					description:
+						"Ručník, trocha strategického popření a tichá naděje, že se problémy vyřeší samy.",
+				},
+			},
+		},
+		"leak-fixed": {
+			notification: [
+				"Správce přišel, za dvacet minut hotovo. Celý to zabralo míň námahy než ten týden váhání, jestli zavolat.",
+				"Kapání je pryč. Dvacet minut cizí šikovnosti. Proč bylo nejtěžší zvednout telefon?",
+			],
+		},
+		"leak-worse": {
+			notification: [
+				"Ručník je promáčený naskvz. Kapání zní hlasitěji, nebo je to jenom větší pozornost. Začíná to být situace.",
+				"Kape to víc. Ručníková metoda tiše dosáhla svých mezí. Zítra. Určitě zítra.",
+			],
+		},
+
+		// Tier 1: Oblouk - Zásilka
+		"missed-delivery": {
+			notification: [
+				"Lísteček na dveřích. Zmeškaná zásilka. Celou dobu tady, i to zaklepání bylo slyšet.",
+				"Pokus o doručení: neúspěšný. Celou dobu doma. Ke dveřím je to osm kroků, jednou se to počítalo.",
+			],
+		},
+		"delivery-deadline": {
+			title: "Poslední šance",
+			description:
+				"Na lístku stojí, že dneska je poslední den, než to pošlou zpátky. Pošta zavírá v pět. Patnáct minut chůze. Balíček tam čeká. Jako všechno ostatní na tom seznamu.",
+			choices: {
+				go: {
+					label: "Jít pro něj",
+					description:
+						"Opustit byt, záměrně. Dojít tam a zpátky. To není málo.",
+				},
+				"let-go": {
+					label: "Nechat to být",
+					description:
+						"Pošlou to zpátky. Dá se objednat znovu. Nebo se to vlastně nebude potřebovat.",
+				},
+			},
+		},
+
+		// Tier 1: Oblouk - Stavba
+		"construction-start": {
+			notification: [
+				"Na vedlejší budově začala stavba. Sbíječky, vrtačky, řev. Bude to hlučnej tejden.",
+				"Sbíječky v osm ráno. Budíček od města, tlačítko na odložení nemá.",
+			],
+		},
+		"construction-weekend": {
+			notification: [
+				"Přes víkend se nestaví. To ticho je skoro znepokojující, na ten rámus si zvyknout šlo podezřele rychle.",
+				"Žádný sbíječky dneska. Sobotní klid. Ticho je divnější než byl ten rámus, zvyk přišel nějak sám.",
+			],
+		},
+
+		// Tier 1: Oblouk - Soused
+		"neighbor-hello": {
+			notification: [
+				"Na chodbě mávnutí od nového souseda. Mávnutí zpátky, krátký, nezávazný. Splněno.",
+				"Na schodech nový soused. Ahoj sem, ahoj tam. Hotovo, pozdrav proběhl.",
+			],
+		},
+		"neighbor-invite": {
+			title: "Pozvánka",
+			description:
+				"Zaklepání. Ten soused z chodby. Dneska večer se něco děje na střeše, nic velkýho, prý. Pár lidí z domu, něco k pití. Pozvánka platí a vypadá to upřímně.",
+			choices: {
+				go: {
+					label: "Jít nahoru",
+					description:
+						"Střecha s lidma z domu. Mohlo by to být fajn, mohlo by to být vyčerpávající. Předem se to nepozná.",
+				},
+				pass: {
+					label: "Radši ne",
+					description: "Ne dneska. Nic konkrétního, prostě... ne.",
+				},
+			},
+		},
+	},
+} satisfies PartialStrings;

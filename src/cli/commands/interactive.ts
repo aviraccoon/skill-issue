@@ -13,6 +13,7 @@ import {
 	getRescueResultMessage,
 } from "../../data/friendRescue";
 import { getOutcomeFlavorText } from "../../data/scrollTrap";
+import { generateWeekStory } from "../../data/weekStory";
 import type { GameState, Task } from "../../state";
 import { createStore } from "../../store";
 import { getExtendedNightDescription } from "../../systems/allnighter";
@@ -116,6 +117,11 @@ export class InteractiveStrategy implements Strategy {
 			console.log(`${state.day.toUpperCase()} NIGHT`);
 			console.log("It's late. Sleep or push through?");
 			console.log(description);
+		} else if (screen === "narrativeEvent") {
+			console.log("NARRATIVE EVENT");
+			if (state.activeEventId) {
+				console.log(`Event: ${state.activeEventId}`);
+			}
 		} else if (weekend) {
 			console.log(
 				`${state.day.toUpperCase()} | ${state.weekendPointsRemaining} points`,
@@ -143,7 +149,9 @@ export class InteractiveStrategy implements Strategy {
 	private displayOptions(decisions: Decision[], state: GameState): void {
 		const hasTaskAttempts = decisions.some((d) => d.type === "attempt");
 		const isSpecialScreen =
-			state.screen === "friendRescue" || state.screen === "nightChoice";
+			state.screen === "friendRescue" ||
+			state.screen === "nightChoice" ||
+			state.screen === "narrativeEvent";
 
 		// Only show tasks on game screen when there are attempts available
 		if (hasTaskAttempts) {
@@ -213,6 +221,19 @@ export class InteractiveStrategy implements Strategy {
 			});
 		}
 		if (hasDeclineRescue) console.log("  d, decline - Not right now");
+
+		const hasDismissEvent = decisions.some((d) => d.type === "dismissEvent");
+		const hasEventChoice = decisions.some((d) => d.type === "eventChoice");
+		if (hasDismissEvent) console.log("  c, continue - Dismiss event");
+		if (hasEventChoice) {
+			console.log("");
+			console.log("Choices:");
+			for (const d of decisions) {
+				if (d.type === "eventChoice") {
+					console.log(`  ${d.choiceId}`);
+				}
+			}
+		}
 
 		console.log("  q, quit   - Exit game");
 	}
@@ -389,7 +410,17 @@ export class InteractiveStrategy implements Strategy {
 						(d) => d.type === "acceptRescue" && d.activity === "high",
 					),
 			},
+			{
+				keywords: ["continue", "c", "ok"],
+				find: () => decisions.find((d) => d.type === "dismissEvent"),
+			},
 		];
+
+		// Try matching event choice IDs directly
+		const eventChoice = decisions.find(
+			(d) => d.type === "eventChoice" && d.choiceId === input,
+		);
+		if (eventChoice) return eventChoice;
 
 		// First try exact match
 		for (const cmd of commands) {
@@ -482,7 +513,9 @@ export async function runInteractive(
 						? ("friendRescue" as const)
 						: state.screen === "nightChoice"
 							? ("nightChoice" as const)
-							: ("game" as const),
+							: state.screen === "narrativeEvent"
+								? ("narrativeEvent" as const)
+								: ("game" as const),
 				roll: () => nextRoll(store),
 			};
 
@@ -521,11 +554,10 @@ export async function runInteractive(
 		// Game over
 		console.log("");
 		console.log("=".repeat(50));
-
 		console.log("WEEK COMPLETE!");
-		console.log("You made it through the week.");
-
 		console.log("=".repeat(50));
+		console.log("");
+		console.log(generateWeekStory(store.getState()));
 	} finally {
 		strategy.close();
 	}

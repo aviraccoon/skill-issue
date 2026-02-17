@@ -48,7 +48,7 @@ function tryParseArgs(): CliArgs {
 
 			// Verbosity
 			quiet: { type: "boolean", short: "q", default: false },
-			verbose: { type: "boolean", default: false },
+			verbose: { type: "boolean", short: "v", default: false },
 			json: { type: "boolean", default: false },
 
 			// Filter options

@@ -4,6 +4,7 @@ import {
 	createHumanLikeStrategy,
 	type DecisionContext,
 } from "../core/strategies";
+import { getEventDefinition } from "../data/events";
 import type { GameState } from "../state";
 import { createInitialState } from "../state";
 import type { Store } from "../store";
@@ -15,6 +16,7 @@ import {
 	getEnergyDecayPerBlock,
 	getScrollTrapEnergyCost,
 } from "../systems/energy";
+import { getProgressionTier } from "../systems/eventSelection";
 import { getFriendRescueChance } from "../systems/friend";
 import {
 	getMomentumDecayPerBlock,
@@ -22,7 +24,11 @@ import {
 	getMomentumSuccessBonus,
 	getScrollTrapMomentumRange,
 } from "../systems/momentum";
-import { clearAllData, resetCurrentRun } from "../systems/persistence";
+import {
+	clearAllData,
+	getPatterns,
+	resetCurrentRun,
+} from "../systems/persistence";
 import {
 	calculateSuccessProbability,
 	getEnergyModifier,
@@ -278,6 +284,75 @@ function renderDevState(state: GameState) {
 	const successCount = state.tasks.filter((t) => t.succeededToday).length;
 	const attemptCount = state.tasks.filter((t) => t.attemptedToday).length;
 
+	// Event state
+	const pendingEvents = state.events.filter((e) => e.status === "pending");
+	const resolvedEvents = state.events.filter((e) => e.status === "resolved");
+	const activeEvent = state.events.find((e) => e.status === "active");
+	const tier = getProgressionTier(getPatterns());
+
+	const eventRows = state.events
+		.map((e) => {
+			const def = getEventDefinition(e.id);
+			const status =
+				e.status === "resolved"
+					? "done"
+					: e.status === "active"
+						? "active"
+						: "pending";
+			const choiceInfo = e.choiceId ? ` [${e.choiceId}]` : "";
+			// Timing: "tue afternoon blockStart"
+			const day = def?.timing.day
+				? Array.isArray(def.timing.day)
+					? def.timing.day.map((d) => d.slice(0, 3)).join("/")
+					: def.timing.day.slice(0, 3)
+				: "any";
+			const block = def?.timing.timeBlock
+				? Array.isArray(def.timing.timeBlock)
+					? def.timing.timeBlock.map((b) => b.slice(0, 3)).join("/")
+					: def.timing.timeBlock.slice(0, 3)
+				: "any";
+			const timing = `${day} ${block} ${def?.timing.phase ?? ""}`;
+			// Effects summary for resolved choices
+			let effectInfo = "";
+			if (e.choiceId && def?.choices) {
+				const choice = def.choices.find((c) => c.id === e.choiceId);
+				if (choice?.effects) {
+					const parts: string[] = [];
+					if (choice.effects.energy)
+						parts.push(
+							`E${choice.effects.energy > 0 ? "+" : ""}${(choice.effects.energy * 100).toFixed(0)}%`,
+						);
+					if (choice.effects.momentum)
+						parts.push(
+							`M${choice.effects.momentum > 0 ? "+" : ""}${(choice.effects.momentum * 100).toFixed(0)}%`,
+						);
+					if (choice.effects.setFlag)
+						parts.push(`flag:${choice.effects.setFlag}`);
+					if (parts.length) effectInfo = ` (${parts.join(", ")})`;
+				}
+			}
+			return `<div class="${styles.row}">
+				<span class="${styles.key}">${e.id}</span>
+				<span class="${styles.value}">${status}${choiceInfo}${effectInfo}</span>
+			</div>
+			<div class="${styles.row}">
+				<span class="${styles.key}"></span>
+				<span class="${styles.valueNote}">${timing}</span>
+			</div>`;
+		})
+		.join("");
+
+	const flagRows =
+		state.eventFlags.length > 0
+			? state.eventFlags
+					.map(
+						(f) => `<div class="${styles.row}">
+				<span class="${styles.value}">${f}</span>
+			</div>`,
+					)
+					.join("")
+			: "";
+
 	container.innerHTML = `
 		<h4>Game State</h4>
 		<div class="${styles.row}">
@@ -359,6 +434,14 @@ function renderDevState(state: GameState) {
 			<span class="${styles.key}">Momentum</span>
 			<span class="${styles.valueModifier}" data-positive="${sleepMod.momentum >= 0}">${sleepMod.momentum >= 0 ? "+" : ""}${(sleepMod.momentum * 100).toFixed(0)}%</span>
 		</div>
+
+		<h4>Events (Tier ${tier})</h4>
+		<div class="${styles.row}">
+			<span class="${styles.key}">Status</span>
+			<span class="${styles.value}">${resolvedEvents.length} done / ${pendingEvents.length} pending${activeEvent ? " / 1 active" : ""}</span>
+		</div>
+		${eventRows}
+		${flagRows ? `<div class="${styles.row}"><span class="${styles.key}">Flags</span></div>${flagRows}` : ""}
 	`;
 }
 
@@ -404,7 +487,9 @@ export function simulateDay(store: Store<GameState>) {
 					? "friendRescue"
 					: state.screen === "nightChoice"
 						? "nightChoice"
-						: "game",
+						: state.screen === "narrativeEvent"
+							? "narrativeEvent"
+							: "game",
 			roll: () => nextRoll(store),
 		};
 

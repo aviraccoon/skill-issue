@@ -12,12 +12,14 @@ import {
 import { chooseSleep, pushThrough } from "../actions/night";
 import { checkPhone } from "../actions/phone";
 import { type AttemptCallbacks, attemptTask } from "../actions/tasks";
-import { endWeekendDay, skipTimeBlock } from "../actions/time";
+import { endWeekendDay, showDaySummary, skipTimeBlock } from "../actions/time";
+import { getEventDefinition } from "../data/events";
 import type { PhoneOutcome } from "../data/scrollTrap";
 import type { TaskCategory, TaskId } from "../data/tasks";
 import { type GameState, isWeekend, type Task } from "../state";
 import type { Store } from "../store";
 import { canPushThrough } from "../systems/allnighter";
+import { resolveEvent } from "../systems/events";
 
 /**
  * Possible decisions during gameplay.
@@ -30,7 +32,9 @@ export type Decision =
 	| { type: "sleep" }
 	| { type: "pushThrough" }
 	| { type: "acceptRescue"; activity: ActivityTier }
-	| { type: "declineRescue" };
+	| { type: "declineRescue" }
+	| { type: "dismissEvent" }
+	| { type: "eventChoice"; choiceId: string };
 
 /**
  * Result of a single action.
@@ -54,6 +58,8 @@ export interface ActionResult {
 	rescueHint?: string;
 	/** Whether rescue tier was correct for energy level. */
 	rescueCorrect?: boolean;
+	/** Event ID for event-related decisions. */
+	eventId?: string;
 	energyBefore: number;
 	energyAfter: number;
 	momentumBefore: number;
@@ -97,6 +103,27 @@ export function getAvailableDecisions(state: GameState): Decision[] {
 		decisions.push({ type: "sleep" });
 		if (canPushThrough(state)) {
 			decisions.push({ type: "pushThrough" });
+		}
+		return decisions;
+	}
+
+	if (state.screen === "narrativeEvent") {
+		const eventId = state.activeEventId;
+		const definition = eventId ? getEventDefinition(eventId) : null;
+
+		if (definition?.type === "major" && definition.choices) {
+			for (const choice of definition.choices) {
+				// Skip choices that require a flag the player doesn't have
+				if (
+					choice.requiresFlag &&
+					!state.eventFlags.includes(choice.requiresFlag)
+				) {
+					continue;
+				}
+				decisions.push({ type: "eventChoice", choiceId: choice.id });
+			}
+		} else {
+			decisions.push({ type: "dismissEvent" });
 		}
 		return decisions;
 	}
@@ -153,6 +180,7 @@ export function executeDecision(
 	let phoneFriendNudge: boolean | undefined;
 	let rescueHint: string | undefined;
 	let rescueCorrect: boolean | undefined;
+	let eventId: string | undefined;
 
 	switch (decision.type) {
 		case "attempt": {
@@ -211,6 +239,21 @@ export function executeDecision(
 			declineFriendRescue(store);
 			store.set("screen", "game");
 			break;
+
+		case "dismissEvent":
+		case "eventChoice": {
+			eventId = stateBefore.activeEventId ?? undefined;
+			const choiceId =
+				decision.type === "eventChoice" ? decision.choiceId : undefined;
+			const phase = resolveEvent(store, choiceId);
+			if (phase === "dayEnd") {
+				// Resume day-end flow (nightChoice check, then summary)
+				showDaySummary(store);
+			} else {
+				store.set("screen", "game");
+			}
+			break;
+		}
 	}
 
 	const stateAfter = store.getState();
@@ -227,6 +270,7 @@ export function executeDecision(
 		phoneFriendNudge,
 		rescueHint,
 		rescueCorrect,
+		eventId,
 		energyBefore,
 		energyAfter: stateAfter.energy,
 		momentumBefore,

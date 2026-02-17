@@ -39,6 +39,7 @@ import { renderGameArea } from "./GameArea";
 import gameAreaStyles from "./GameArea.module.css";
 import { renderIntro } from "./Intro";
 import { renderMainMenu } from "./MainMenu";
+import { renderNarrativeEvent } from "./NarrativeEvent";
 import { renderNightChoice } from "./NightChoice";
 import panelStyles from "./Panel.module.css";
 import { renderPatterns } from "./Patterns";
@@ -320,6 +321,11 @@ function getScreenAnnouncement(screenInfo: ScreenInfo): string | null {
 		case "weekComplete":
 			// Include the week narrative
 			return `${s.a11y.screenWeekComplete}. ${screenInfo.narrative}`;
+		case "narrativeEvent":
+			if (screenInfo.eventType === "major") {
+				return `${s.a11y.screenNarrativeEvent}. ${screenInfo.title}. ${screenInfo.description}`;
+			}
+			return `${s.a11y.screenNarrativeEvent}. ${screenInfo.text}`;
 		default:
 			return null; // Game screen announces day/time separately
 	}
@@ -547,6 +553,11 @@ export function renderApp(store: Store<GameState>) {
 			gameInitialized = false;
 			delete app.dataset.time;
 			renderPatterns(screenInfo, app, store);
+			break;
+		case "narrativeEvent":
+			gameInitialized = false;
+			app.dataset.time = state.timeBlock;
+			renderNarrativeEvent(screenInfo, app, handleDecision);
 			break;
 		default:
 			renderGameScreen(store, screenInfo, app, handleDecision);
