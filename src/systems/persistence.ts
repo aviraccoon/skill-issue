@@ -15,6 +15,7 @@ import {
 	type Day,
 	type EventId,
 	type EventInstance,
+	type GameMode,
 	type GameState,
 	type RunStats,
 	type Task,
@@ -27,9 +28,6 @@ import { getPersonalityFromSeed } from "./personality";
 import { selectTasksForSeed } from "./taskSelection";
 
 const STORAGE_KEY = "skill-issue-save";
-
-/** Game mode determines which save slot to use. */
-export type GameMode = "main" | "seeded";
 
 /** Runtime state for a task - the only thing we persist. */
 interface SavedTask {
