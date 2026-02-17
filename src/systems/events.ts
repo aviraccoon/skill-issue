@@ -11,6 +11,13 @@ import {
 import type { EventId, GameState } from "../state";
 import type { Store } from "../store";
 import { clamp } from "../utils/math";
+import { seededVariation } from "../utils/random";
+
+/** Variance factor applied to event effects (±20% of base value). */
+const EVENT_EFFECT_VARIANCE = 0.2;
+
+const SALT_EVENT_ENERGY = 9001;
+const SALT_EVENT_MOMENTUM = 9002;
 
 /**
  * Checks if any pending event should fire at the current game state and phase.
@@ -117,17 +124,27 @@ export function resolveEvent(
 	return definition?.timing.phase ?? null;
 }
 
-/** Applies energy/momentum/flag effects from an event. */
+/** Applies energy/momentum/flag effects from an event with seed variance. */
 function applyEventEffects(
 	store: Store<GameState>,
 	effects: EventEffects,
 ): void {
 	const { energy, momentum, setFlag } = effects;
+	const seed = store.getState().runSeed;
 	if (energy) {
-		store.update("energy", (e) => clamp(e + energy, 0, 1));
+		const variance = Math.abs(energy) * EVENT_EFFECT_VARIANCE;
+		const varied = seededVariation(seed, energy, variance, SALT_EVENT_ENERGY);
+		store.update("energy", (e) => clamp(e + varied, 0, 1));
 	}
 	if (momentum) {
-		store.update("momentum", (m) => clamp(m + momentum, 0, 1));
+		const variance = Math.abs(momentum) * EVENT_EFFECT_VARIANCE;
+		const varied = seededVariation(
+			seed,
+			momentum,
+			variance,
+			SALT_EVENT_MOMENTUM,
+		);
+		store.update("momentum", (m) => clamp(m + varied, 0, 1));
 	}
 	if (setFlag) {
 		store.update("eventFlags", (flags) =>

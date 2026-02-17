@@ -43,26 +43,28 @@ export function runCompare(args: CliArgs): void {
 		// Table header
 		const nameWidth = Math.max(...strategyNames.map((s) => s.length), 8);
 		console.log(
-			`${"Strategy".padEnd(nameWidth)}  Result    Energy   Momentum  All-nighters  Phone  Unlocks`,
+			`${"Strategy".padEnd(nameWidth)}  Energy   Momentum  All-nighters  Phone  Events  Unlocks`,
 		);
-		console.log("-".repeat(nameWidth + 64));
+		console.log("-".repeat(nameWidth + 60));
 
 		// Run each strategy (fresh instance per seed)
 		for (const name of strategyNames) {
 			const strategy = createStrategy(name);
 			const result = simulate(seed, strategy);
-			const status = result.survived ? "SURVIVED" : "FAILED  ";
 			const energy = formatPercent(result.stats.energy.end).padStart(6);
 			const momentum = formatPercent(result.stats.momentum.end).padStart(6);
 			const allNighters = String(result.stats.allNighters).padStart(5);
 			const phone = String(result.stats.phoneChecks).padStart(5);
+			const events = String(
+				result.events.filter((e) => e.status !== "pending").length,
+			).padStart(5);
 			const unlocks =
 				result.stats.variantsUnlocked.length > 0
 					? result.stats.variantsUnlocked.join(",")
 					: "-";
 
 			console.log(
-				`${name.padEnd(nameWidth)}  ${status}  ${energy}   ${momentum}  ${allNighters}         ${phone}  ${unlocks}`,
+				`${name.padEnd(nameWidth)}  ${energy}   ${momentum}  ${allNighters}         ${phone}  ${events}  ${unlocks}`,
 			);
 		}
 	} else {
@@ -75,22 +77,22 @@ export function runCompare(args: CliArgs): void {
 		const resultsByStrategy: Record<
 			string,
 			{
-				survived: number;
 				energy: number;
 				momentum: number;
 				allNighters: number;
 				phone: number;
+				events: number;
 				variantUnlocks: Record<string, number>;
 			}
 		> = {};
 
 		for (const name of strategyNames) {
 			resultsByStrategy[name] = {
-				survived: 0,
 				energy: 0,
 				momentum: 0,
 				allNighters: 0,
 				phone: 0,
+				events: 0,
 				variantUnlocks: {},
 			};
 		}
@@ -112,11 +114,13 @@ export function runCompare(args: CliArgs): void {
 				const result = simulate(seed, strategy);
 				const stats = resultsByStrategy[name];
 				if (stats) {
-					if (result.survived) stats.survived++;
 					stats.energy += result.stats.energy.end;
 					stats.momentum += result.stats.momentum.end;
 					stats.allNighters += result.stats.allNighters;
 					stats.phone += result.stats.phoneChecks;
+					stats.events += result.events.filter(
+						(e) => e.status !== "pending",
+					).length;
 					for (const category of result.stats.variantsUnlocked) {
 						stats.variantUnlocks[category] =
 							(stats.variantUnlocks[category] ?? 0) + 1;
@@ -128,23 +132,23 @@ export function runCompare(args: CliArgs): void {
 		// Table header
 		const nameWidth = Math.max(...strategyNames.map((s) => s.length), 8);
 		console.log(
-			`${"Strategy".padEnd(nameWidth)}  Survival  Avg Energy  Avg Momentum  All-nighters  Phone`,
+			`${"Strategy".padEnd(nameWidth)}  Avg Energy  Avg Momentum  All-nighters  Phone  Events`,
 		);
-		console.log("-".repeat(nameWidth + 62));
+		console.log("-".repeat(nameWidth + 60));
 
 		// Output results
 		for (const name of strategyNames) {
 			const stats = resultsByStrategy[name];
 			if (stats) {
 				const n = args.runs;
-				const survival = formatPercent(stats.survived / n).padStart(7);
 				const energy = formatPercent(stats.energy / n).padStart(9);
 				const momentum = formatPercent(stats.momentum / n).padStart(11);
 				const allNighters = (stats.allNighters / n).toFixed(1).padStart(7);
 				const phone = (stats.phone / n).toFixed(1).padStart(5);
+				const events = (stats.events / n).toFixed(1).padStart(5);
 
 				console.log(
-					`${name.padEnd(nameWidth)}  ${survival}   ${energy}    ${momentum}       ${allNighters}  ${phone}`,
+					`${name.padEnd(nameWidth)}  ${energy}    ${momentum}       ${allNighters}  ${phone}  ${events}`,
 				);
 			}
 		}

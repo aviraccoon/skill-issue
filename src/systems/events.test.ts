@@ -1,7 +1,10 @@
 import { describe, expect, it } from "bun:test";
+import { getEventDefinition } from "../data/events";
 import { createInitialState, type GameState } from "../state";
 import { createStore } from "../store";
 import { activateEvent, checkForEvent, resolveEvent } from "./events";
+
+const VARIANCE_FACTOR = 0.2;
 
 /** Creates a test state with overrides. */
 function createTestState(overrides: Partial<GameState> = {}): GameState {
@@ -174,7 +177,10 @@ describe("activateEvent", () => {
 	});
 
 	it("applies effects immediately for minor events", () => {
-		// cold-apartment has energy: -0.02
+		const def = getEventDefinition("cold-apartment");
+		expect(def).toBeDefined();
+		const baseEnergy = def?.effects?.energy ?? 0;
+		expect(baseEnergy).not.toBe(0);
 		const state = createTestState({
 			events: [{ id: "cold-apartment", status: "pending" }],
 			energy: 0.5,
@@ -184,7 +190,12 @@ describe("activateEvent", () => {
 
 		activateEvent(store, "cold-apartment");
 
-		expect(store.getState().energy).toBeCloseTo(0.48, 5);
+		const maxDrop = Math.abs(baseEnergy) * (1 + VARIANCE_FACTOR);
+		const minDrop = Math.abs(baseEnergy) * (1 - VARIANCE_FACTOR);
+		const energy = store.getState().energy;
+		expect(energy).toBeLessThan(0.5);
+		expect(energy).toBeGreaterThanOrEqual(0.5 - maxDrop);
+		expect(energy).toBeLessThanOrEqual(0.5 - minDrop);
 		expect(store.getState().momentum).toBe(0.5);
 	});
 
@@ -269,7 +280,14 @@ describe("resolveEvent", () => {
 	});
 
 	it("applies choice effects for major events", () => {
-		// neighbor-cookies "accept" has: momentum +0.03, energy +0.02
+		const def = getEventDefinition("neighbor-cookies");
+		expect(def).toBeDefined();
+		const acceptChoice = def?.choices?.find((c) => c.id === "accept");
+		expect(acceptChoice).toBeDefined();
+		const baseEnergy = acceptChoice?.effects?.energy ?? 0;
+		const baseMomentum = acceptChoice?.effects?.momentum ?? 0;
+		expect(baseEnergy).not.toBe(0);
+		expect(baseMomentum).not.toBe(0);
 		const state = createTestState({
 			events: [{ id: "neighbor-cookies", status: "active" }],
 			activeEventId: "neighbor-cookies",
@@ -280,8 +298,22 @@ describe("resolveEvent", () => {
 
 		resolveEvent(store, "accept");
 
-		expect(store.getState().energy).toBeCloseTo(0.52, 5);
-		expect(store.getState().momentum).toBeCloseTo(0.53, 5);
+		const energy = store.getState().energy;
+		const momentum = store.getState().momentum;
+		expect(energy).toBeGreaterThan(0.5);
+		expect(energy).toBeGreaterThanOrEqual(
+			0.5 + baseEnergy * (1 - VARIANCE_FACTOR),
+		);
+		expect(energy).toBeLessThanOrEqual(
+			0.5 + baseEnergy * (1 + VARIANCE_FACTOR),
+		);
+		expect(momentum).toBeGreaterThan(0.5);
+		expect(momentum).toBeGreaterThanOrEqual(
+			0.5 + baseMomentum * (1 - VARIANCE_FACTOR),
+		);
+		expect(momentum).toBeLessThanOrEqual(
+			0.5 + baseMomentum * (1 + VARIANCE_FACTOR),
+		);
 	});
 
 	it("applies no effects for decline choice (no effects defined)", () => {

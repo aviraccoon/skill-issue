@@ -100,6 +100,35 @@ export function getEventRecap(
 	return null;
 }
 
+// --- Effect Magnitude Scale ---
+
+/**
+ * Standardized effect magnitudes for events.
+ * All event effects should use these instead of raw numbers.
+ * Tune globally here; individual events pick a tier.
+ *
+ * For reference, other systems per action:
+ *   Task success momentum: +0.05 to +0.10
+ *   Task failure momentum: -0.03 to -0.05
+ *   Phone void momentum:  -0.15 to -0.20
+ *   Friend rescue:        +0.10 momentum, +0.12 energy
+ *   Block decay:          -0.015 to -0.025
+ */
+export const EVENT_MAGNITUDE = {
+	/** Barely perceptible. Flavor-with-weight. */
+	NUDGE: 0.03,
+	/** Like a task attempt outcome. */
+	MINOR: 0.06,
+	/** Like 1-2 task attempts. Noticeable shift. */
+	MODERATE: 0.1,
+	/** Friend-rescue-level. Significant. */
+	MAJOR: 0.15,
+	/** Crisis-level. Tier 3 convergence only. */
+	SEVERE: 0.2,
+} as const;
+
+const M = EVENT_MAGNITUDE;
+
 // --- Event Pool ---
 
 /** All event definitions. Seed-based selection picks from this pool. */
@@ -194,7 +223,7 @@ export const eventPool: readonly EventDefinition[] = [
 			day: ["monday", "tuesday", "wednesday"],
 			phase: "dayStart",
 		},
-		effects: { energy: -0.02 },
+		effects: { energy: -M.MINOR },
 	},
 
 	{
@@ -206,7 +235,7 @@ export const eventPool: readonly EventDefinition[] = [
 			timeBlock: "afternoon",
 			phase: "blockStart",
 		},
-		effects: { momentum: 0.02 },
+		effects: { momentum: M.MINOR },
 	},
 
 	{
@@ -217,7 +246,7 @@ export const eventPool: readonly EventDefinition[] = [
 			day: ["monday", "tuesday", "wednesday", "thursday", "friday"],
 			phase: "dayStart",
 		},
-		effects: { energy: -0.03 },
+		effects: { energy: -M.MODERATE },
 	},
 
 	{
@@ -229,7 +258,7 @@ export const eventPool: readonly EventDefinition[] = [
 			timeBlock: ["evening", "night"],
 			phase: "blockStart",
 		},
-		effects: { energy: -0.02, momentum: -0.02 },
+		effects: { energy: -M.NUDGE, momentum: -M.MINOR },
 	},
 
 	{
@@ -240,7 +269,7 @@ export const eventPool: readonly EventDefinition[] = [
 			day: ["monday", "tuesday", "wednesday", "thursday", "friday"],
 			phase: "blockStart",
 		},
-		effects: { momentum: 0.03 },
+		effects: { momentum: M.MINOR },
 	},
 
 	{
@@ -252,7 +281,7 @@ export const eventPool: readonly EventDefinition[] = [
 			timeBlock: "evening",
 			phase: "blockStart",
 		},
-		effects: { momentum: -0.01 },
+		effects: { momentum: -M.NUDGE },
 	},
 
 	{
@@ -267,7 +296,7 @@ export const eventPool: readonly EventDefinition[] = [
 		choices: [
 			{
 				id: "accept",
-				effects: { momentum: 0.03, energy: 0.02 },
+				effects: { momentum: M.MODERATE, energy: M.MINOR },
 			},
 			{
 				id: "decline",
@@ -290,6 +319,7 @@ export const eventPool: readonly EventDefinition[] = [
 		},
 		arcId: "leak",
 		arcStep: 0,
+		effects: { momentum: -M.NUDGE },
 	},
 
 	{
@@ -307,8 +337,8 @@ export const eventPool: readonly EventDefinition[] = [
 			{
 				id: "call",
 				effects: {
-					energy: -0.02,
-					momentum: 0.02,
+					energy: -M.NUDGE,
+					momentum: M.MINOR,
 					setFlag: "called-maintenance",
 				},
 			},
@@ -331,7 +361,7 @@ export const eventPool: readonly EventDefinition[] = [
 		condition: (state) => state.eventFlags.includes("called-maintenance"),
 		arcId: "leak",
 		arcStep: 2,
-		effects: { momentum: 0.02 },
+		effects: { momentum: M.MINOR },
 	},
 
 	{
@@ -346,7 +376,7 @@ export const eventPool: readonly EventDefinition[] = [
 		condition: (state) => state.eventFlags.includes("leak-ignored"),
 		arcId: "leak",
 		arcStep: 2,
-		effects: { momentum: -0.02, energy: -0.01 },
+		effects: { momentum: -M.MODERATE, energy: -M.MINOR },
 	},
 
 	// =====================
@@ -364,7 +394,7 @@ export const eventPool: readonly EventDefinition[] = [
 		},
 		arcId: "delivery",
 		arcStep: 0,
-		effects: { momentum: -0.01 },
+		effects: { momentum: -M.NUDGE },
 	},
 
 	{
@@ -382,11 +412,11 @@ export const eventPool: readonly EventDefinition[] = [
 		choices: [
 			{
 				id: "go",
-				effects: { momentum: 0.03, energy: -0.02 },
+				effects: { momentum: M.MODERATE, energy: -M.MINOR },
 			},
 			{
 				id: "let-go",
-				effects: { momentum: -0.02 },
+				effects: { momentum: -M.MINOR },
 			},
 		],
 	},
@@ -405,7 +435,7 @@ export const eventPool: readonly EventDefinition[] = [
 		},
 		arcId: "construction",
 		arcStep: 0,
-		effects: { energy: -0.02 },
+		effects: { energy: -M.MINOR },
 	},
 
 	{
@@ -419,7 +449,7 @@ export const eventPool: readonly EventDefinition[] = [
 		requires: ["construction-start"],
 		arcId: "construction",
 		arcStep: 1,
-		effects: { energy: 0.01 },
+		effects: { energy: M.NUDGE },
 	},
 
 	// =====================
@@ -437,7 +467,7 @@ export const eventPool: readonly EventDefinition[] = [
 		},
 		arcId: "neighbor",
 		arcStep: 0,
-		effects: { momentum: 0.01 },
+		effects: { momentum: M.NUDGE },
 	},
 
 	{
@@ -454,11 +484,11 @@ export const eventPool: readonly EventDefinition[] = [
 		choices: [
 			{
 				id: "go",
-				effects: { momentum: 0.04, energy: -0.02 },
+				effects: { momentum: M.MAJOR, energy: -M.MINOR },
 			},
 			{
 				id: "pass",
-				effects: { momentum: -0.01 },
+				effects: { momentum: -M.MINOR },
 			},
 		],
 	},
