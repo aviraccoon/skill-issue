@@ -7,3 +7,6 @@ export const TIME_BLOCKS = [
 ] as const;
 
 export type TimeBlock = (typeof TIME_BLOCKS)[number];
+
+/** Action slots available per weekday time block. */
+export const SLOTS_PER_BLOCK = 3;

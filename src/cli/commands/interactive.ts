@@ -17,6 +17,7 @@ import { generateWeekStory } from "../../data/weekStory";
 import type { GameState, Task } from "../../state";
 import { createStore } from "../../store";
 import { getExtendedNightDescription } from "../../systems/allnighter";
+import { getDayBlocks } from "../../systems/dailyJitter";
 import { getDogUrgency, getUrgencyDisplay } from "../../systems/dog";
 import { getEvolvedDescription } from "../../systems/evolution";
 import { nextRoll } from "../../utils/random";
@@ -44,7 +45,10 @@ function getVisibleTasks(state: GameState): Task[] {
 	if (weekend) {
 		return state.tasks;
 	}
-	return state.tasks.filter((t) => t.availableBlocks.includes(state.timeBlock));
+	const dayBlocks = getDayBlocks(state.tasks, state.dayIndex, state.runSeed);
+	return state.tasks.filter((t) =>
+		dayBlocks.get(t.id)?.includes(state.timeBlock),
+	);
 }
 
 /**

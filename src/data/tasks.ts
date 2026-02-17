@@ -4,7 +4,8 @@ import {
 	adjustBlocksForPersonality,
 	type TimePreference,
 } from "../systems/personality";
-import type { TimeBlock } from "./timeBlocks";
+import { seededRandom, seededShuffle } from "../utils/random";
+import { SLOTS_PER_BLOCK, TIME_BLOCKS, type TimeBlock } from "./timeBlocks";
 
 /** Task category for grouping and modifiers. */
 export type TaskCategory =
@@ -162,7 +163,7 @@ export const taskStatics: readonly TaskStatic[] = [
 		id: "make-coffee",
 		category: "food",
 		baseRate: 0.6,
-		availableBlocks: ["morning", "afternoon", "evening"],
+		availableBlocks: ["morning", "afternoon", "evening", "night"],
 		selectionTag: "high",
 	},
 	// --- Chores ---
@@ -191,7 +192,7 @@ export const taskStatics: readonly TaskStatic[] = [
 		category: "chores",
 		baseRate: 0.2,
 		variantBaseRate: 0.5,
-		availableBlocks: ["morning", "afternoon", "evening"],
+		availableBlocks: ["morning", "afternoon", "evening", "night"],
 	},
 	{
 		id: "shopping",
@@ -236,7 +237,7 @@ export const taskStatics: readonly TaskStatic[] = [
 		id: "work",
 		category: "work",
 		baseRate: 0.4,
-		availableBlocks: ["morning", "afternoon"],
+		availableBlocks: ["morning", "afternoon", "evening", "night"],
 		core: true,
 	},
 	// --- Creative ---
@@ -352,18 +353,17 @@ function buildEvolution(id: TaskId): TaskEvolution {
 	};
 }
 
-/** Creates initial tasks with runtime state fields. Optionally filters to specific task IDs. */
+/** Creates initial tasks with runtime state fields from a seed's task pool. */
 export function createInitialTasks(
-	taskIds?: TaskId[],
-	timePref?: TimePreference,
+	taskIds: TaskId[],
+	timePref: TimePreference,
+	seed: number,
 ): Task[] {
 	const statics = taskIds
-		? taskIds
-				.map((id) => taskStatics.find((ts) => ts.id === id))
-				.filter((ts): ts is TaskStatic => ts !== undefined)
-		: taskStatics;
+		.map((id) => taskStatics.find((ts) => ts.id === id))
+		.filter((ts): ts is TaskStatic => ts !== undefined);
 
-	return statics.map((ts) => {
+	const tasks = statics.map((ts) => {
 		const content = getTaskContent(ts.id);
 		const blocks =
 			timePref && !ts.noBlockShift
@@ -385,6 +385,72 @@ export function createInitialTasks(
 			succeededToday: false,
 		};
 	});
+
+	// Ensure personality shifts don't leave any block below the playable minimum
+	if (timePref !== "neutral") {
+		ensurePersonalityMinimums(tasks, statics, seed);
+	}
+
+	return tasks;
+}
+
+/** Salt offset for personality block minimum restoration. */
+const PERSONALITY_MIN_SALT = 8000;
+
+/** Seeded range for how many tasks to keep in personality-shifted blocks. */
+const KEEP_RATIO_MIN = 0.45;
+const KEEP_RATIO_MAX = 0.65;
+
+/**
+ * After personality adjustment, blocks can be too sparse -- either below the
+ * playable minimum (SLOTS_PER_BLOCK) or sparse enough to make the personality
+ * type immediately obvious. Restores personality-removed tasks using seeded
+ * selection. The keep ratio varies by seed (0.45-0.65), so some runs have
+ * sparser off-preference blocks than others.
+ */
+function ensurePersonalityMinimums(
+	tasks: Task[],
+	statics: readonly TaskStatic[],
+	seed: number,
+): void {
+	const keepRatio =
+		KEEP_RATIO_MIN +
+		seededRandom(seed, PERSONALITY_MIN_SALT + 100) *
+			(KEEP_RATIO_MAX - KEEP_RATIO_MIN);
+
+	for (let bi = 0; bi < TIME_BLOCKS.length; bi++) {
+		const block = TIME_BLOCKS[bi] as TimeBlock;
+
+		const originalCount = statics.filter((s) =>
+			s.availableBlocks.includes(block),
+		).length;
+		const target = Math.max(
+			SLOTS_PER_BLOCK,
+			Math.ceil(originalCount * keepRatio),
+		);
+
+		let count = tasks.filter((t) => t.availableBlocks.includes(block)).length;
+		if (count >= target) continue;
+
+		// Tasks that had this block originally but lost it to personality shift
+		const candidates = tasks.filter((t) => {
+			const original = statics.find((s) => s.id === t.id);
+			return (
+				original?.availableBlocks.includes(block) &&
+				!t.availableBlocks.includes(block)
+			);
+		});
+
+		const shuffled = seededShuffle(
+			candidates,
+			seed + PERSONALITY_MIN_SALT + bi,
+		);
+		for (const task of shuffled) {
+			if (count >= target) break;
+			task.availableBlocks.push(block);
+			count++;
+		}
+	}
 }
 
 /** Info about a task with a variant, for friend rescue hint generation. */

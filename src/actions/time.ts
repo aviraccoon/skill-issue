@@ -1,3 +1,4 @@
+import { SLOTS_PER_BLOCK } from "../data/timeBlocks";
 import { DAYS, type GameState, TIME_BLOCKS } from "../state";
 import type { Store } from "../store";
 import { canPushThrough, getAllNighterPenalty } from "../systems/allnighter";
@@ -31,7 +32,7 @@ export function skipTimeBlock(store: Store<GameState>) {
 	if (nextBlock) {
 		// Move to next time block
 		store.set("timeBlock", nextBlock);
-		store.set("slotsRemaining", 3);
+		store.set("slotsRemaining", SLOTS_PER_BLOCK);
 		// Clear selection - task may not be available in new block
 		store.set("selectedTaskId", null);
 
@@ -135,11 +136,11 @@ export function continueToNextDay(store: Store<GameState>) {
 	} else if (pulledAllNighter) {
 		// Weekday after all-nighter - skip morning, start at afternoon
 		store.set("timeBlock", "afternoon");
-		store.set("slotsRemaining", 3);
+		store.set("slotsRemaining", SLOTS_PER_BLOCK);
 	} else {
 		// Normal weekday - morning with 3 slots
 		store.set("timeBlock", "morning");
-		store.set("slotsRemaining", 3);
+		store.set("slotsRemaining", SLOTS_PER_BLOCK);
 	}
 
 	// Reset daily flags on tasks

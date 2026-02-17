@@ -286,7 +286,7 @@ describe("time-block coverage after shifts", () => {
 		for (let seed = 0; seed < 300; seed++) {
 			const p = getPersonalityFromSeed(seed);
 			const taskIds = selectTasksForSeed(seed, p);
-			const tasks = createInitialTasks(taskIds, p.time);
+			const tasks = createInitialTasks(taskIds, p.time, seed);
 
 			for (const block of TIME_BLOCKS) {
 				const available = tasks.filter((t) =>

@@ -8,6 +8,7 @@ import {
 } from "../core/screenInfo";
 import { ROOM_SCALE } from "../data/roomLayout";
 import type { TaskId } from "../data/tasks";
+import { SLOTS_PER_BLOCK } from "../data/timeBlocks";
 import { strings } from "../i18n";
 import { generateSingleRoomLayout } from "../rendering/layout";
 import { buildTimePalette } from "../rendering/palettes";
@@ -875,12 +876,11 @@ function renderSlots(screenInfo: GameScreenInfo) {
 		// Normal weekday: show slot indicators
 		// Rebuild slots if coming back from extended night
 		const slots = document.querySelectorAll(`.${appStyles.slot}`);
-		if (slots.length !== 3 && slotsContainer) {
-			slotsContainer.innerHTML = `
-				<span class="${appStyles.slot}"></span>
-				<span class="${appStyles.slot}"></span>
-				<span class="${appStyles.slot}"></span>
-			`;
+		if (slots.length !== SLOTS_PER_BLOCK && slotsContainer) {
+			slotsContainer.innerHTML = Array.from(
+				{ length: SLOTS_PER_BLOCK },
+				() => `<span class="${appStyles.slot}"></span>`,
+			).join("\n\t\t\t\t");
 		}
 		const currentSlots = document.querySelectorAll(`.${appStyles.slot}`);
 		const used = 3 - screenInfo.slotsRemaining;

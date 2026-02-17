@@ -209,6 +209,7 @@ export function isWeekend(state: GameState): boolean {
 }
 
 import { createInitialTasks } from "./data/tasks";
+import { SLOTS_PER_BLOCK } from "./data/timeBlocks";
 import {
 	getPersonalityFromSeed,
 	getStartingEnergyFromSeed,
@@ -228,9 +229,9 @@ export function createInitialState(
 		day: "monday",
 		dayIndex: 0,
 		timeBlock: "morning",
-		slotsRemaining: 3,
+		slotsRemaining: SLOTS_PER_BLOCK,
 		weekendPointsRemaining: 8,
-		tasks: createInitialTasks(taskIds, personality.time),
+		tasks: createInitialTasks(taskIds, personality.time, runSeed),
 		selectedTaskId: null,
 		screen: "game",
 		energy: getStartingEnergyFromSeed(runSeed),

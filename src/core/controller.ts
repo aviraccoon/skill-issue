@@ -19,6 +19,7 @@ import type { TaskCategory, TaskId } from "../data/tasks";
 import { type GameState, isWeekend, type Task } from "../state";
 import type { Store } from "../store";
 import { canPushThrough } from "../systems/allnighter";
+import { getDayBlocks } from "../systems/dailyJitter";
 import { resolveEvent } from "../systems/events";
 
 /**
@@ -77,9 +78,10 @@ export function getAvailableTasks(state: GameState): Task[] {
 		return state.tasks.filter((t) => !t.succeededToday);
 	}
 
-	// Weekday: filter by time block and not succeeded
+	// Weekday: filter by jittered time blocks and not succeeded
+	const dayBlocks = getDayBlocks(state.tasks, state.dayIndex, state.runSeed);
 	return state.tasks.filter(
-		(t) => t.availableBlocks.includes(state.timeBlock) && !t.succeededToday,
+		(t) => dayBlocks.get(t.id)?.includes(state.timeBlock) && !t.succeededToday,
 	);
 }
 

@@ -30,6 +30,7 @@ import type {
 } from "../state";
 import { isWeekend, TIME_BLOCKS } from "../state";
 import { getExtendedNightDescription } from "../systems/allnighter";
+import { getDayBlocks } from "../systems/dailyJitter";
 import {
 	type DogUrgency,
 	getDogUrgency,
@@ -404,10 +405,11 @@ function getGameScreenInfo(state: GameState): GameScreenInfo {
 	const weekend = isWeekend(state);
 	const decisions = getAvailableDecisions(state);
 
-	// Get visible tasks (all on weekends, time-block filtered on weekdays)
+	// Get visible tasks (all on weekends, jittered time-block filtered on weekdays)
+	const dayBlocks = getDayBlocks(state.tasks, state.dayIndex, state.runSeed);
 	let visibleTasks = weekend
 		? state.tasks
-		: state.tasks.filter((t) => t.availableBlocks.includes(state.timeBlock));
+		: state.tasks.filter((t) => dayBlocks.get(t.id)?.includes(state.timeBlock));
 
 	// Shuffle for display variety
 	visibleTasks = seededShuffle(visibleTasks, state.runSeed + state.dayIndex);

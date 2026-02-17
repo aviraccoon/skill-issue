@@ -5,6 +5,7 @@ import {
 	type DecisionContext,
 } from "../core/strategies";
 import { getEventDefinition } from "../data/events";
+import { SLOTS_PER_BLOCK } from "../data/timeBlocks";
 import type { GameState } from "../state";
 import { createInitialState } from "../state";
 import type { Store } from "../store";
@@ -365,7 +366,7 @@ function renderDevState(state: GameState) {
 		</div>
 		<div class="${styles.row}">
 			<span class="${styles.key}">Slots</span>
-			<span class="${styles.valueNumber}">${state.slotsRemaining}/${state.inExtendedNight ? calculateExtendedNightSlots(state.energy) : 3}${state.inExtendedNight ? " (late)" : ""}</span>
+			<span class="${styles.valueNumber}">${state.slotsRemaining}/${state.inExtendedNight ? calculateExtendedNightSlots(state.energy) : SLOTS_PER_BLOCK}${state.inExtendedNight ? " (late)" : ""}</span>
 		</div>
 
 		<h4>Hidden State</h4>
