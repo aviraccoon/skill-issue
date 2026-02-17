@@ -29,6 +29,8 @@ export interface SearchCriteria {
 	maxEnergy: number | null;
 	/** Categories that must be unlocked via friend hints. */
 	friendUnlocks: string[];
+	/** Event IDs that must fire (status !== "pending"). */
+	events: string[];
 }
 
 /**

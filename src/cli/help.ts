@@ -136,11 +136,13 @@ CRITERIA OPTIONS:
   --min-energy <pct>       Minimum end energy (0-100)
   --max-energy <pct>       Maximum end energy (0-100)
   --friend-unlocks <cat>   Require variant unlock (repeatable: hygiene, food, chores)
+  --event <id>             Require event to fire (repeatable, e.g., leak-worse)
 
 EXAMPLES:
-  bun run cli find-seed --failed --max-phone 0
-  bun run cli find-seed -p nightOwl+hermit --survived --min-energy 80
-  bun run cli find-seed --min-allnighters 2 --survived -l 5
+  bun run cli find-seed --max-phone 0
+  bun run cli find-seed -p nightOwl+hermit --min-energy 80
+  bun run cli find-seed --min-allnighters 2 -l 5
   bun run cli find-seed --friend-unlocks food --friend-unlocks hygiene
+  bun run cli find-seed --event leak-worse --event upstairs-party
 `);
 }

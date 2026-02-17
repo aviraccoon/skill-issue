@@ -70,6 +70,7 @@ function tryParseArgs(): CliArgs {
 			"min-energy": { type: "string" },
 			"max-energy": { type: "string" },
 			"friend-unlocks": { type: "string", multiple: true },
+			event: { type: "string", multiple: true },
 
 			// Debug
 			debug: { type: "boolean", short: "d", default: false },
@@ -147,6 +148,7 @@ function tryParseArgs(): CliArgs {
 			minEnergy: parseEnergy(values["min-energy"]),
 			maxEnergy: parseEnergy(values["max-energy"]),
 			friendUnlocks: values["friend-unlocks"] ?? [],
+			events: values.event ?? [],
 		},
 		limit: parseNum(values.limit) ?? 10,
 		groupBy,

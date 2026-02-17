@@ -57,6 +57,7 @@ function matchesSearchCriteria(
 			energy: { end: number };
 			variantsUnlocked: string[];
 		};
+		events: { id: string; status: string }[];
 	},
 	filters: FilterOptions,
 	criteria: SearchCriteria,
@@ -114,6 +115,16 @@ function matchesSearchCriteria(
 		}
 	}
 
+	// Events - all specified events must have fired
+	if (criteria.events.length > 0) {
+		const firedIds = new Set(
+			result.events.filter((e) => e.status !== "pending").map((e) => e.id),
+		);
+		for (const eventId of criteria.events) {
+			if (!firedIds.has(eventId)) return false;
+		}
+	}
+
 	return true;
 }
 
@@ -143,6 +154,8 @@ function formatCriteria(
 		parts.push(`energy<=${formatPercent(criteria.maxEnergy)}`);
 	if (criteria.friendUnlocks.length > 0)
 		parts.push(`unlocks=${criteria.friendUnlocks.join("+")}`);
+	if (criteria.events.length > 0)
+		parts.push(`events=${criteria.events.join(",")}`);
 
 	return parts.length > 0 ? parts.join(", ") : "any";
 }
@@ -194,17 +207,17 @@ export function runFindSeed(args: CliArgs): void {
 			found.push(seed);
 			const state = createStateFromSeed(seed);
 			const personality = `${state.personality.time} + ${state.personality.social}`;
-			const status = result.survived ? "SURVIVED" : "FAILED";
 			const energy = formatPercent(result.stats.energy.end);
 			const phone = result.stats.phoneChecks;
 			const allNighters = result.stats.allNighters;
+			const events = result.events.filter((e) => e.status !== "pending").length;
 			const unlocks =
 				result.stats.variantsUnlocked.length > 0
 					? ` unlocks=${result.stats.variantsUnlocked.join(",")}`
 					: "";
 
 			console.log(
-				`${seed}: ${personality.padEnd(25)} ${status.padEnd(8)} energy=${energy.padStart(6)} phone=${phone} allNighters=${allNighters}${unlocks}`,
+				`${seed}: ${personality.padEnd(25)} energy=${energy.padStart(6)} phone=${phone} allNighters=${allNighters} events=${events}${unlocks}`,
 			);
 		}
 
