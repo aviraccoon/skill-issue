@@ -698,6 +698,7 @@ function renderGameScreen(
 		? (animationController?.getState().taskId ?? null)
 		: null;
 	renderTaskPanel(screenInfo, onDecision, animatingTaskId);
+	renderPhoneButton(screenInfo, onDecision);
 	renderFooter(screenInfo, onDecision);
 	initTooltips();
 
@@ -769,28 +770,39 @@ function createAppStructure(
 		</header>
 
 		<main class="${appStyles.main}">
-			<canvas
-				class="${gameAreaStyles.gameArea} ${appStyles.gameArea}"
-				width="${layout.roomWidth * ROOM_SCALE}"
-				height="${layout.roomHeight * ROOM_SCALE}"
-				role="img"
-				aria-label="${s.a11y.gameArea ?? "Game area showing your room"}"
-			></canvas>
+			<div class="${appStyles.gameAreaColumn}">
+				<canvas
+					class="${gameAreaStyles.gameArea} ${appStyles.gameArea}"
+					width="${layout.roomWidth * ROOM_SCALE}"
+					height="${layout.roomHeight * ROOM_SCALE}"
+					role="img"
+					aria-label="${s.a11y.gameArea ?? "Game area showing your room"}"
+				></canvas>
+				<div class="${appStyles.notification}" aria-live="polite" aria-atomic="true"></div>
+			</div>
 
 			<section class="${appStyles.taskListContainer}">
-				<div class="${appStyles.slots}" ${screenInfo.isWeekend ? 'data-weekend="true"' : ""}>
-					${
-						screenInfo.isWeekend
-							? `<span class="${appStyles.points}"></span>`
-							: `
-					<span class="${appStyles.slot}"></span>
-					<span class="${appStyles.slot}"></span>
-					<span class="${appStyles.slot}"></span>
-					`
-					}
+				<div class="${appStyles.slotsRow}">
+					<div class="${appStyles.slots}" ${screenInfo.isWeekend ? 'data-weekend="true"' : ""}>
+						${
+							screenInfo.isWeekend
+								? `<span class="${appStyles.points}"></span>`
+								: `
+						<span class="${appStyles.slot}"></span>
+						<span class="${appStyles.slot}"></span>
+						<span class="${appStyles.slot}"></span>
+						`
+						}
+					</div>
+					<button class="btn btn-secondary ${appStyles.phoneBtn}" aria-label="${s.game.checkPhone}">
+						<svg class="${appStyles.phoneIcon}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+							<rect x="5" y="2" width="14" height="20" rx="2" ry="2"/>
+							<line x1="12" y1="18" x2="12" y2="18"/>
+						</svg>
+						<span class="${appStyles.phoneDot}"></span>
+					</button>
 				</div>
 				<ul class="${appStyles.taskList}"></ul>
-				<div class="${appStyles.notification}" aria-live="polite" aria-atomic="true"></div>
 			</section>
 
 			<aside id="task-panel" class="${panelStyles.panel}" tabindex="-1" aria-label="${s.a11y.taskPanel}">
@@ -799,13 +811,6 @@ function createAppStructure(
 		</main>
 
 		<footer class="${appStyles.footer}">
-			<button class="btn btn-secondary ${appStyles.phoneBtn}" aria-label="${s.game.checkPhone}">
-				<svg class="${appStyles.phoneIcon}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-					<rect x="5" y="2" width="14" height="20" rx="2" ry="2"/>
-					<line x1="12" y1="18" x2="12" y2="18"/>
-				</svg>
-				<span class="${appStyles.phoneDot}"></span>
-			</button>
 			<button class="btn btn-secondary ${appStyles.skipBtn}"></button>
 			<button class="btn btn-secondary ${appStyles.menuBtn}">${s.game.menu}</button>
 		</footer>
@@ -1119,42 +1124,48 @@ function attachContinueHandler(
 		});
 }
 
-/** Renders the footer with skip/end day and phone buttons. */
+/** Updates the phone button: click handler, tooltip, notification dot. */
+function renderPhoneButton(
+	screenInfo: GameScreenInfo,
+	onDecision: (decision: Decision) => void,
+) {
+	const s = strings();
+	const phoneBtn = document.querySelector(`.${appStyles.phoneBtn}`);
+	if (!phoneBtn) return;
+
+	const newPhoneBtn = phoneBtn.cloneNode(true) as HTMLButtonElement;
+	phoneBtn.parentNode?.replaceChild(newPhoneBtn, phoneBtn);
+	// Clear tooltip init flag so initTooltips re-initializes after cloning
+	delete newPhoneBtn.dataset.tooltipInit;
+	newPhoneBtn.addEventListener("click", () => {
+		onDecision({ type: "checkPhone" });
+	});
+	// Random tooltip on hover (set initial so initTooltips picks it up)
+	const phoneTips = s.tooltips.checkPhone;
+	newPhoneBtn.dataset.tooltip =
+		phoneTips[Math.floor(Math.random() * phoneTips.length)];
+	newPhoneBtn.addEventListener("mouseenter", () => {
+		newPhoneBtn.dataset.tooltip =
+			phoneTips[Math.floor(Math.random() * phoneTips.length)];
+	});
+
+	// Update notification dot visibility and animation intensity
+	const dot = newPhoneBtn.querySelector(`.${appStyles.phoneDot}`);
+	if (dot) {
+		const count = screenInfo.phoneNotificationCount;
+		dot.classList.toggle(appStyles.phoneDotVisible, count > 0);
+		dot.classList.toggle(appStyles.phoneDotPulse, count >= 3);
+		dot.classList.toggle(appStyles.phoneDotUrgent, count >= 5);
+	}
+}
+
+/** Renders the footer with skip/end day button. */
 function renderFooter(
 	screenInfo: GameScreenInfo,
 	onDecision: (decision: Decision) => void,
 ) {
 	const s = strings();
 	const skipBtn = document.querySelector(`.${appStyles.skipBtn}`);
-	const phoneBtn = document.querySelector(`.${appStyles.phoneBtn}`);
-
-	// Set up phone button (scroll trap)
-	if (phoneBtn) {
-		const newPhoneBtn = phoneBtn.cloneNode(true) as HTMLButtonElement;
-		phoneBtn.parentNode?.replaceChild(newPhoneBtn, phoneBtn);
-		// Clear tooltip init flag so initTooltips re-initializes after cloning
-		delete newPhoneBtn.dataset.tooltipInit;
-		newPhoneBtn.addEventListener("click", () => {
-			onDecision({ type: "checkPhone" });
-		});
-		// Random tooltip on hover (set initial so initTooltips picks it up)
-		const phoneTips = s.tooltips.checkPhone;
-		newPhoneBtn.dataset.tooltip =
-			phoneTips[Math.floor(Math.random() * phoneTips.length)];
-		newPhoneBtn.addEventListener("mouseenter", () => {
-			newPhoneBtn.dataset.tooltip =
-				phoneTips[Math.floor(Math.random() * phoneTips.length)];
-		});
-
-		// Update notification dot visibility and animation intensity
-		const dot = newPhoneBtn.querySelector(`.${appStyles.phoneDot}`);
-		if (dot) {
-			const count = screenInfo.phoneNotificationCount;
-			dot.classList.toggle(appStyles.phoneDotVisible, count > 0);
-			dot.classList.toggle(appStyles.phoneDotPulse, count >= 3);
-			dot.classList.toggle(appStyles.phoneDotUrgent, count >= 5);
-		}
-	}
 
 	if (!skipBtn) return;
 

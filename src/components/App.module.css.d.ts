@@ -2,6 +2,7 @@ declare const styles: {
 	readonly css: string;
 	readonly footer: string;
 	readonly gameArea: string;
+	readonly gameAreaColumn: string;
 	readonly header: string;
 	readonly lateNight: string;
 	readonly main: string;
@@ -19,6 +20,7 @@ declare const styles: {
 	readonly slot: string;
 	readonly slotUsed: string;
 	readonly slots: string;
+	readonly slotsRow: string;
 	readonly taskList: string;
 	readonly taskListContainer: string;
 	readonly timeBlock: string;
