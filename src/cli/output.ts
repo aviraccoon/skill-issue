@@ -1,4 +1,9 @@
-import { getEventDefinition } from "../data/events";
+import {
+	getEventContent,
+	getEventDefinition,
+	getEventVariantSeed,
+	resolveChoiceContent,
+} from "../data/events";
 import { getOutcomeFlavorText } from "../data/scrollTrap";
 import type { EventInstance, GameState } from "../state";
 import { getEvolvedDescription } from "../systems/evolution";
@@ -168,7 +173,7 @@ const verboseObserver: SimulationObserver = {
 		if (firedEvents.length > 0) {
 			console.log(`  Events: ${firedEvents.length} fired`);
 			for (const event of firedEvents) {
-				console.log(`    ${formatEventSummary(event)}`);
+				console.log(`    ${formatEventSummary(event, result.seed)}`);
 			}
 		}
 
@@ -237,13 +242,35 @@ function formatDecisionWithState(
 		return `Event [${result.eventId}]: (dismissed)`;
 	}
 	if (decision.type === "eventChoice" && result?.eventId) {
-		return `Event [${result.eventId}]: ${decision.choiceId}`;
+		const label = resolveChoiceLabel(
+			result.eventId,
+			decision.choiceId,
+			state.runSeed,
+		);
+		return `Event [${result.eventId}]: ${label}`;
 	}
 	return formatDecision(decision);
 }
 
+/** Resolves a choice's variant label for CLI display. Falls back to choiceId. */
+function resolveChoiceLabel(
+	eventId: EventInstance["id"],
+	choiceId: string,
+	seed: number,
+): string {
+	const content = getEventContent(eventId);
+	if (!("choices" in content)) return choiceId;
+	const choices = content.choices as Record<string, unknown>;
+	const raw = choices[choiceId];
+	const resolved = resolveChoiceContent(
+		raw as Parameters<typeof resolveChoiceContent>[0],
+		getEventVariantSeed(seed, eventId),
+	);
+	return resolved.label ? `${resolved.label} (${choiceId})` : choiceId;
+}
+
 /** Formats an event instance for the final stats summary. */
-function formatEventSummary(event: EventInstance): string {
+function formatEventSummary(event: EventInstance, seed: number): string {
 	const def = getEventDefinition(event.id);
 	const type = def?.type === "major" ? "major" : "minor";
 	const status = event.status === "resolved" ? "done" : event.status;
@@ -253,7 +280,8 @@ function formatEventSummary(event: EventInstance): string {
 	// Show choice and effects for resolved major events
 	if (event.choiceId && def?.choices) {
 		const choice = def.choices.find((c) => c.id === event.choiceId);
-		const parts: string[] = [event.choiceId];
+		const label = resolveChoiceLabel(event.id, event.choiceId, seed);
+		const parts: string[] = [label];
 		if (choice?.effects) {
 			const fx: string[] = [];
 			if (choice.effects.energy)

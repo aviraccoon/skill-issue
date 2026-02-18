@@ -1456,16 +1456,20 @@ export const cs = {
 			description:
 				"Na lístku stojí, že dneska je poslední den, než to pošlou zpátky. Pošta zavírá v pět. Patnáct minut chůze. Balíček tam čeká. Jako všechno ostatní na tom seznamu.",
 			choices: {
-				go: {
-					label: "Jít pro něj",
-					description:
-						"Opustit byt, záměrně. Dojít tam a zpátky. To není málo.",
-				},
-				"let-go": {
-					label: "Nechat to být",
-					description:
-						"Pošlou to zpátky. Dá se objednat znovu. Nebo se to vlastně nebude potřebovat.",
-				},
+				go: [
+					{
+						label: "Jít pro něj",
+						description:
+							"Opustit byt, záměrně. Dojít tam a zpátky. To není málo.",
+					},
+				],
+				"let-go": [
+					{
+						label: "Nechat to být",
+						description:
+							"Pošlou to zpátky. Dá se objednat znovu. Nebo se to vlastně nebude potřebovat.",
+					},
+				],
 			},
 		},
 

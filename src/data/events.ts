@@ -6,7 +6,7 @@
 
 import { strings } from "../i18n";
 import type { Day, EventId, GameState, TimeBlock } from "../state";
-import { pickVariant } from "../utils/random";
+import { hashString, pickVariant } from "../utils/random";
 
 export type { EventId };
 
@@ -77,9 +77,39 @@ export function getEventContent(id: EventId) {
 }
 
 /**
+ * Computes a deterministic variant index for an event's choice labels.
+ * Same (seed, eventId) always produces the same index.
+ * Used to pair variant labels with their matching recap text.
+ */
+export function getEventVariantSeed(seed: number, eventId: EventId): number {
+	return hashString(eventId) + seed;
+}
+
+/** A choice's display content: label + description. */
+export interface ChoiceContent {
+	label: string;
+	description: string;
+}
+
+/**
+ * Resolves a choice value that may be a single object or an array of variants.
+ * When an array, picks deterministically based on variantSeed.
+ */
+export function resolveChoiceContent(
+	value: ChoiceContent | ChoiceContent[] | undefined,
+	variantSeed: number,
+): ChoiceContent {
+	if (!value) return { label: "", description: "" };
+	if (!Array.isArray(value)) return value;
+	if (value.length === 0) return { label: "", description: "" };
+	return pickVariant(value as [ChoiceContent, ...ChoiceContent[]], variantSeed);
+}
+
+/**
  * Gets recap text for a resolved event, if available.
  * Minor events have recap as string[], major events as { [choiceId]: string[] }.
- * Returns null if the event has no recap or the choiceId doesn't match.
+ * For major events with variant choice labels, the variant seed pairs
+ * the recap with the label the player saw.
  */
 export function getEventRecap(
 	id: EventId,
@@ -90,15 +120,18 @@ export function getEventRecap(
 	const recap = (content as Record<string, unknown>).recap;
 	if (!recap) return null;
 
+	const variantSeed = getEventVariantSeed(seed, id);
+
+	// Minor event: recap is string[]
 	if (Array.isArray(recap)) {
-		return pickVariant(recap as [string, ...string[]], seed);
+		return pickVariant(recap as [string, ...string[]], variantSeed);
 	}
 
 	// Major event: recap keyed by choiceId
 	if (choiceId && typeof recap === "object") {
 		const variants = (recap as Record<string, string[]>)[choiceId];
 		if (variants?.length) {
-			return pickVariant(variants as [string, ...string[]], seed);
+			return pickVariant(variants as [string, ...string[]], variantSeed);
 		}
 	}
 

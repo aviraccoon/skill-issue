@@ -16,7 +16,7 @@ import { endWeekendDay, showDaySummary, skipTimeBlock } from "../actions/time";
 import { getEventDefinition } from "../data/events";
 import type { PhoneOutcome } from "../data/scrollTrap";
 import type { TaskCategory, TaskId } from "../data/tasks";
-import { type GameState, isWeekend, type Task } from "../state";
+import { type EventId, type GameState, isWeekend, type Task } from "../state";
 import type { Store } from "../store";
 import { canPushThrough } from "../systems/allnighter";
 import { getDayBlocks } from "../systems/dailyJitter";
@@ -60,7 +60,7 @@ export interface ActionResult {
 	/** Whether rescue tier was correct for energy level. */
 	rescueCorrect?: boolean;
 	/** Event ID for event-related decisions. */
-	eventId?: string;
+	eventId?: EventId;
 	energyBefore: number;
 	energyAfter: number;
 	momentumBefore: number;
@@ -187,7 +187,7 @@ export function executeDecision(
 	let phoneFriendNudge: boolean | undefined;
 	let rescueHint: string | undefined;
 	let rescueCorrect: boolean | undefined;
-	let eventId: string | undefined;
+	let eventId: EventId | undefined;
 
 	switch (decision.type) {
 		case "attempt": {

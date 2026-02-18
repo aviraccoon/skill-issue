@@ -13,7 +13,13 @@ import {
 	getAllNighterTitle,
 	getDogNote,
 } from "../data/daySummary";
-import { getEventContent, getEventDefinition } from "../data/events";
+import {
+	type ChoiceContent,
+	getEventContent,
+	getEventDefinition,
+	getEventVariantSeed,
+	resolveChoiceContent,
+} from "../data/events";
 import { getRandomRescueMessage } from "../data/friendRescue";
 import { generateWeekStory } from "../data/weekStory";
 import { strings } from "../i18n";
@@ -470,6 +476,7 @@ function getNarrativeEventInfo(state: GameState): NarrativeEventInfo {
 		const choiceEntries = (definition.choices ?? []).filter(
 			(c) => !c.requiresFlag || state.eventFlags.includes(c.requiresFlag),
 		);
+		const variantSeed = getEventVariantSeed(state.runSeed, eventId);
 		return {
 			type: "narrativeEvent",
 			eventType: "major",
@@ -480,13 +487,13 @@ function getNarrativeEventInfo(state: GameState): NarrativeEventInfo {
 			choices: choiceEntries.map((c) => {
 				const choices = content.choices as Record<
 					string,
-					{ label: string; description: string } | undefined
+					ChoiceContent | ChoiceContent[] | undefined
 				>;
-				const choiceContent = choices[c.id];
+				const resolved = resolveChoiceContent(choices[c.id], variantSeed);
 				return {
 					id: c.id,
-					label: choiceContent?.label ?? c.id,
-					description: choiceContent?.description ?? "",
+					label: resolved.label || c.id,
+					description: resolved.description,
 				};
 			}),
 			decisions,

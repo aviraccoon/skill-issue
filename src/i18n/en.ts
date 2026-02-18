@@ -1525,25 +1525,50 @@ export const en = {
 			description:
 				"The pickup slip says today's the last day before they send it back. The post office closes at five. It's a fifteen-minute walk. The package is just sitting there, waiting. Like everything else on your list.",
 			choices: {
-				go: {
-					label: "Go get it",
-					description:
-						"Leave the apartment. On purpose. Walk there and back. It's not nothing.",
-				},
-				"let-go": {
-					label: "Let it go",
-					description:
-						"It'll get sent back. You'll reorder it eventually. Or you won't need it. Maybe.",
-				},
+				go: [
+					{
+						label: "Go get it",
+						description:
+							"Leave the apartment. On purpose. Walk there and back. It's not nothing.",
+					},
+					{
+						label: "Just go",
+						description:
+							"It's fifteen minutes. You've been thinking about it longer than that.",
+					},
+					{
+						label: "Get it before they send it back",
+						description: "The window is closing. Sometimes that helps.",
+					},
+				],
+				"let-go": [
+					{
+						label: "Let it go",
+						description:
+							"It'll get sent back. You'll reorder it eventually. Or you won't need it. Maybe.",
+					},
+					{
+						label: "It's not worth the walk",
+						description:
+							"The walk isn't the problem. Deciding to walk is. And you've decided.",
+					},
+					{
+						label: "You'll reorder it",
+						description:
+							"Future you can deal with it. Future you deals with everything.",
+					},
+				],
 			},
 			recap: {
 				go: [
 					"You went out and got the package. Fifteen-minute walk, round trip. The hardest part was the door.",
-					"The package was retrieved. You left the apartment on purpose, walked there and back. That counts.",
+					"You just went. Fifteen minutes out, fifteen back. Shorter than the debate in your head.",
+					"You got it before they sent it back. The closing window did what willpower couldn't.",
 				],
 				"let-go": [
 					"The package went back. You'll reorder it. Probably. It already feels like it never existed.",
-					"You let the delivery deadline pass. Another thing that almost happened.",
+					"You decided it wasn't worth the walk. The walk was never the real obstacle.",
+					"You'll reorder it. That's what you told yourself. Future you nodded along.",
 				],
 			},
 		},

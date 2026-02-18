@@ -9,6 +9,11 @@ import {
 	getDogNote,
 } from "../../data/daySummary";
 import {
+	getEventContent,
+	getEventVariantSeed,
+	resolveChoiceContent,
+} from "../../data/events";
+import {
 	getRandomRescueMessage,
 	getRescueResultMessage,
 } from "../../data/friendRescue";
@@ -122,9 +127,16 @@ export class InteractiveStrategy implements Strategy {
 			console.log("It's late. Sleep or push through?");
 			console.log(description);
 		} else if (screen === "narrativeEvent") {
-			console.log("NARRATIVE EVENT");
 			if (state.activeEventId) {
-				console.log(`Event: ${state.activeEventId}`);
+				const eventContent = getEventContent(state.activeEventId);
+				const title =
+					"title" in eventContent ? eventContent.title : state.activeEventId;
+				console.log(title);
+				if ("description" in eventContent) {
+					console.log(eventContent.description);
+				}
+			} else {
+				console.log("NARRATIVE EVENT");
 			}
 		} else if (weekend) {
 			console.log(
@@ -234,12 +246,27 @@ export class InteractiveStrategy implements Strategy {
 		const hasDismissEvent = decisions.some((d) => d.type === "dismissEvent");
 		const hasEventChoice = decisions.some((d) => d.type === "eventChoice");
 		if (hasDismissEvent) console.log("  c, continue - Dismiss event");
-		if (hasEventChoice) {
+		if (hasEventChoice && state.activeEventId) {
 			console.log("");
 			console.log("Choices:");
+			const content = getEventContent(state.activeEventId);
+			const variantSeed = getEventVariantSeed(
+				state.runSeed,
+				state.activeEventId,
+			);
+			const choices =
+				"choices" in content
+					? (content.choices as Record<string, unknown>)
+					: {};
 			for (const d of decisions) {
 				if (d.type === "eventChoice") {
-					console.log(`  ${d.choiceId}`);
+					const raw = choices[d.choiceId];
+					const resolved = resolveChoiceContent(
+						raw as Parameters<typeof resolveChoiceContent>[0],
+						variantSeed,
+					);
+					const label = resolved.label || d.choiceId;
+					console.log(`  ${d.choiceId} - ${label}`);
 				}
 			}
 		}

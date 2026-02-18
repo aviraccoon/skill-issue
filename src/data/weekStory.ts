@@ -261,7 +261,7 @@ function getEvents(events: EventInstance[], seed: number): string | null {
 	const recaps: string[] = [];
 	for (const event of events) {
 		if (event.status !== "resolved") continue;
-		const recap = getEventRecap(event.id, event.choiceId, seed + recaps.length);
+		const recap = getEventRecap(event.id, event.choiceId, seed);
 		if (recap) recaps.push(recap);
 	}
 	if (recaps.length === 0) return null;

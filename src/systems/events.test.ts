@@ -1,5 +1,10 @@
 import { describe, expect, it } from "bun:test";
-import { getEventDefinition } from "../data/events";
+import {
+	getEventDefinition,
+	getEventRecap,
+	getEventVariantSeed,
+	resolveChoiceContent,
+} from "../data/events";
 import { createInitialState, type GameState } from "../state";
 import { createStore } from "../store";
 import { activateEvent, checkForEvent, resolveEvent } from "./events";
@@ -378,5 +383,101 @@ describe("event flag effects", () => {
 		resolveEvent(store, "accept");
 
 		expect(store.getState().eventFlags).toEqual([]);
+	});
+});
+
+describe("resolveChoiceContent", () => {
+	it("returns single object as-is", () => {
+		const content = { label: "Go", description: "Do it" };
+		const result = resolveChoiceContent(content, 42);
+		expect(result.label).toBe("Go");
+		expect(result.description).toBe("Do it");
+	});
+
+	it("picks variant from array based on seed", () => {
+		const content = [
+			{ label: "Go get it", description: "Walk there." },
+			{ label: "Just go", description: "Fifteen minutes." },
+			{ label: "Hurry", description: "Window closing." },
+		];
+		const result = resolveChoiceContent(content, 0);
+		expect(result.label).toBe("Go get it");
+
+		const result2 = resolveChoiceContent(content, 1);
+		expect(result2.label).toBe("Just go");
+
+		const result3 = resolveChoiceContent(content, 2);
+		expect(result3.label).toBe("Hurry");
+	});
+
+	it("wraps around for large seeds", () => {
+		const content = [
+			{ label: "A", description: "" },
+			{ label: "B", description: "" },
+		];
+		expect(resolveChoiceContent(content, 100).label).toBe("A"); // 100 % 2 = 0
+		expect(resolveChoiceContent(content, 101).label).toBe("B"); // 101 % 2 = 1
+	});
+
+	it("returns empty content for undefined", () => {
+		const result = resolveChoiceContent(undefined, 42);
+		expect(result.label).toBe("");
+		expect(result.description).toBe("");
+	});
+
+	it("returns empty content for empty array", () => {
+		const result = resolveChoiceContent([], 42);
+		expect(result.label).toBe("");
+	});
+});
+
+describe("getEventVariantSeed", () => {
+	it("produces different seeds for different event IDs", () => {
+		const seed = 12345;
+		const a = getEventVariantSeed(seed, "delivery-deadline");
+		const b = getEventVariantSeed(seed, "neighbor-cookies");
+		expect(a).not.toBe(b);
+	});
+
+	it("produces different seeds for different run seeds", () => {
+		const a = getEventVariantSeed(100, "delivery-deadline");
+		const b = getEventVariantSeed(200, "delivery-deadline");
+		expect(a).not.toBe(b);
+	});
+
+	it("is deterministic", () => {
+		const a = getEventVariantSeed(42, "leak-found");
+		const b = getEventVariantSeed(42, "leak-found");
+		expect(a).toBe(b);
+	});
+});
+
+describe("variant choice labels (delivery-deadline)", () => {
+	it("picks consistent label and recap for the same seed", () => {
+		const seed = 42;
+		const variantSeed = getEventVariantSeed(seed, "delivery-deadline");
+
+		// The variant seed picks label index and recap index identically
+		const labelIndex = variantSeed % 3; // 3 variants for delivery-deadline
+
+		const recap = getEventRecap("delivery-deadline", "go", seed);
+		expect(recap).toBeDefined();
+
+		// Verify the recap matches the same variant index
+		const goRecaps = [
+			"You went out and got the package. Fifteen-minute walk, round trip. The hardest part was the door.",
+			"You just went. Fifteen minutes out, fifteen back. Shorter than the debate in your head.",
+			"You got it before they sent it back. The closing window did what willpower couldn't.",
+		];
+		expect(recap).toBe(goRecaps[labelIndex] ?? null);
+	});
+
+	it("different seeds can produce different variants", () => {
+		// Try a range of seeds to find at least 2 different recap texts
+		const recaps = new Set<string | null>();
+		for (let seed = 0; seed < 20; seed++) {
+			recaps.add(getEventRecap("delivery-deadline", "go", seed));
+		}
+		expect(recaps.size).toBeGreaterThan(1);
 	});
 });
