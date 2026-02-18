@@ -41,8 +41,10 @@ export function checkForEvent(
 		// Check phase
 		if (definition.timing.phase !== phase) continue;
 
-		// Check day
-		if (definition.timing.day) {
+		// Check day: use scheduled day if assigned, otherwise fall back to definition
+		if (instance.scheduledDay !== undefined) {
+			if (state.dayIndex !== instance.scheduledDay) continue;
+		} else if (definition.timing.day) {
 			const days = Array.isArray(definition.timing.day)
 				? definition.timing.day
 				: [definition.timing.day];

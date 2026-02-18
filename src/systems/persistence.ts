@@ -37,11 +37,12 @@ interface SavedTask {
 	succeededToday: boolean;
 }
 
-/** Persisted event instance state (status + player choice). */
+/** Persisted event instance state (status + player choice + scheduling). */
 interface SavedEventInstance {
 	id: EventId;
 	status: EventInstance["status"];
 	choiceId?: string;
+	scheduledDay?: number;
 }
 
 /** Minimal game state for persistence - no translatable content. */
@@ -168,6 +169,7 @@ function toSavedState(state: GameState): SavedState {
 			id: e.id,
 			status: e.status,
 			choiceId: e.choiceId,
+			scheduledDay: e.scheduledDay,
 		})),
 		eventFlags: state.eventFlags,
 	};
@@ -365,6 +367,7 @@ function fromSavedState(saved: SavedState): GameState {
 		id: e.id,
 		status: e.status,
 		choiceId: e.choiceId,
+		scheduledDay: e.scheduledDay,
 	}));
 
 	// Derive activeEventId from the events array

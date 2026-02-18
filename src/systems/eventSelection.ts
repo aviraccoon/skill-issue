@@ -9,7 +9,7 @@ import {
 	type EventTier,
 	eventPool,
 } from "../data/events";
-import type { EventInstance } from "../state";
+import { DAYS, type EventInstance } from "../state";
 import { seededRandom, seededShuffle } from "../utils/random";
 import type { PatternsData } from "./persistence";
 
@@ -166,5 +166,52 @@ export function selectEventsForSeed(
 		}
 	}
 
+	// Assign each standalone event a specific day within its allowed range.
+	// Without this, events fire on the first matching day (always Monday for
+	// "any day" events). Arc events keep their definition-based day checks
+	// since arc ordering depends on carefully designed day ranges.
+	assignScheduledDays(selected, seed);
+
 	return selected;
+}
+
+/** Salt offset for day scheduling (distinct from selection salts). */
+const SALT_SCHEDULE_DAY = 5200;
+
+/**
+ * Assigns a scheduledDay to each non-arc standalone event, picking from its
+ * allowed day range using seeded random. Arc events are skipped (their day
+ * ranges are designed for narrative ordering).
+ */
+function assignScheduledDays(events: EventInstance[], seed: number): void {
+	for (let i = 0; i < events.length; i++) {
+		const instance = events[i];
+		if (!instance) continue;
+
+		const definition = eventPool.find((e) => e.id === instance.id);
+		if (!definition || definition.arcId) continue;
+
+		// Build allowed day indices from definition
+		let allowedDays: number[];
+		if (definition.timing.day) {
+			const days = Array.isArray(definition.timing.day)
+				? definition.timing.day
+				: [definition.timing.day];
+			allowedDays = days.map((d) => DAYS.indexOf(d)).filter((idx) => idx >= 0);
+		} else {
+			// Any day: restrict to weekdays (0-4) since blockStart events can't
+			// fire on weekends (no time block transitions) and weekend scheduling
+			// doesn't fit the weekday-survival narrative arc
+			allowedDays = [0, 1, 2, 3, 4];
+		}
+
+		if (allowedDays.length === 0) continue;
+
+		// Pick one day from the range
+		const r = seededRandom(seed, SALT_SCHEDULE_DAY + i);
+		const dayIndex = allowedDays[Math.floor(r * allowedDays.length)];
+		if (dayIndex !== undefined) {
+			instance.scheduledDay = dayIndex;
+		}
+	}
 }

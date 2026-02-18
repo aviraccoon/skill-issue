@@ -76,6 +76,8 @@ export interface EventInstance {
 	status: "pending" | "active" | "resolved";
 	/** For major events: which choice the player made. */
 	choiceId?: string;
+	/** Day index (0-6) this event is scheduled to fire on. Assigned during selection. */
+	scheduledDay?: number;
 }
 
 /**
