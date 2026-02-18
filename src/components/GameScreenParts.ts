@@ -145,7 +145,8 @@ export function showNotification(
 		}, 100);
 	});
 
-	// Clear after a few seconds
+	// Display duration scales with text length: 2s base + 50ms per character
+	const duration = Math.min(Math.max(2000 + text.length * 50, 2500), 8000);
 	notificationHideTimeout = setTimeout(() => {
 		notification.classList.remove(appStyles.notificationVisible);
 		notification.classList.remove(
@@ -153,7 +154,7 @@ export function showNotification(
 			appStyles.notificationMessage,
 		);
 		notificationHideTimeout = null;
-	}, 3200);
+	}, duration);
 }
 
 /** Updates the header with current day and time block. */
