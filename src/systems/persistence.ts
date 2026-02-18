@@ -403,6 +403,7 @@ function fromSavedState(saved: SavedState): GameState {
 		events, // Saved state merged with seed selection in loadGame
 		eventFlags: saved.eventFlags ?? [],
 		activeEventId,
+		eventBanner: null, // Transient, not persisted
 	};
 }
 

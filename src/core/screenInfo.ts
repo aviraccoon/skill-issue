@@ -251,6 +251,7 @@ function getGameScreenInfo(state: GameState): GameScreenInfo {
 		decisions,
 		nextTimeBlock,
 		phoneNotificationCount: state.phoneNotificationCount,
+		eventBanner: state.eventBanner,
 	};
 }
 

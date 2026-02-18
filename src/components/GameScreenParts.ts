@@ -102,8 +102,20 @@ export function createAppStructure(
 /** Timeout ID for hiding notification - tracked to reset on new notifications. */
 let notificationHideTimeout: ReturnType<typeof setTimeout> | null = null;
 
-/** Shows a brief notification message (e.g., phone buzz text). */
-export function showNotification(text: string) {
+/** Delivery style CSS classes keyed by style name. */
+const deliveryStyleClasses: Record<string, string | undefined> = {
+	notification: appStyles.notificationCard,
+	message: appStyles.notificationMessage,
+};
+
+/**
+ * Shows a brief notification message (e.g., phone buzz, event banner).
+ * @param style - Delivery style for event banners. Default "thought" uses base italic style.
+ */
+export function showNotification(
+	text: string,
+	style?: "thought" | "notification" | "message",
+) {
 	const notification = document.querySelector(`.${appStyles.notification}`);
 	if (!notification) return;
 
@@ -113,18 +125,33 @@ export function showNotification(text: string) {
 		notificationHideTimeout = null;
 	}
 
+	// Remove any previous delivery style classes
+	notification.classList.remove(
+		appStyles.notificationCard,
+		appStyles.notificationMessage,
+	);
+
 	// Clear first to ensure re-announcement, then set after paint
 	notification.textContent = "";
 	requestAnimationFrame(() => {
 		setTimeout(() => {
 			notification.textContent = text;
 			notification.classList.add(appStyles.notificationVisible);
+			// Apply delivery style class (thought = default italic, no extra class)
+			const styleClass = style ? deliveryStyleClasses[style] : undefined;
+			if (styleClass) {
+				notification.classList.add(styleClass);
+			}
 		}, 100);
 	});
 
 	// Clear after a few seconds
 	notificationHideTimeout = setTimeout(() => {
 		notification.classList.remove(appStyles.notificationVisible);
+		notification.classList.remove(
+			appStyles.notificationCard,
+			appStyles.notificationMessage,
+		);
 		notificationHideTimeout = null;
 	}, 3200);
 }

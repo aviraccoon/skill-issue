@@ -13,8 +13,11 @@ export type { EventId };
 /** Progression tier determines which events are available. */
 export type EventTier = 0 | 1 | 2 | 3;
 
-/** Event presentation: minor = interstitial notification, major = choice screen. */
+/** Event presentation: minor = inline banner, major = full-screen choice. */
 export type EventType = "minor" | "major";
+
+/** Visual treatment for inline minor event banners. */
+export type DeliveryStyle = "thought" | "notification" | "message";
 
 /** When in the game loop the event fires. */
 export type EventPhase = "blockStart" | "dayStart" | "dayEnd";
@@ -63,6 +66,8 @@ export interface EventDefinition {
 	arcStep?: number;
 	/** Event IDs that must have been shown before this one fires. */
 	requires?: EventId[];
+	/** Visual style for inline delivery (minor events only). Default: "thought". */
+	deliveryStyle?: DeliveryStyle;
 }
 
 /** Gets event content from i18n by event ID. */

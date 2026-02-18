@@ -6,7 +6,7 @@
 import type { Activity } from "../actions/friend";
 import type { EventType } from "../data/events";
 import type { TaskId } from "../data/tasks";
-import type { Day, EventId, Screen, TimeBlock } from "../state";
+import type { Day, EventBanner, EventId, Screen, TimeBlock } from "../state";
 import type { DogUrgency } from "../systems/dog";
 import type { Decision } from "./controller";
 /** Task display info for rendering. */
@@ -46,6 +46,8 @@ export interface GameScreenInfo {
 	nextTimeBlock: TimeBlock | null;
 	/** Phone notification count (0 = no dot, 1+ = dot with escalating animation). */
 	phoneNotificationCount: number;
+	/** Inline event banner from a minor event that just fired, or null. */
+	eventBanner: EventBanner | null;
 }
 
 /** Night choice screen info. */

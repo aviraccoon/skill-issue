@@ -8,6 +8,8 @@ declare const styles: {
 	readonly main: string;
 	readonly menuBtn: string;
 	readonly notification: string;
+	readonly notificationCard: string;
+	readonly notificationMessage: string;
 	readonly notificationVisible: string;
 	readonly phoneBtn: string;
 	readonly phoneDot: string;

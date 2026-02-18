@@ -43,8 +43,8 @@ export function skipTimeBlock(store: Store<GameState>) {
 
 		// Check for blockStart events in the new block
 		const eventId = checkForEvent(store.getState(), "blockStart");
-		if (eventId) {
-			activateEvent(store, eventId);
+		if (eventId && activateEvent(store, eventId) === "fullscreen") {
+			return; // Full-screen event shown; game loop handles dismissal
 		}
 	} else {
 		// End of day - show summary
@@ -74,9 +74,8 @@ export function showDaySummary(store: Store<GameState>) {
 
 	// Check for dayEnd events before showing summary/night choice
 	const eventId = checkForEvent(store.getState(), "dayEnd");
-	if (eventId) {
-		activateEvent(store, eventId);
-		return; // Event shown; dismissal re-triggers this function
+	if (eventId && activateEvent(store, eventId) === "fullscreen") {
+		return; // Full-screen event shown; dismissal re-triggers this function
 	}
 
 	// Check if player can choose to push through
@@ -160,8 +159,11 @@ export function continueToNextDay(store: Store<GameState>) {
 	store.set("selectedTaskId", null);
 
 	// Check for dayStart events
-	const eventId = checkForEvent(store.getState(), "dayStart");
-	if (eventId) {
-		activateEvent(store, eventId);
+	const dayStartEventId = checkForEvent(store.getState(), "dayStart");
+	if (
+		dayStartEventId &&
+		activateEvent(store, dayStartEventId) === "fullscreen"
+	) {
+		return; // Full-screen event shown; game loop handles dismissal
 	}
 }

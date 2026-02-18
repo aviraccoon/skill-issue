@@ -24,9 +24,17 @@ export interface TaskEvolution {
 	resigned: NonEmptyArray<string>;
 }
 
+import type { DeliveryStyle } from "./data/events";
 import type { PhoneOutcome } from "./data/scrollTrap";
 import type { TaskCategory, TaskId } from "./data/tasks";
 import type { Personality } from "./systems/personality";
+
+/** Transient inline event banner shown on the game screen. */
+export interface EventBanner {
+	eventId: EventId;
+	text: string;
+	style: DeliveryStyle;
+}
 
 /** Event ID type - all valid event identifiers. Re-exported for use in data/events.ts. */
 export type EventId =
@@ -200,7 +208,10 @@ export interface GameState {
 	// Narrative events (seed-determined, checked at transition points)
 	events: EventInstance[]; // events selected for this run, with status
 	eventFlags: string[]; // flags set by event choices (for consequence chains)
-	activeEventId: EventId | null; // event currently being displayed
+	activeEventId: EventId | null; // event currently being displayed (major events only)
+
+	// Inline event banner (minor events, transient, not persisted)
+	eventBanner: EventBanner | null;
 }
 
 /** Returns true if the current day is Saturday or Sunday. */
@@ -257,6 +268,7 @@ export function createInitialState(
 		events: [], // populated by event selection system
 		eventFlags: [],
 		activeEventId: null,
+		eventBanner: null,
 	};
 }
 

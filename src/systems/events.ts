@@ -6,12 +6,13 @@
 import {
 	type EventEffects,
 	type EventPhase,
+	getEventContent,
 	getEventDefinition,
 } from "../data/events";
 import type { EventId, GameState } from "../state";
 import type { Store } from "../store";
 import { clamp } from "../utils/math";
-import { seededVariation } from "../utils/random";
+import { pickVariant, seededVariation } from "../utils/random";
 
 /** Variance factor applied to event effects (±20% of base value). */
 const EVENT_EFFECT_VARIANCE = 0.2;
@@ -70,11 +71,51 @@ export function checkForEvent(
 	return null;
 }
 
+/** How the event was delivered to the player. */
+export type EventDelivery = "inline" | "fullscreen";
+
 /**
- * Activates an event: sets it as active and transitions to the event screen.
- * For minor events, applies effects immediately (they have no choices).
+ * Activates an event. Minor events are delivered inline (banner + immediate
+ * resolve). Major events use full-screen with player choice.
  */
-export function activateEvent(store: Store<GameState>, eventId: EventId): void {
+export function activateEvent(
+	store: Store<GameState>,
+	eventId: EventId,
+): EventDelivery {
+	const definition = getEventDefinition(eventId);
+
+	// Minor events: inline delivery (apply effects, set banner, resolve)
+	if (definition?.type === "minor") {
+		if (definition.effects) {
+			applyEventEffects(store, definition.effects);
+		}
+
+		// Build banner text from i18n
+		const state = store.getState();
+		const content = getEventContent(eventId);
+		let text = "";
+		if ("notification" in content && Array.isArray(content.notification)) {
+			const variants = [...content.notification] as [string, ...string[]];
+			text = pickVariant(variants, state.runSeed + state.dayIndex);
+		}
+
+		store.set("eventBanner", {
+			eventId,
+			text,
+			style: definition.deliveryStyle ?? "thought",
+		});
+
+		// Mark as resolved immediately (no player interaction needed)
+		store.update("events", (events) =>
+			events.map((e) =>
+				e.id === eventId ? { ...e, status: "resolved" as const } : e,
+			),
+		);
+
+		return "inline";
+	}
+
+	// Major events: full-screen delivery (existing behavior)
 	store.update("events", (events) =>
 		events.map((e) =>
 			e.id === eventId ? { ...e, status: "active" as const } : e,
@@ -83,11 +124,7 @@ export function activateEvent(store: Store<GameState>, eventId: EventId): void {
 	store.set("activeEventId", eventId);
 	store.set("screen", "narrativeEvent");
 
-	// Apply effects for minor events immediately
-	const definition = getEventDefinition(eventId);
-	if (definition?.type === "minor" && definition.effects) {
-		applyEventEffects(store, definition.effects);
-	}
+	return "fullscreen";
 }
 
 /**

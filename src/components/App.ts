@@ -460,6 +460,12 @@ export function renderApp(store: Store<GameState>) {
 			showNotification(result.phoneBuzzText);
 		}
 
+		// Show inline event banner if a minor event fired during this action
+		const postState = store.getState();
+		if (postState.eventBanner) {
+			showNotification(postState.eventBanner.text, postState.eventBanner.style);
+		}
+
 		// Show scroll trap flavor text if present
 		if (result.scrollTrapText) {
 			showNotification(result.scrollTrapText);

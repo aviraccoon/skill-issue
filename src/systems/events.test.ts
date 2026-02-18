@@ -142,38 +142,40 @@ describe("checkForEvent", () => {
 });
 
 describe("activateEvent", () => {
-	it("sets event status to active", () => {
+	it("resolves minor events inline with banner", () => {
 		const state = createTestState({
 			events: [{ id: "rain", status: "pending" }],
 		});
 		const store = createStore(state);
 
-		activateEvent(store, "rain");
+		const delivery = activateEvent(store, "rain");
 
+		expect(delivery).toBe("inline");
 		const event = store.getState().events.find((e) => e.id === "rain");
+		expect(event?.status).toBe("resolved");
+		expect(store.getState().activeEventId).toBeNull();
+		expect(store.getState().screen).toBe("game");
+		expect(store.getState().eventBanner).not.toBeNull();
+		expect(store.getState().eventBanner?.eventId).toBe("rain");
+		expect(store.getState().eventBanner?.style).toBe("thought");
+	});
+
+	it("shows major events fullscreen", () => {
+		const state = createTestState({
+			events: [{ id: "neighbor-cookies", status: "pending" }],
+		});
+		const store = createStore(state);
+
+		const delivery = activateEvent(store, "neighbor-cookies");
+
+		expect(delivery).toBe("fullscreen");
+		const event = store
+			.getState()
+			.events.find((e) => e.id === "neighbor-cookies");
 		expect(event?.status).toBe("active");
-	});
-
-	it("sets activeEventId", () => {
-		const state = createTestState({
-			events: [{ id: "rain", status: "pending" }],
-		});
-		const store = createStore(state);
-
-		activateEvent(store, "rain");
-
-		expect(store.getState().activeEventId).toBe("rain");
-	});
-
-	it("sets screen to narrativeEvent", () => {
-		const state = createTestState({
-			events: [{ id: "rain", status: "pending" }],
-		});
-		const store = createStore(state);
-
-		activateEvent(store, "rain");
-
+		expect(store.getState().activeEventId).toBe("neighbor-cookies");
 		expect(store.getState().screen).toBe("narrativeEvent");
+		expect(store.getState().eventBanner).toBeNull();
 	});
 
 	it("applies effects immediately for minor events", () => {

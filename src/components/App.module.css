@@ -190,6 +190,27 @@
 	opacity: 1;
 }
 
+/* Delivery style: notification card (calendar, reminders) */
+.notificationCard {
+	font-style: normal;
+	border: 1px solid var(--border);
+	border-radius: 0.375rem;
+	padding: 0.5rem 0.75rem;
+	background: var(--bg-secondary, var(--bg));
+	max-width: 20rem;
+	margin: 0.25rem auto;
+}
+
+/* Delivery style: message bubble (friend/neighbor texts) */
+.notificationMessage {
+	font-style: normal;
+	border-radius: 1rem;
+	padding: 0.5rem 0.75rem;
+	background: var(--bg-secondary, var(--bg));
+	max-width: 20rem;
+	margin: 0.25rem auto;
+}
+
 .menuBtn {
 	margin-left: auto;
 	padding: 0.5rem 1rem;

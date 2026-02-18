@@ -136,6 +136,11 @@ export class InteractiveStrategy implements Strategy {
 			);
 		}
 
+		// Show inline event banner if present (minor events delivered inline)
+		if (state.eventBanner) {
+			console.log(`  -- ${state.eventBanner.text}`);
+		}
+
 		// Show hidden state if debug mode
 		if (this.debug) {
 			const e = (state.energy * 100).toFixed(1);

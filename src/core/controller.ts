@@ -168,6 +168,11 @@ export function executeDecision(
 	decision: Decision,
 	callbacks?: AttemptCallbacks,
 ): ActionResult {
+	// Clear any previous inline event banner (dismissed on next action)
+	if (store.getState().eventBanner) {
+		store.set("eventBanner", null);
+	}
+
 	const stateBefore = store.getState();
 	const energyBefore = stateBefore.energy;
 	const momentumBefore = stateBefore.momentum;

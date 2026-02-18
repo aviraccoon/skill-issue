@@ -118,6 +118,13 @@ const verboseObserver: SimulationObserver = {
 		if (result.phoneBuzzText) {
 			console.log(`    ${result.phoneBuzzText}`);
 		}
+
+		// Show inline event banner if a minor event fired during this action
+		if (state.eventBanner) {
+			console.log(
+				`    Event [${state.eventBanner.eventId}]: ${state.eventBanner.text}`,
+			);
+		}
 	},
 
 	onDayEnd(_state: GameState, summary: DaySummary) {
