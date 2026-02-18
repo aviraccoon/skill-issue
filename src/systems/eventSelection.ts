@@ -6,6 +6,7 @@
 
 import {
 	type EventDefinition,
+	type EventPhase,
 	type EventTier,
 	eventPool,
 } from "../data/events";
@@ -176,6 +177,9 @@ export function selectEventsForSeed(
 	// and consequence day are all computed together.
 	assignObligationDays(selected, seed);
 
+	// Spread events across days to prevent same-(day, phase) collisions.
+	coordinateEventTiming(selected, seed);
+
 	return selected;
 }
 
@@ -189,9 +193,30 @@ const SALT_OBLIGATION_DAY = 5300;
  * Assigns scheduling for obligation arcs: notification gets a scheduledDay,
  * obligation day is computed as notification + seeded offset, and the
  * consequence event's scheduledDay is set to the obligation day.
+ *
+ * Notifications are spread across different days when possible to avoid
+ * dayStart collisions (checkForEvent returns only the first match per phase).
  */
 function assignObligationDays(events: EventInstance[], seed: number): void {
+	// Track days already claimed by obligation notifications (all dayStart)
+	const usedNotificationDays = new Set<number>();
+
+	// Collect obligation notification indices, sorted by constraint level.
+	// Most constrained (fewest allowed days) first, so they get first pick
+	// and less constrained obligations work around them.
+	const obligationIndices: number[] = [];
 	for (let i = 0; i < events.length; i++) {
+		const def = eventPool.find((e) => e.id === events[i]?.id);
+		if (def?.obligation) obligationIndices.push(i);
+	}
+	obligationIndices.sort((a, b) => {
+		const defA = eventPool.find((e) => e.id === events[a]?.id);
+		const defB = eventPool.find((e) => e.id === events[b]?.id);
+		if (!defA || !defB) return 0;
+		return getAllowedDays(defA).length - getAllowedDays(defB).length;
+	});
+
+	for (const i of obligationIndices) {
 		const instance = events[i];
 		if (!instance) continue;
 
@@ -200,24 +225,21 @@ function assignObligationDays(events: EventInstance[], seed: number): void {
 
 		// Schedule the notification event itself (arc events skip assignScheduledDays)
 		if (instance.scheduledDay === undefined) {
-			let allowedDays: number[];
-			if (definition.timing.day) {
-				const days = Array.isArray(definition.timing.day)
-					? definition.timing.day
-					: [definition.timing.day];
-				allowedDays = days
-					.map((d) => DAYS.indexOf(d))
-					.filter((idx) => idx >= 0);
-			} else {
-				allowedDays = [0, 1, 2, 3, 4];
-			}
-			if (allowedDays.length > 0) {
+			const allowedDays = getAllowedDays(definition);
+			// Prefer days not already used by another obligation notification
+			const available = allowedDays.filter((d) => !usedNotificationDays.has(d));
+			const candidates = available.length > 0 ? available : allowedDays;
+			if (candidates.length > 0) {
 				const r = seededRandom(seed, SALT_SCHEDULE_DAY + i);
-				const dayIdx = allowedDays[Math.floor(r * allowedDays.length)];
+				const dayIdx = candidates[Math.floor(r * candidates.length)];
 				if (dayIdx !== undefined) {
 					instance.scheduledDay = dayIdx;
 				}
 			}
+		}
+
+		if (instance.scheduledDay !== undefined) {
+			usedNotificationDays.add(instance.scheduledDay);
 		}
 
 		if (instance.scheduledDay === undefined) continue;
@@ -246,6 +268,86 @@ function assignObligationDays(events: EventInstance[], seed: number): void {
 			}
 		}
 	}
+}
+
+/** Salt offset for event timing coordination. */
+const SALT_COORDINATION = 5400;
+
+/**
+ * Prevents event collisions at the same (day, phase).
+ * checkForEvent returns only the first matching event per phase transition,
+ * so two events at the same day and phase means one is silently dropped.
+ *
+ * Obligation arc events have highest priority (most constrained timing).
+ * Standalone events are reassigned to alternative days when possible.
+ */
+export function coordinateEventTiming(
+	events: EventInstance[],
+	seed: number,
+): void {
+	const occupied = new Set<string>();
+
+	function slotKey(day: number, phase: EventPhase): string {
+		return `${day}:${phase}`;
+	}
+
+	// Identify obligation arcs (arcs containing an event with obligation field)
+	const obligationArcIds = new Set<string>();
+	for (const instance of events) {
+		const def = eventPool.find((e) => e.id === instance.id);
+		if (def?.obligation && def.arcId) {
+			obligationArcIds.add(def.arcId);
+		}
+	}
+
+	// Phase 1: Reserve slots for obligation arc events (highest priority)
+	for (const instance of events) {
+		if (instance.scheduledDay === undefined) continue;
+		const def = eventPool.find((e) => e.id === instance.id);
+		if (!def?.arcId || !obligationArcIds.has(def.arcId)) continue;
+		occupied.add(slotKey(instance.scheduledDay, def.timing.phase));
+	}
+
+	// Phase 2: Place standalone events, reassigning on conflict
+	for (let i = 0; i < events.length; i++) {
+		const instance = events[i];
+		if (!instance || instance.scheduledDay === undefined) continue;
+		const def = eventPool.find((e) => e.id === instance.id);
+		if (!def || def.arcId) continue; // standalone only
+
+		const k = slotKey(instance.scheduledDay, def.timing.phase);
+		if (!occupied.has(k)) {
+			occupied.add(k);
+			continue;
+		}
+
+		// Conflict: find an alternative day from the event's allowed range
+		const allowedDays = getAllowedDays(def);
+		const alternatives = allowedDays.filter(
+			(d) => !occupied.has(slotKey(d, def.timing.phase)),
+		);
+
+		if (alternatives.length > 0) {
+			const r = seededRandom(seed, SALT_COORDINATION + i);
+			const newDay = alternatives[Math.floor(r * alternatives.length)];
+			if (newDay !== undefined) {
+				instance.scheduledDay = newDay;
+			}
+		}
+		// Mark final position as occupied (whether moved or not)
+		occupied.add(slotKey(instance.scheduledDay, def.timing.phase));
+	}
+}
+
+/** Gets the allowed day indices for an event definition. */
+function getAllowedDays(def: EventDefinition): number[] {
+	if (def.timing.day) {
+		const days = Array.isArray(def.timing.day)
+			? def.timing.day
+			: [def.timing.day];
+		return days.map((d) => DAYS.indexOf(d)).filter((idx) => idx >= 0);
+	}
+	return [0, 1, 2, 3, 4];
 }
 
 /**

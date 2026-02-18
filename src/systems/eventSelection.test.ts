@@ -1,6 +1,11 @@
 import { describe, expect, it } from "bun:test";
 import { eventPool, getEventDefinition } from "../data/events";
-import { getProgressionTier, selectEventsForSeed } from "./eventSelection";
+import type { EventInstance } from "../state";
+import {
+	coordinateEventTiming,
+	getProgressionTier,
+	selectEventsForSeed,
+} from "./eventSelection";
 import type { CompletedRun, PatternsData } from "./persistence";
 
 /** Creates a minimal PatternsData with a given number of main-mode completions. */
@@ -301,6 +306,152 @@ describe("assignObligationDays", () => {
 						expect(consequence.scheduledDay).toBe(event.obligationDay);
 					}
 				}
+			}
+		}
+	});
+
+	it("obligation notifications land on different days", () => {
+		for (let seed = 0; seed < 200; seed++) {
+			const events = selectEventsForSeed(seed, patterns);
+			const notificationDays: number[] = [];
+			for (const event of events) {
+				const def = getEventDefinition(event.id);
+				if (def?.obligation && event.scheduledDay !== undefined) {
+					notificationDays.push(event.scheduledDay);
+				}
+			}
+			// All notification days should be unique
+			const uniqueDays = new Set(notificationDays);
+			expect(uniqueDays.size).toBe(notificationDays.length);
+		}
+	});
+});
+
+describe("coordinateEventTiming", () => {
+	it("moves standalone dayStart away from obligation dayStart", () => {
+		const events: EventInstance[] = [
+			{
+				id: "dentist-reminder",
+				status: "pending",
+				scheduledDay: 0,
+				obligationDay: 2,
+			},
+			{ id: "dentist-missed", status: "pending", scheduledDay: 2 },
+			// cold-apartment: standalone, dayStart, allowed Mon-Wed (0-2)
+			{ id: "cold-apartment", status: "pending", scheduledDay: 0 },
+		];
+
+		coordinateEventTiming(events, 42);
+
+		const coldApt = events.find((e) => e.id === "cold-apartment");
+		expect(coldApt).toBeDefined();
+		expect(coldApt?.scheduledDay).not.toBe(0);
+		// Should be on one of its other allowed days (1 or 2)
+		expect([1, 2]).toContain(coldApt?.scheduledDay ?? -1);
+	});
+
+	it("spreads two standalone dayStart events to different days", () => {
+		const events: EventInstance[] = [
+			// Both dayStart, both on Tuesday
+			{ id: "cold-apartment", status: "pending", scheduledDay: 1 },
+			{ id: "hot-water-out", status: "pending", scheduledDay: 1 },
+		];
+
+		coordinateEventTiming(events, 42);
+
+		const coldApt = events.find((e) => e.id === "cold-apartment");
+		const hotWater = events.find((e) => e.id === "hot-water-out");
+		expect(coldApt?.scheduledDay).not.toBe(hotWater?.scheduledDay);
+	});
+
+	it("does not move events when no conflict exists", () => {
+		const events: EventInstance[] = [
+			{ id: "cold-apartment", status: "pending", scheduledDay: 0 },
+			{ id: "hot-water-out", status: "pending", scheduledDay: 2 },
+		];
+
+		coordinateEventTiming(events, 42);
+
+		expect(events.find((e) => e.id === "cold-apartment")?.scheduledDay).toBe(0);
+		expect(events.find((e) => e.id === "hot-water-out")?.scheduledDay).toBe(2);
+	});
+
+	it("obligation events take priority over standalone events", () => {
+		const events: EventInstance[] = [
+			{
+				id: "dentist-reminder",
+				status: "pending",
+				scheduledDay: 1,
+				obligationDay: 3,
+			},
+			{ id: "dentist-missed", status: "pending", scheduledDay: 3 },
+			{ id: "cold-apartment", status: "pending", scheduledDay: 1 },
+		];
+
+		coordinateEventTiming(events, 42);
+
+		// Obligation stays in place
+		expect(events.find((e) => e.id === "dentist-reminder")?.scheduledDay).toBe(
+			1,
+		);
+		// Standalone moved
+		expect(
+			events.find((e) => e.id === "cold-apartment")?.scheduledDay,
+		).not.toBe(1);
+	});
+
+	it("does not coordinate across different phases", () => {
+		// dayStart and blockStart on same day is fine (different phase checks)
+		const events: EventInstance[] = [
+			{ id: "cold-apartment", status: "pending", scheduledDay: 1 }, // dayStart
+			{ id: "rain", status: "pending", scheduledDay: 1 }, // blockStart
+		];
+
+		coordinateEventTiming(events, 42);
+
+		// Both should keep their day -- different phases don't conflict
+		expect(events.find((e) => e.id === "cold-apartment")?.scheduledDay).toBe(1);
+		expect(events.find((e) => e.id === "rain")?.scheduledDay).toBe(1);
+	});
+
+	it("produces deterministic results", () => {
+		const makeEvents = (): EventInstance[] => [
+			{
+				id: "dentist-reminder",
+				status: "pending",
+				scheduledDay: 0,
+				obligationDay: 2,
+			},
+			{ id: "dentist-missed", status: "pending", scheduledDay: 2 },
+			{ id: "cold-apartment", status: "pending", scheduledDay: 0 },
+		];
+
+		const a = makeEvents();
+		const b = makeEvents();
+		coordinateEventTiming(a, 42);
+		coordinateEventTiming(b, 42);
+
+		expect(a).toEqual(b);
+	});
+
+	it("no dayStart collisions across 200 seeds at tier 3", () => {
+		const patterns = patternsWithCompletions(4);
+		for (let seed = 0; seed < 200; seed++) {
+			const events = selectEventsForSeed(seed, patterns);
+			const dayStartDays = new Map<number, string[]>();
+
+			for (const event of events) {
+				if (event.scheduledDay === undefined) continue;
+				const def = getEventDefinition(event.id);
+				if (!def || def.timing.phase !== "dayStart") continue;
+
+				const existing = dayStartDays.get(event.scheduledDay) ?? [];
+				existing.push(event.id);
+				dayStartDays.set(event.scheduledDay, existing);
+			}
+
+			for (const [, ids] of dayStartDays) {
+				expect(ids.length).toBe(1);
 			}
 		}
 	});
