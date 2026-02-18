@@ -5,8 +5,10 @@
  */
 
 import { strings } from "../i18n";
-import type { Day, EventId, GameState, TimeBlock } from "../state";
+import type { Day, EventId, GameState } from "../state";
 import { hashString, pickVariant } from "../utils/random";
+import type { TaskCategory, TaskId } from "./tasks";
+import { TIME_BLOCKS, type TimeBlock } from "./timeBlocks";
 
 export type { EventId };
 
@@ -38,6 +40,19 @@ export interface EventEffects {
 	momentum?: number;
 	/** Set a flag in event state (for consequence chains). */
 	setFlag?: string;
+	/** Mark a task as succeeded (used by obligation consequence "do it now" choices). */
+	succeedTask?: TaskId;
+}
+
+/** Definition for a task injected by an obligation notification event. */
+export interface ObligationDef {
+	taskId: TaskId;
+	category: TaskCategory;
+	baseRate: number;
+	availableBlocks: readonly TimeBlock[];
+	/** Day offset range [min, max] from notification day to obligation day. */
+	dayOffset: [number, number];
+	energyEffect?: { success?: number; failure?: number };
 }
 
 /** A choice in a major event. */
@@ -68,6 +83,8 @@ export interface EventDefinition {
 	requires?: EventId[];
 	/** Visual style for inline delivery (minor events only). Default: "thought". */
 	deliveryStyle?: DeliveryStyle;
+	/** Obligation task to inject when this notification event fires. */
+	obligation?: ObligationDef;
 }
 
 /** Gets event content from i18n by event ID. */
@@ -527,6 +544,138 @@ export const eventPool: readonly EventDefinition[] = [
 			{
 				id: "pass",
 				effects: { momentum: -M.MINOR },
+			},
+		],
+	},
+
+	// =====================
+	// Tier 2: Obligation - Dentist
+	// =====================
+
+	{
+		id: "dentist-reminder",
+		tier: 2,
+		type: "minor",
+		timing: {
+			day: ["monday", "tuesday", "wednesday"],
+			phase: "dayStart",
+		},
+		deliveryStyle: "notification",
+		arcId: "dentist",
+		arcStep: 0,
+		obligation: {
+			taskId: "dentist-visit",
+			category: "selfcare",
+			baseRate: 0.4,
+			availableBlocks: ["afternoon"],
+			dayOffset: [2, 3],
+		},
+	},
+
+	{
+		id: "dentist-missed",
+		tier: 2,
+		type: "minor",
+		timing: { phase: "blockStart" },
+		requires: ["dentist-reminder"],
+		arcId: "dentist",
+		arcStep: 1,
+		condition: (state) => {
+			const task = state.tasks.find((t) => t.id === "dentist-visit");
+			return (
+				task != null &&
+				!task.succeededToday &&
+				TIME_BLOCKS.indexOf(state.timeBlock) > TIME_BLOCKS.indexOf("afternoon")
+			);
+		},
+		effects: { momentum: -M.MODERATE },
+	},
+
+	// =====================
+	// Tier 2: Obligation - Vet
+	// =====================
+
+	{
+		id: "vet-reminder",
+		tier: 2,
+		type: "minor",
+		timing: {
+			day: ["monday", "tuesday", "wednesday"],
+			phase: "dayStart",
+		},
+		deliveryStyle: "notification",
+		arcId: "vet",
+		arcStep: 0,
+		obligation: {
+			taskId: "vet-visit",
+			category: "dog",
+			baseRate: 0.55,
+			availableBlocks: ["morning"],
+			dayOffset: [1, 2],
+		},
+	},
+
+	{
+		id: "vet-missed",
+		tier: 2,
+		type: "minor",
+		timing: { phase: "blockStart" },
+		requires: ["vet-reminder"],
+		arcId: "vet",
+		arcStep: 1,
+		condition: (state) => {
+			const task = state.tasks.find((t) => t.id === "vet-visit");
+			return (
+				task != null &&
+				!task.succeededToday &&
+				TIME_BLOCKS.indexOf(state.timeBlock) > TIME_BLOCKS.indexOf("morning")
+			);
+		},
+		effects: { momentum: -M.MODERATE },
+	},
+
+	// =====================
+	// Tier 2: Obligation - Work Deadline
+	// =====================
+
+	{
+		id: "work-reminder",
+		tier: 2,
+		type: "minor",
+		timing: {
+			day: ["monday", "tuesday"],
+			phase: "dayStart",
+		},
+		deliveryStyle: "notification",
+		arcId: "work-deadline",
+		arcStep: 0,
+		obligation: {
+			taskId: "work-deadline",
+			category: "work",
+			baseRate: 0.35,
+			availableBlocks: ["morning", "afternoon", "evening", "night"],
+			dayOffset: [3, 4],
+		},
+	},
+
+	{
+		id: "work-missed",
+		tier: 2,
+		type: "major",
+		timing: { phase: "dayEnd" },
+		requires: ["work-reminder"],
+		arcId: "work-deadline",
+		arcStep: 1,
+		condition: (state) =>
+			state.tasks.some((t) => t.id === "work-deadline" && !t.succeededToday),
+		choices: [
+			{
+				id: "do-it-now",
+				effects: { energy: -M.MAJOR, succeedTask: "work-deadline" },
+			},
+			{
+				id: "let-it-go",
+				effects: { momentum: -M.MAJOR },
 			},
 		],
 	},

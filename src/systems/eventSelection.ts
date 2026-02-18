@@ -172,11 +172,81 @@ export function selectEventsForSeed(
 	// since arc ordering depends on carefully designed day ranges.
 	assignScheduledDays(selected, seed);
 
+	// Obligation arcs need special scheduling: notification day, obligation day,
+	// and consequence day are all computed together.
+	assignObligationDays(selected, seed);
+
 	return selected;
 }
 
 /** Salt offset for day scheduling (distinct from selection salts). */
 const SALT_SCHEDULE_DAY = 5200;
+
+/** Salt offset for obligation day computation. */
+const SALT_OBLIGATION_DAY = 5300;
+
+/**
+ * Assigns scheduling for obligation arcs: notification gets a scheduledDay,
+ * obligation day is computed as notification + seeded offset, and the
+ * consequence event's scheduledDay is set to the obligation day.
+ */
+function assignObligationDays(events: EventInstance[], seed: number): void {
+	for (let i = 0; i < events.length; i++) {
+		const instance = events[i];
+		if (!instance) continue;
+
+		const definition = eventPool.find((e) => e.id === instance.id);
+		if (!definition?.obligation) continue;
+
+		// Schedule the notification event itself (arc events skip assignScheduledDays)
+		if (instance.scheduledDay === undefined) {
+			let allowedDays: number[];
+			if (definition.timing.day) {
+				const days = Array.isArray(definition.timing.day)
+					? definition.timing.day
+					: [definition.timing.day];
+				allowedDays = days
+					.map((d) => DAYS.indexOf(d))
+					.filter((idx) => idx >= 0);
+			} else {
+				allowedDays = [0, 1, 2, 3, 4];
+			}
+			if (allowedDays.length > 0) {
+				const r = seededRandom(seed, SALT_SCHEDULE_DAY + i);
+				const dayIdx = allowedDays[Math.floor(r * allowedDays.length)];
+				if (dayIdx !== undefined) {
+					instance.scheduledDay = dayIdx;
+				}
+			}
+		}
+
+		if (instance.scheduledDay === undefined) continue;
+
+		// Compute obligation day: notification day + seeded offset
+		const [minOffset, maxOffset] = definition.obligation.dayOffset;
+		const offsetRange = maxOffset - minOffset + 1;
+		const r = seededRandom(seed, SALT_OBLIGATION_DAY + i);
+		let obligDay =
+			instance.scheduledDay + minOffset + Math.floor(r * offsetRange);
+		// Clamp to weekdays (0-4)
+		obligDay = Math.min(obligDay, 4);
+		instance.obligationDay = obligDay;
+
+		// Find the consequence event in the same arc and set its scheduledDay
+		if (definition.arcId) {
+			for (const other of events) {
+				if (other === instance) continue;
+				const otherDef = eventPool.find((e) => e.id === other.id);
+				if (
+					otherDef?.arcId === definition.arcId &&
+					otherDef.requires?.includes(definition.id)
+				) {
+					other.scheduledDay = obligDay;
+				}
+			}
+		}
+	}
+}
 
 /**
  * Assigns a scheduledDay to each non-arc standalone event, picking from its

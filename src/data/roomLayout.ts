@@ -47,6 +47,10 @@ const TASK_FURNITURE_MAP: Record<TaskId, FurnitureName> = {
 	"take-meds": "bathroom",
 	read: "couch",
 	meditate: "bed",
+	// Obligations (injected by events)
+	"dentist-visit": "door",
+	"vet-visit": "door",
+	"work-deadline": "desk",
 };
 
 /**

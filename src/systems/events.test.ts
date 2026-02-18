@@ -5,9 +5,15 @@ import {
 	getEventVariantSeed,
 	resolveChoiceContent,
 } from "../data/events";
-import { createInitialState, type GameState } from "../state";
+import type { TaskId } from "../data/tasks";
+import { createInitialState, type GameState, type Task } from "../state";
 import { createStore } from "../store";
-import { activateEvent, checkForEvent, resolveEvent } from "./events";
+import {
+	activateEvent,
+	checkForEvent,
+	createObligationTask,
+	resolveEvent,
+} from "./events";
 
 const VARIANCE_FACTOR = 0.2;
 
@@ -479,5 +485,377 @@ describe("variant choice labels (delivery-deadline)", () => {
 			recaps.add(getEventRecap("delivery-deadline", "go", seed));
 		}
 		expect(recaps.size).toBeGreaterThan(1);
+	});
+});
+
+describe("createObligationTask", () => {
+	/** Gets the obligation def from an event, throwing if not found. */
+	function getObligation(
+		eventId: "dentist-reminder" | "vet-reminder" | "work-reminder",
+	) {
+		const def = getEventDefinition(eventId);
+		if (!def?.obligation) throw new Error(`No obligation on ${eventId}`);
+		return def.obligation;
+	}
+
+	it("creates a task with obligation properties", () => {
+		const obligation = getObligation("dentist-reminder");
+		const task = createObligationTask(obligation, 3, "dentist-reminder");
+
+		expect(task.id).toBe("dentist-visit");
+		expect(task.category).toBe("selfcare");
+		expect(task.baseRate).toBe(0.4);
+		expect(task.availableBlocks).toEqual(["afternoon"]);
+		expect(task.availableDay).toBe(3);
+		expect(task.sourceEvent).toBe("dentist-reminder");
+		expect(task.isObligation).toBe(true);
+		expect(task.failureCount).toBe(0);
+		expect(task.succeededToday).toBe(false);
+	});
+
+	it("uses i18n name for the task", () => {
+		const obligation = getObligation("dentist-reminder");
+		const task = createObligationTask(obligation, 2, "dentist-reminder");
+		expect(task.name).toBe("Dentist Appointment");
+	});
+
+	it("creates vet task with dog category", () => {
+		const obligation = getObligation("vet-reminder");
+		const task = createObligationTask(obligation, 2, "vet-reminder");
+		expect(task.id).toBe("vet-visit");
+		expect(task.category).toBe("dog");
+		expect(task.baseRate).toBe(0.55);
+		expect(task.availableBlocks).toEqual(["morning"]);
+	});
+
+	it("creates work deadline task with all blocks", () => {
+		const obligation = getObligation("work-reminder");
+		const task = createObligationTask(obligation, 4, "work-reminder");
+		expect(task.id).toBe("work-deadline");
+		expect(task.category).toBe("work");
+		expect(task.baseRate).toBe(0.35);
+		expect(task.availableBlocks).toEqual([
+			"morning",
+			"afternoon",
+			"evening",
+			"night",
+		]);
+	});
+});
+
+describe("activateEvent with obligations", () => {
+	it("injects obligation task when notification event fires", () => {
+		const state = createTestState({
+			events: [
+				{
+					id: "dentist-reminder",
+					status: "pending",
+					scheduledDay: 0,
+					obligationDay: 3,
+				},
+			],
+			dayIndex: 0,
+			day: "monday",
+			tasks: [],
+		});
+		const store = createStore(state);
+
+		const delivery = activateEvent(store, "dentist-reminder");
+
+		expect(delivery).toBe("inline");
+		const tasks = store.getState().tasks;
+		expect(tasks).toHaveLength(1);
+		expect(tasks[0]?.id).toBe("dentist-visit");
+		expect(tasks[0]?.availableDay).toBe(3);
+		expect(tasks[0]?.isObligation).toBe(true);
+	});
+
+	it("does not inject task when no obligationDay is set", () => {
+		const state = createTestState({
+			events: [
+				{
+					id: "dentist-reminder",
+					status: "pending",
+					scheduledDay: 0,
+					// no obligationDay
+				},
+			],
+			dayIndex: 0,
+			day: "monday",
+			tasks: [],
+		});
+		const store = createStore(state);
+
+		activateEvent(store, "dentist-reminder");
+
+		expect(store.getState().tasks).toHaveLength(0);
+	});
+
+	it("sets banner with notification delivery style", () => {
+		const state = createTestState({
+			events: [
+				{
+					id: "dentist-reminder",
+					status: "pending",
+					scheduledDay: 0,
+					obligationDay: 3,
+				},
+			],
+			dayIndex: 0,
+			day: "monday",
+		});
+		const store = createStore(state);
+
+		activateEvent(store, "dentist-reminder");
+
+		const banner = store.getState().eventBanner;
+		expect(banner).not.toBeNull();
+		expect(banner?.style).toBe("notification");
+		expect(banner?.text).toContain("Dentist");
+		expect(banner?.text).toContain("Thursday");
+	});
+});
+
+describe("succeedTask effect", () => {
+	it("marks specified task as succeeded", () => {
+		const workTask: Task = {
+			id: "work-deadline" as TaskId,
+			name: "Work Deadline",
+			category: "work",
+			baseRate: 0.35,
+			availableBlocks: ["morning", "afternoon", "evening", "night"],
+			failureCount: 0,
+			attemptedToday: false,
+			succeededToday: false,
+			isObligation: true,
+		};
+		const state = createTestState({
+			events: [{ id: "work-missed", status: "active" }],
+			activeEventId: "work-missed",
+			tasks: [workTask],
+			energy: 0.5,
+			momentum: 0.5,
+		});
+		const store = createStore(state);
+
+		resolveEvent(store, "do-it-now");
+
+		const task = store.getState().tasks.find((t) => t.id === "work-deadline");
+		expect(task?.succeededToday).toBe(true);
+	});
+
+	it("applies energy cost for do-it-now choice", () => {
+		const workTask: Task = {
+			id: "work-deadline" as TaskId,
+			name: "Work Deadline",
+			category: "work",
+			baseRate: 0.35,
+			availableBlocks: ["morning", "afternoon", "evening", "night"],
+			failureCount: 0,
+			attemptedToday: false,
+			succeededToday: false,
+			isObligation: true,
+		};
+		const state = createTestState({
+			events: [{ id: "work-missed", status: "active" }],
+			activeEventId: "work-missed",
+			tasks: [workTask],
+			energy: 0.5,
+			momentum: 0.5,
+		});
+		const store = createStore(state);
+
+		resolveEvent(store, "do-it-now");
+
+		expect(store.getState().energy).toBeLessThan(0.5);
+		expect(store.getState().momentum).toBe(0.5);
+	});
+
+	it("applies momentum cost for let-it-go choice", () => {
+		const workTask: Task = {
+			id: "work-deadline" as TaskId,
+			name: "Work Deadline",
+			category: "work",
+			baseRate: 0.35,
+			availableBlocks: ["morning", "afternoon", "evening", "night"],
+			failureCount: 0,
+			attemptedToday: false,
+			succeededToday: false,
+			isObligation: true,
+		};
+		const state = createTestState({
+			events: [{ id: "work-missed", status: "active" }],
+			activeEventId: "work-missed",
+			tasks: [workTask],
+			energy: 0.5,
+			momentum: 0.5,
+		});
+		const store = createStore(state);
+
+		resolveEvent(store, "let-it-go");
+
+		expect(store.getState().energy).toBe(0.5);
+		expect(store.getState().momentum).toBeLessThan(0.5);
+		// Task should NOT be marked succeeded
+		const task = store.getState().tasks.find((t) => t.id === "work-deadline");
+		expect(task?.succeededToday).toBe(false);
+	});
+});
+
+describe("obligation consequence conditions", () => {
+	it("dentist-missed fires after afternoon block on obligation day", () => {
+		const dentistTask: Task = {
+			id: "dentist-visit" as TaskId,
+			name: "Dentist Appointment",
+			category: "selfcare",
+			baseRate: 0.4,
+			availableBlocks: ["afternoon"],
+			failureCount: 0,
+			attemptedToday: false,
+			succeededToday: false,
+			isObligation: true,
+			availableDay: 3,
+		};
+		const state = createTestState({
+			events: [
+				{ id: "dentist-reminder", status: "resolved", scheduledDay: 0 },
+				{ id: "dentist-missed", status: "pending", scheduledDay: 3 },
+			],
+			dayIndex: 3,
+			timeBlock: "evening",
+			tasks: [dentistTask],
+		});
+
+		// Should fire: after afternoon, task not succeeded
+		expect(checkForEvent(state, "blockStart")).toBe("dentist-missed");
+	});
+
+	it("dentist-missed does not fire during afternoon block", () => {
+		const dentistTask: Task = {
+			id: "dentist-visit" as TaskId,
+			name: "Dentist Appointment",
+			category: "selfcare",
+			baseRate: 0.4,
+			availableBlocks: ["afternoon"],
+			failureCount: 0,
+			attemptedToday: false,
+			succeededToday: false,
+			isObligation: true,
+			availableDay: 3,
+		};
+		const state = createTestState({
+			events: [
+				{ id: "dentist-reminder", status: "resolved", scheduledDay: 0 },
+				{ id: "dentist-missed", status: "pending", scheduledDay: 3 },
+			],
+			dayIndex: 3,
+			timeBlock: "afternoon",
+			tasks: [dentistTask],
+		});
+
+		// Should NOT fire: still in afternoon block, player can still attempt
+		expect(checkForEvent(state, "blockStart")).toBeNull();
+	});
+
+	it("dentist-missed does not fire if task was succeeded", () => {
+		const dentistTask: Task = {
+			id: "dentist-visit" as TaskId,
+			name: "Dentist Appointment",
+			category: "selfcare",
+			baseRate: 0.4,
+			availableBlocks: ["afternoon"],
+			failureCount: 0,
+			attemptedToday: false,
+			succeededToday: true,
+			isObligation: true,
+			availableDay: 3,
+		};
+		const state = createTestState({
+			events: [
+				{ id: "dentist-reminder", status: "resolved", scheduledDay: 0 },
+				{ id: "dentist-missed", status: "pending", scheduledDay: 3 },
+			],
+			dayIndex: 3,
+			timeBlock: "evening",
+			tasks: [dentistTask],
+		});
+
+		expect(checkForEvent(state, "blockStart")).toBeNull();
+	});
+
+	it("vet-missed fires after morning block on obligation day", () => {
+		const vetTask: Task = {
+			id: "vet-visit" as TaskId,
+			name: "Vet Visit",
+			category: "dog",
+			baseRate: 0.55,
+			availableBlocks: ["morning"],
+			failureCount: 0,
+			attemptedToday: false,
+			succeededToday: false,
+			isObligation: true,
+			availableDay: 2,
+		};
+		const state = createTestState({
+			events: [
+				{ id: "vet-reminder", status: "resolved", scheduledDay: 0 },
+				{ id: "vet-missed", status: "pending", scheduledDay: 2 },
+			],
+			dayIndex: 2,
+			timeBlock: "afternoon",
+			tasks: [vetTask],
+		});
+
+		expect(checkForEvent(state, "blockStart")).toBe("vet-missed");
+	});
+
+	it("work-missed fires at dayEnd when task not succeeded", () => {
+		const workTask: Task = {
+			id: "work-deadline" as TaskId,
+			name: "Work Deadline",
+			category: "work",
+			baseRate: 0.35,
+			availableBlocks: ["morning", "afternoon", "evening", "night"],
+			failureCount: 0,
+			attemptedToday: false,
+			succeededToday: false,
+			isObligation: true,
+			availableDay: 4,
+		};
+		const state = createTestState({
+			events: [
+				{ id: "work-reminder", status: "resolved", scheduledDay: 0 },
+				{ id: "work-missed", status: "pending", scheduledDay: 4 },
+			],
+			dayIndex: 4,
+			tasks: [workTask],
+		});
+
+		expect(checkForEvent(state, "dayEnd")).toBe("work-missed");
+	});
+
+	it("work-missed does not fire if task was succeeded", () => {
+		const workTask: Task = {
+			id: "work-deadline" as TaskId,
+			name: "Work Deadline",
+			category: "work",
+			baseRate: 0.35,
+			availableBlocks: ["morning", "afternoon", "evening", "night"],
+			failureCount: 0,
+			attemptedToday: false,
+			succeededToday: true,
+			isObligation: true,
+			availableDay: 4,
+		};
+		const state = createTestState({
+			events: [
+				{ id: "work-reminder", status: "resolved", scheduledDay: 0 },
+				{ id: "work-missed", status: "pending", scheduledDay: 4 },
+			],
+			dayIndex: 4,
+			tasks: [workTask],
+		});
+
+		expect(checkForEvent(state, "dayEnd")).toBeNull();
 	});
 });

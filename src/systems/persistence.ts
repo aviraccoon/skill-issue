@@ -4,6 +4,7 @@
  */
 
 import { MENU_SCREENS } from "../core/screenInfo";
+import { getEventDefinition } from "../data/events";
 import {
 	createInitialTasks,
 	type TaskCategory,
@@ -22,6 +23,7 @@ import {
 	type TimeBlock,
 } from "../state";
 import { selectEventsForSeed } from "./eventSelection";
+import { createObligationTask } from "./events";
 import { CURRENT_SAVE_VERSION, runMigrations } from "./migrations";
 import type { Personality } from "./personality";
 import { getPersonalityFromSeed } from "./personality";
@@ -43,6 +45,7 @@ interface SavedEventInstance {
 	status: EventInstance["status"];
 	choiceId?: string;
 	scheduledDay?: number;
+	obligationDay?: number;
 }
 
 /** Minimal game state for persistence - no translatable content. */
@@ -170,6 +173,7 @@ function toSavedState(state: GameState): SavedState {
 			status: e.status,
 			choiceId: e.choiceId,
 			scheduledDay: e.scheduledDay,
+			obligationDay: e.obligationDay,
 		})),
 		eventFlags: state.eventFlags,
 	};
@@ -260,6 +264,35 @@ export function loadGame(mode: GameMode): GameState | null {
 			choiceId: savedEvent.choiceId,
 		};
 	});
+
+	// Reconstruct obligation tasks from resolved notification events.
+	// Obligation tasks are injected at runtime by activateEvent, so they
+	// aren't in the seed-based task pool. We rebuild them from the event
+	// definitions and merge saved task runtime state.
+	const savedTaskMap = new Map(saved.tasks.map((t) => [t.id, t]));
+	for (const event of state.events) {
+		if (event.status !== "resolved" || event.obligationDay === undefined)
+			continue;
+		const definition = getEventDefinition(event.id);
+		if (!definition?.obligation) continue;
+		const { obligation } = definition;
+		// Skip if this task already exists (shouldn't happen, but defensive)
+		if (state.tasks.some((t) => t.id === obligation.taskId)) continue;
+		const task = createObligationTask(
+			obligation,
+			event.obligationDay,
+			event.id,
+		);
+		// Restore saved runtime state
+		const savedTask = savedTaskMap.get(task.id);
+		if (savedTask) {
+			task.failureCount = savedTask.failureCount;
+			task.attemptedToday = savedTask.attemptedToday;
+			task.succeededToday = savedTask.succeededToday;
+		}
+		state.tasks.push(task);
+	}
+
 	return state;
 }
 
@@ -368,6 +401,7 @@ function fromSavedState(saved: SavedState): GameState {
 		status: e.status,
 		choiceId: e.choiceId,
 		scheduledDay: e.scheduledDay,
+		obligationDay: e.obligationDay,
 	}));
 
 	// Derive activeEventId from the events array

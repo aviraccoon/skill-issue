@@ -74,15 +74,21 @@ export function getAvailableTasks(state: GameState): Task[] {
 	const weekend = isWeekend(state);
 
 	if (weekend) {
-		// Weekend: all tasks available that haven't succeeded
-		return state.tasks.filter((t) => !t.succeededToday);
+		// Weekend: all tasks available that haven't succeeded (obligations excluded by day)
+		return state.tasks.filter((t) => {
+			if (t.availableDay !== undefined && t.availableDay !== state.dayIndex)
+				return false;
+			return !t.succeededToday;
+		});
 	}
 
-	// Weekday: filter by jittered time blocks and not succeeded
+	// Weekday: filter by day restriction, jittered time blocks, and not succeeded
 	const dayBlocks = getDayBlocks(state.tasks, state.dayIndex, state.runSeed);
-	return state.tasks.filter(
-		(t) => dayBlocks.get(t.id)?.includes(state.timeBlock) && !t.succeededToday,
-	);
+	return state.tasks.filter((t) => {
+		if (t.availableDay !== undefined && t.availableDay !== state.dayIndex)
+			return false;
+		return dayBlocks.get(t.id)?.includes(state.timeBlock) && !t.succeededToday;
+	});
 }
 
 /**

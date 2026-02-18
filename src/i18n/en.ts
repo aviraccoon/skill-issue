@@ -1271,6 +1271,10 @@ export const en = {
 				],
 			},
 		},
+		// Obligation tasks (injected by events, not in seed pool)
+		"dentist-visit": { name: "Dentist Appointment" },
+		"vet-visit": { name: "Vet Visit" },
+		"work-deadline": { name: "Work Deadline" },
 	},
 
 	events: {
@@ -1630,6 +1634,124 @@ export const en = {
 				pass: [
 					"The roof thing happened without you. You could hear them from your window. Sounded nice.",
 					"You passed on the neighbor's invite. Something came up. Nothing specific.",
+				],
+			},
+		},
+
+		// =====================
+		// Tier 2: Obligation - Dentist
+		// =====================
+
+		"dentist-reminder": {
+			notification: [
+				(day: Day, blocks: readonly TimeBlock[]) =>
+					`Calendar: Dentist Appointment -- ${days[day]}, ${timeBlocks[blocks[0] ?? "afternoon"]}`,
+				(day: Day, blocks: readonly TimeBlock[]) =>
+					`Reminder: Dentist on ${days[day]}. ${timeBlocks[blocks[0] ?? "afternoon"]}.`,
+			],
+		},
+		"dentist-missed": {
+			notification: [
+				"You didn't go. The guilt sits in your chest like a stone. You'll reschedule. You always say that.",
+				"The appointment came and went. You were right here the whole time. That's the part that stings.",
+			],
+			recap: [
+				"The dentist appointment happened without you. You were in the building the whole time.",
+				"You missed the dentist. The rescheduling email is sitting in drafts.",
+			],
+		},
+
+		// =====================
+		// Tier 2: Obligation - Vet
+		// =====================
+
+		"vet-reminder": {
+			notification: [
+				(day: Day, blocks: readonly TimeBlock[]) =>
+					`Calendar: Azor's Vet Appointment -- ${days[day]}, ${timeBlocks[blocks[0] ?? "morning"]}`,
+				(day: Day, blocks: readonly TimeBlock[]) =>
+					`Reminder: Vet for Azor on ${days[day]}. ${timeBlocks[blocks[0] ?? "morning"]}.`,
+			],
+		},
+		"vet-missed": {
+			notification: [
+				"You didn't take him. He's fine. He doesn't know. That's worse, somehow.",
+				"The vet appointment passed. Azor looked at you when you picked up his leash and put it back down.",
+			],
+			recap: [
+				"You missed Azor's vet appointment. He's fine. Probably. You'll call to reschedule. Probably.",
+				"The vet visit didn't happen. Azor doesn't know he was supposed to go. You do.",
+			],
+		},
+
+		// =====================
+		// Tier 2: Obligation - Work Deadline
+		// =====================
+
+		"work-reminder": {
+			notification: [
+				(day: Day) =>
+					`Reminder: Work deadline ${days[day]}. You know. You've known.`,
+				(day: Day) =>
+					`Calendar: Project deadline -- ${days[day]}. The date hasn't moved.`,
+			],
+		},
+		"work-missed": {
+			title: "The Deadline Passed",
+			description:
+				"The deadline was today. The day is over. The work isn't done. Your inbox already has the follow-up email you haven't opened. What now?",
+			choices: {
+				"do-it-now": [
+					{
+						label: "Do it now",
+						description:
+							"Stay up. Power through. Get it done tonight. The energy cost will be brutal but the thing will be done.",
+					},
+					{
+						label: "Pull an all-nighter",
+						description:
+							"Sleep is a suggestion. The deadline isn't. You'll feel terrible tomorrow but at least the work will exist.",
+					},
+					{
+						label: "Stay up and finish it",
+						description:
+							"The night is young. You're not, but the night is. Sit down. Open the laptop. Go.",
+					},
+				],
+				"let-it-go": [
+					{
+						label: "Let it go",
+						description:
+							"It's done. Not the work -- the day. You'll deal with it tomorrow. Or you won't.",
+					},
+					{
+						label: "Call in sick",
+						description:
+							"Tomorrow you'll send the email. Woke up with something. Nonspecific. Bought yourself a day. Maybe.",
+					},
+					{
+						label: "Close the laptop",
+						description:
+							"The screen goes dark. The deadline doesn't care. Neither do you, right now. Tomorrow's problem.",
+					},
+					{
+						label: "Pretend you didn't see the email",
+						description:
+							"The notification is there. You're choosing not to look. That's a decision. Technically.",
+					},
+				],
+			},
+			recap: {
+				"do-it-now": [
+					"The work deadline passed, but you stayed up and powered through it. The next day was a write-off. The work exists, though.",
+					"You missed the deadline. Then you pulled an all-nighter to finish it anyway. Worth it? Hard to say from inside the exhaustion.",
+					"The deadline came and went. You stayed up and finished it that night. The bags under your eyes had bags.",
+				],
+				"let-it-go": [
+					"The work deadline passed. You let it. Sometimes that's the only honest option.",
+					"You called in sick. Not technically a lie -- the feeling in your stomach when you think about the deadline is definitely a symptom of something.",
+					"You missed the deadline and closed the laptop. The follow-up email is still unread. Tomorrow's problem.",
+					"The deadline happened. You didn't. The email sits in your inbox like a small monument to the gap between planning and doing.",
 				],
 			},
 		},

@@ -1,5 +1,5 @@
 import { describe, expect, it } from "bun:test";
-import { eventPool } from "../data/events";
+import { eventPool, getEventDefinition } from "../data/events";
 import { getProgressionTier, selectEventsForSeed } from "./eventSelection";
 import type { CompletedRun, PatternsData } from "./persistence";
 
@@ -217,6 +217,90 @@ describe("selectEventsForSeed", () => {
 				const standaloneCount = tierEvents.filter((e) => !e.arcId).length;
 				const totalUnits = arcIds.size + standaloneCount;
 				expect(unitKeys.size).toBeLessThanOrEqual(totalUnits);
+			}
+		}
+	});
+
+	it("selects obligation arcs as complete units", () => {
+		const patterns = patternsWithCompletions(2); // tier 2
+		for (let seed = 0; seed < 100; seed++) {
+			const events = selectEventsForSeed(seed, patterns);
+			const ids = new Set(events.map((e) => e.id));
+
+			// Dentist arc
+			if (ids.has("dentist-reminder") || ids.has("dentist-missed")) {
+				expect(ids.has("dentist-reminder")).toBe(true);
+				expect(ids.has("dentist-missed")).toBe(true);
+			}
+			// Vet arc
+			if (ids.has("vet-reminder") || ids.has("vet-missed")) {
+				expect(ids.has("vet-reminder")).toBe(true);
+				expect(ids.has("vet-missed")).toBe(true);
+			}
+			// Work deadline arc
+			if (ids.has("work-reminder") || ids.has("work-missed")) {
+				expect(ids.has("work-reminder")).toBe(true);
+				expect(ids.has("work-missed")).toBe(true);
+			}
+		}
+	});
+});
+
+describe("assignObligationDays", () => {
+	const patterns = patternsWithCompletions(2); // tier 2
+
+	it("assigns obligationDay to notification events", () => {
+		for (let seed = 0; seed < 50; seed++) {
+			const events = selectEventsForSeed(seed, patterns);
+			for (const event of events) {
+				const def = getEventDefinition(event.id);
+				if (def?.obligation) {
+					expect(event.obligationDay).toBeDefined();
+					expect(event.scheduledDay).toBeDefined();
+				}
+			}
+		}
+	});
+
+	it("obligation day is after notification day", () => {
+		for (let seed = 0; seed < 50; seed++) {
+			const events = selectEventsForSeed(seed, patterns);
+			for (const event of events) {
+				const def = getEventDefinition(event.id);
+				if (def?.obligation && event.obligationDay !== undefined) {
+					expect(event.obligationDay).toBeGreaterThan(event.scheduledDay ?? -1);
+				}
+			}
+		}
+	});
+
+	it("obligation day stays within weekdays (0-4)", () => {
+		for (let seed = 0; seed < 100; seed++) {
+			const events = selectEventsForSeed(seed, patterns);
+			for (const event of events) {
+				if (event.obligationDay !== undefined) {
+					expect(event.obligationDay).toBeGreaterThanOrEqual(0);
+					expect(event.obligationDay).toBeLessThanOrEqual(4);
+				}
+			}
+		}
+	});
+
+	it("sets consequence event scheduledDay to obligation day", () => {
+		for (let seed = 0; seed < 50; seed++) {
+			const events = selectEventsForSeed(seed, patterns);
+			for (const event of events) {
+				const def = getEventDefinition(event.id);
+				if (def?.obligation && event.obligationDay !== undefined) {
+					// Find the consequence event (requires this notification)
+					const consequence = events.find((e) => {
+						const cDef = getEventDefinition(e.id);
+						return cDef?.requires?.includes(event.id);
+					});
+					if (consequence) {
+						expect(consequence.scheduledDay).toBe(event.obligationDay);
+					}
+				}
 			}
 		}
 	});

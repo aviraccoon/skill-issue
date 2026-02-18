@@ -58,6 +58,12 @@ The `private/` directory contains internal docs not for public reference. Never 
 - `bun run gen:css-types` to regenerate CSS module type declarations
 - Use Bun APIs over Node.js equivalents where available
 
+## CLI Tool
+
+A headless simulation tool at `bun run cli`. Subcommands: `simulate`, `compare`, `find-seed`, `play`. Each has `--help` with full options. Use these for verifying game mechanics without a browser.
+
+See `src/cli/README.md` for details.
+
 ## CSS Modules
 
 Component styles use CSS modules (`.module.css` files). Type declarations are co-located (`*.module.css.d.ts`) and auto-generated.

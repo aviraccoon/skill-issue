@@ -227,6 +227,22 @@ describe("getDayBlocks", () => {
 		}
 	});
 
+	test("obligation tasks skip jitter (keep all blocks)", () => {
+		const obligation = makeTask("dentist-visit", ["afternoon"]) as Task & {
+			isObligation: boolean;
+		};
+		obligation.isObligation = true;
+
+		const pool = makeLargePool();
+		pool.push(obligation);
+
+		for (let day = 0; day < 5; day++) {
+			const result = getDayBlocks(pool, day, 42);
+			// Obligation task with 1 block should always keep it
+			expect(result.get("dentist-visit" as Task["id"])).toEqual(["afternoon"]);
+		}
+	});
+
 	test("jitter creates variety across days in real task pools", () => {
 		const seed = 12345;
 		const p = getPersonalityFromSeed(seed);

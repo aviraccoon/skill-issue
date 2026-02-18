@@ -59,7 +59,9 @@ export function getDayBlocks(
 	for (const task of tasks) {
 		const numBlocks = task.availableBlocks.length;
 		const isExempt =
-			numBlocks <= 1 || getTaskStatic(task.id)?.noBlockShift === true;
+			numBlocks <= 1 ||
+			task.isObligation === true ||
+			getTaskStatic(task.id)?.noBlockShift === true;
 
 		if (isExempt) {
 			result.set(task.id, task.availableBlocks);
@@ -164,6 +166,7 @@ function addBlockToTask(
  * Finds tasks in adjacent blocks that aren't currently in the target block.
  * Adjacent = nearest neighbors in the TIME_BLOCKS sequence.
  * Prefers the later neighbor first (morning pulls from afternoon, not night).
+ * Obligation tasks are excluded -- they have fixed timing.
  */
 function getAdjacentCandidates(
 	tasks: readonly Task[],
@@ -183,6 +186,7 @@ function getAdjacentCandidates(
 	for (const neighbor of neighbors) {
 		for (const task of tasks) {
 			if (seen.has(task.id)) continue;
+			if (task.isObligation) continue;
 			const blocks = result.get(task.id);
 			if (blocks?.includes(neighbor) && !blocks.includes(block)) {
 				candidates.push(task.id);

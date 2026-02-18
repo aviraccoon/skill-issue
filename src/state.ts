@@ -68,7 +68,16 @@ export type EventId =
 	| "construction-weekend"
 	// Tier 1: Arc - Neighbor
 	| "neighbor-hello"
-	| "neighbor-invite";
+	| "neighbor-invite"
+	// Tier 2: Obligation - Dentist
+	| "dentist-reminder"
+	| "dentist-missed"
+	// Tier 2: Obligation - Vet
+	| "vet-reminder"
+	| "vet-missed"
+	// Tier 2: Obligation - Work Deadline
+	| "work-reminder"
+	| "work-missed";
 
 /** Runtime state of an event instance during a run. */
 export interface EventInstance {
@@ -78,6 +87,8 @@ export interface EventInstance {
 	choiceId?: string;
 	/** Day index (0-6) this event is scheduled to fire on. Assigned during selection. */
 	scheduledDay?: number;
+	/** Day index when obligation task appears. Set on notification events with obligations. */
+	obligationDay?: number;
 }
 
 /**
@@ -136,6 +147,12 @@ export interface Task {
 	failureCount: number; // how many times failed this week
 	attemptedToday: boolean;
 	succeededToday: boolean;
+	/** If set, task only appears on this dayIndex (0-6). Used for obligation tasks. */
+	availableDay?: number;
+	/** Event that injected this task. Used for obligation tasks. */
+	sourceEvent?: EventId;
+	/** Whether this is an obligation task (exempt from daily jitter). */
+	isObligation?: boolean;
 }
 
 export type Screen =

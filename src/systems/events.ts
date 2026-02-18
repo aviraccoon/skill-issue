@@ -8,8 +8,17 @@ import {
 	type EventPhase,
 	getEventContent,
 	getEventDefinition,
+	type ObligationDef,
 } from "../data/events";
-import type { EventId, GameState } from "../state";
+import { strings } from "../i18n";
+import {
+	DAYS,
+	type Day,
+	type EventId,
+	type GameState,
+	type Task,
+	type TimeBlock,
+} from "../state";
 import type { Store } from "../store";
 import { clamp } from "../utils/math";
 import { pickVariant, seededVariation } from "../utils/random";
@@ -77,6 +86,33 @@ export function checkForEvent(
 export type EventDelivery = "inline" | "fullscreen";
 
 /**
+ * Creates a Task from an obligation definition.
+ * Used when a notification event injects an obligation task.
+ */
+export function createObligationTask(
+	obligation: ObligationDef,
+	obligationDay: number,
+	sourceEvent: EventId,
+): Task {
+	const s = strings();
+	const taskStrings = s.tasks[obligation.taskId];
+	return {
+		id: obligation.taskId,
+		name: taskStrings?.name ?? obligation.taskId,
+		category: obligation.category,
+		baseRate: obligation.baseRate,
+		availableBlocks: [...obligation.availableBlocks],
+		energyEffect: obligation.energyEffect,
+		failureCount: 0,
+		attemptedToday: false,
+		succeededToday: false,
+		availableDay: obligationDay,
+		sourceEvent,
+		isObligation: true,
+	};
+}
+
+/**
  * Activates an event. Minor events are delivered inline (banner + immediate
  * resolve). Major events use full-screen with player choice.
  */
@@ -92,13 +128,41 @@ export function activateEvent(
 			applyEventEffects(store, definition.effects);
 		}
 
-		// Build banner text from i18n
+		// Inject obligation task if this is an obligation notification
 		const state = store.getState();
+		const instance = state.events.find((e) => e.id === eventId);
+		if (definition.obligation && instance?.obligationDay !== undefined) {
+			const task = createObligationTask(
+				definition.obligation,
+				instance.obligationDay,
+				eventId,
+			);
+			store.update("tasks", (tasks) => [...tasks, task]);
+		}
+
+		// Build banner text from i18n
 		const content = getEventContent(eventId);
 		let text = "";
 		if ("notification" in content && Array.isArray(content.notification)) {
-			const variants = [...content.notification] as [string, ...string[]];
-			text = pickVariant(variants, state.runSeed + state.dayIndex);
+			const variant = pickVariant(
+				[...content.notification] as [unknown, ...unknown[]],
+				state.runSeed + state.dayIndex,
+			);
+			// Obligation notifications use template functions for localization
+			if (
+				typeof variant === "function" &&
+				definition.obligation &&
+				instance?.obligationDay !== undefined
+			) {
+				const dayName = DAYS[instance.obligationDay];
+				if (dayName) {
+					text = (
+						variant as (day: Day, blocks: readonly TimeBlock[]) => string
+					)(dayName, definition.obligation.availableBlocks);
+				}
+			} else if (typeof variant === "string") {
+				text = variant;
+			}
 		}
 
 		store.set("eventBanner", {
@@ -188,6 +252,12 @@ function applyEventEffects(
 	if (setFlag) {
 		store.update("eventFlags", (flags) =>
 			flags.includes(setFlag) ? flags : [...flags, setFlag],
+		);
+	}
+	if (effects.succeedTask) {
+		const taskId = effects.succeedTask;
+		store.update("tasks", (tasks) =>
+			tasks.map((t) => (t.id === taskId ? { ...t, succeededToday: true } : t)),
 		);
 	}
 }

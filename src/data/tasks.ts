@@ -90,7 +90,11 @@ export type TaskId =
 	| "go-outside"
 	| "take-meds"
 	| "read"
-	| "meditate";
+	| "meditate"
+	// Obligations (injected by events, not in seed pool)
+	| "dentist-visit"
+	| "vet-visit"
+	| "work-deadline";
 
 /** Static task data that doesn't change (rates, blocks, category). */
 export interface TaskStatic {
@@ -343,9 +347,10 @@ function buildVariant(taskStatic: TaskStatic): MinimalVariant | undefined {
 	};
 }
 
-/** Builds TaskEvolution from i18n strings. */
-function buildEvolution(id: TaskId): TaskEvolution {
+/** Builds TaskEvolution from i18n strings, if the task has evolution text. */
+function buildEvolution(id: TaskId): TaskEvolution | undefined {
 	const content = getTaskContent(id);
+	if (!("evolution" in content)) return undefined;
 	return {
 		aware: [...content.evolution.aware],
 		honest: [...content.evolution.honest],
