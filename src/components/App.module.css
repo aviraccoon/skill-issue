@@ -34,7 +34,7 @@
 /* Side-by-side layout on wider screens */
 @media (min-width: 1024px) {
 	.main {
-		grid-template-columns: auto 1fr 280px;
+		grid-template-columns: min-content 1fr 280px;
 		grid-template-rows: 1fr;
 		align-items: start;
 	}
