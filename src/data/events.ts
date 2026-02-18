@@ -102,10 +102,12 @@ export function getEventVariantSeed(seed: number, eventId: EventId): number {
 	return hashString(eventId) + seed;
 }
 
-/** A choice's display content: label + description. */
+/** A choice's display content: label + description, optionally bundled with recap. */
 export interface ChoiceContent {
 	label: string;
 	description: string;
+	/** Recap text for this specific variant (structural pairing, not index-based). */
+	recap?: string;
 }
 
 /**
@@ -124,9 +126,9 @@ export function resolveChoiceContent(
 
 /**
  * Gets recap text for a resolved event, if available.
- * Minor events have recap as string[], major events as { [choiceId]: string[] }.
- * For major events with variant choice labels, the variant seed pairs
- * the recap with the label the player saw.
+ * Minor events have recap as string[].
+ * Major events with variant choice arrays bundle recap into each variant object.
+ * Major events with single choices use a separate recap: { [choiceId]: string[] }.
  */
 export function getEventRecap(
 	id: EventId,
@@ -134,17 +136,32 @@ export function getEventRecap(
 	seed: number,
 ): string | null {
 	const content = getEventContent(id);
+	const variantSeed = getEventVariantSeed(seed, id);
+
+	// Major event with variant choices: recap is bundled in the choice variant object
+	if (choiceId && "choices" in content) {
+		const choices = (content as Record<string, unknown>).choices as
+			| Record<string, unknown>
+			| undefined;
+		const choiceValue = choices?.[choiceId];
+		if (Array.isArray(choiceValue)) {
+			const resolved = pickVariant(
+				choiceValue as [ChoiceContent, ...ChoiceContent[]],
+				variantSeed,
+			);
+			if (resolved.recap) return resolved.recap;
+		}
+	}
+
 	const recap = (content as Record<string, unknown>).recap;
 	if (!recap) return null;
-
-	const variantSeed = getEventVariantSeed(seed, id);
 
 	// Minor event: recap is string[]
 	if (Array.isArray(recap)) {
 		return pickVariant(recap as [string, ...string[]], variantSeed);
 	}
 
-	// Major event: recap keyed by choiceId
+	// Major event with single choices: recap keyed by choiceId
 	if (choiceId && typeof recap === "object") {
 		const variants = (recap as Record<string, string[]>)[choiceId];
 		if (variants?.length) {

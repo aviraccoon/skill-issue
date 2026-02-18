@@ -1461,6 +1461,7 @@ export const cs = {
 						label: "Jít pro něj",
 						description:
 							"Opustit byt, záměrně. Dojít tam a zpátky. To není málo.",
+						recap: "",
 					},
 				],
 				"let-go": [
@@ -1468,6 +1469,7 @@ export const cs = {
 						label: "Nechat to být",
 						description:
 							"Pošlou to zpátky. Dá se objednat znovu. Nebo se to vlastně nebude potřebovat.",
+						recap: "",
 					},
 				],
 			},

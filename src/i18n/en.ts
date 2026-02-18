@@ -1534,15 +1534,21 @@ export const en = {
 						label: "Go get it",
 						description:
 							"Leave the apartment. On purpose. Walk there and back. It's not nothing.",
+						recap:
+							"You went out and got the package. Fifteen-minute walk, round trip. The hardest part was the door.",
 					},
 					{
 						label: "Just go",
 						description:
 							"It's fifteen minutes. You've been thinking about it longer than that.",
+						recap:
+							"You just went. Fifteen minutes out, fifteen back. Shorter than the debate in your head.",
 					},
 					{
 						label: "Get it before they send it back",
 						description: "The window is closing. Sometimes that helps.",
+						recap:
+							"You got it before they sent it back. The closing window did what willpower couldn't.",
 					},
 				],
 				"let-go": [
@@ -1550,29 +1556,23 @@ export const en = {
 						label: "Let it go",
 						description:
 							"It'll get sent back. You'll reorder it eventually. Or you won't need it. Maybe.",
+						recap:
+							"The package went back. You'll reorder it. Probably. It already feels like it never existed.",
 					},
 					{
 						label: "It's not worth the walk",
 						description:
 							"The walk isn't the problem. Deciding to walk is. And you've decided.",
+						recap:
+							"You decided it wasn't worth the walk. The walk was never the real obstacle.",
 					},
 					{
 						label: "You'll reorder it",
 						description:
 							"Future you can deal with it. Future you deals with everything.",
+						recap:
+							"You'll reorder it. That's what you told yourself. Future you nodded along.",
 					},
-				],
-			},
-			recap: {
-				go: [
-					"You went out and got the package. Fifteen-minute walk, round trip. The hardest part was the door.",
-					"You just went. Fifteen minutes out, fifteen back. Shorter than the debate in your head.",
-					"You got it before they sent it back. The closing window did what willpower couldn't.",
-				],
-				"let-go": [
-					"The package went back. You'll reorder it. Probably. It already feels like it never existed.",
-					"You decided it wasn't worth the walk. The walk was never the real obstacle.",
-					"You'll reorder it. That's what you told yourself. Future you nodded along.",
 				],
 			},
 		},
@@ -1706,16 +1706,22 @@ export const en = {
 						label: "Do it now",
 						description:
 							"Stay up. Power through. Get it done tonight. The energy cost will be brutal but the thing will be done.",
+						recap:
+							"The work deadline passed, but you stayed up and powered through it. The next day was a write-off. The work exists, though.",
 					},
 					{
 						label: "Pull an all-nighter",
 						description:
 							"Sleep is a suggestion. The deadline isn't. You'll feel terrible tomorrow but at least the work will exist.",
+						recap:
+							"You missed the deadline. Then you pulled an all-nighter to finish it anyway. Worth it? Hard to say from inside the exhaustion.",
 					},
 					{
 						label: "Stay up and finish it",
 						description:
 							"The night is young. You're not, but the night is. Sit down. Open the laptop. Go.",
+						recap:
+							"The deadline came and went. You stayed up and finished it that night. The bags under your eyes had bags.",
 					},
 				],
 				"let-it-go": [
@@ -1723,35 +1729,30 @@ export const en = {
 						label: "Let it go",
 						description:
 							"It's done. Not the work -- the day. You'll deal with it tomorrow. Or you won't.",
+						recap:
+							"The work deadline passed. You let it. Sometimes that's the only honest option.",
 					},
 					{
 						label: "Call in sick",
 						description:
 							"Tomorrow you'll send the email. Woke up with something. Nonspecific. Bought yourself a day. Maybe.",
+						recap:
+							"You called in sick. Not technically a lie -- the feeling in your stomach when you think about the deadline is definitely a symptom of something.",
 					},
 					{
 						label: "Close the laptop",
 						description:
 							"The screen goes dark. The deadline doesn't care. Neither do you, right now. Tomorrow's problem.",
+						recap:
+							"You missed the deadline and closed the laptop. The follow-up email is still unread. Tomorrow's problem.",
 					},
 					{
 						label: "Pretend you didn't see the email",
 						description:
 							"The notification is there. You're choosing not to look. That's a decision. Technically.",
+						recap:
+							"The deadline happened. You didn't. The email sits in your inbox like a small monument to the gap between planning and doing.",
 					},
-				],
-			},
-			recap: {
-				"do-it-now": [
-					"The work deadline passed, but you stayed up and powered through it. The next day was a write-off. The work exists, though.",
-					"You missed the deadline. Then you pulled an all-nighter to finish it anyway. Worth it? Hard to say from inside the exhaustion.",
-					"The deadline came and went. You stayed up and finished it that night. The bags under your eyes had bags.",
-				],
-				"let-it-go": [
-					"The work deadline passed. You let it. Sometimes that's the only honest option.",
-					"You called in sick. Not technically a lie -- the feeling in your stomach when you think about the deadline is definitely a symptom of something.",
-					"You missed the deadline and closed the laptop. The follow-up email is still unread. Tomorrow's problem.",
-					"The deadline happened. You didn't. The email sits in your inbox like a small monument to the gap between planning and doing.",
 				],
 			},
 		},

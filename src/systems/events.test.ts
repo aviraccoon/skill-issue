@@ -1,5 +1,6 @@
 import { describe, expect, it } from "bun:test";
 import {
+	getEventContent,
 	getEventDefinition,
 	getEventRecap,
 	getEventVariantSeed,
@@ -459,23 +460,20 @@ describe("getEventVariantSeed", () => {
 });
 
 describe("variant choice labels (delivery-deadline)", () => {
-	it("picks consistent label and recap for the same seed", () => {
+	it("recap is structurally bundled with its variant label", () => {
 		const seed = 42;
 		const variantSeed = getEventVariantSeed(seed, "delivery-deadline");
+		const content = getEventContent("delivery-deadline");
+		const choices = (content as Record<string, unknown>).choices as
+			| Record<string, { label: string; recap: string }[]>
+			| undefined;
+		const goVariants = choices?.go ?? [];
+		const index = variantSeed % goVariants.length;
 
-		// The variant seed picks label index and recap index identically
-		const labelIndex = variantSeed % 3; // 3 variants for delivery-deadline
-
+		// The same variantSeed picks both label and recap from the same object
 		const recap = getEventRecap("delivery-deadline", "go", seed);
-		expect(recap).toBeDefined();
-
-		// Verify the recap matches the same variant index
-		const goRecaps = [
-			"You went out and got the package. Fifteen-minute walk, round trip. The hardest part was the door.",
-			"You just went. Fifteen minutes out, fifteen back. Shorter than the debate in your head.",
-			"You got it before they sent it back. The closing window did what willpower couldn't.",
-		];
-		expect(recap).toBe(goRecaps[labelIndex] ?? null);
+		expect(goVariants.length).toBeGreaterThan(0);
+		expect(recap).toBe(goVariants[index]?.recap ?? null);
 	});
 
 	it("different seeds can produce different variants", () => {
