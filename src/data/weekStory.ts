@@ -265,7 +265,7 @@ function getEvents(events: EventInstance[], seed: number): string | null {
 		if (recap) recaps.push(recap);
 	}
 	if (recaps.length === 0) return null;
-	return recaps.join(" ");
+	return recaps.join("\n");
 }
 
 /** Attempts paragraph -- creative, aspirational tasks. */

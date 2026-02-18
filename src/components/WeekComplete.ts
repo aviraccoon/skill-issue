@@ -32,7 +32,10 @@ export function renderWeekComplete(
 	// Build narrative HTML - split paragraphs
 	const narrativeParagraphs = screenInfo.narrative
 		.split("\n\n")
-		.map((p) => `<p class="${styles.narrative}">${p}</p>`)
+		.map((p) => {
+			const html = p.replace(/\n/g, "<br>");
+			return `<p class="${styles.narrative}">${html}</p>`;
+		})
 		.join("");
 
 	// Build patterns HTML
