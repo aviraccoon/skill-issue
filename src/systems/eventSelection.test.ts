@@ -251,6 +251,44 @@ describe("selectEventsForSeed", () => {
 	});
 });
 
+describe("standalone major event cap", () => {
+	const patterns = patternsWithCompletions(4); // tier 3 = all events available
+
+	it("never selects more than 2 standalone major events", () => {
+		for (let seed = 0; seed < 500; seed++) {
+			const events = selectEventsForSeed(seed, patterns);
+			const standaloneMajors = events.filter((e) => {
+				const def = getEventDefinition(e.id);
+				return def?.type === "major" && !def.arcId;
+			});
+			expect(standaloneMajors.length).toBeLessThanOrEqual(2);
+		}
+	});
+
+	it("does not remove arc major events (consequences)", () => {
+		// Arc majors like delivery-deadline, neighbor-invite should survive the cap
+		let sawArcMajor = false;
+		for (let seed = 0; seed < 500; seed++) {
+			const events = selectEventsForSeed(seed, patterns);
+			for (const e of events) {
+				const def = getEventDefinition(e.id);
+				if (def?.type === "major" && def.arcId) {
+					sawArcMajor = true;
+				}
+			}
+		}
+		expect(sawArcMajor).toBe(true);
+	});
+
+	it("preserves selection determinism with cap applied", () => {
+		for (let seed = 0; seed < 50; seed++) {
+			const a = selectEventsForSeed(seed, patterns);
+			const b = selectEventsForSeed(seed, patterns);
+			expect(a.map((e) => e.id)).toEqual(b.map((e) => e.id));
+		}
+	});
+});
+
 describe("assignObligationDays", () => {
 	const patterns = patternsWithCompletions(2); // tier 2
 

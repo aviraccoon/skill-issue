@@ -17,6 +17,16 @@ import type { PatternsData } from "./persistence";
 /** Salt range for event selection (5100-5199, above task selection's 5000-5099). */
 const SALT_EVENT_SELECTION = 5100;
 
+/**
+ * Max standalone major events per run. Arc majors (consequences) are exempt
+ * since they only fire on player failure. This caps guaranteed fullscreen
+ * interruptions while letting consequence events remain as earned punishment.
+ */
+const MAX_STANDALONE_MAJORS = 2;
+
+/** Salt for major event cap shuffling. */
+const SALT_MAJOR_CAP = 5500;
+
 /** Max selection units selected per tier range. */
 const UNITS_PER_TIER: Record<EventTier, { min: number; max: number }> = {
 	0: { min: 1, max: 2 },
@@ -167,6 +177,10 @@ export function selectEventsForSeed(
 		}
 	}
 
+	// Cap standalone major events to prevent fullscreen overload.
+	// Arc majors (consequences with `requires`) are exempt -- they self-gate.
+	capStandaloneMajors(selected, seed);
+
 	// Assign each standalone event a specific day within its allowed range.
 	// Without this, events fire on the first matching day (always Monday for
 	// "any day" events). Arc events keep their definition-based day checks
@@ -181,6 +195,32 @@ export function selectEventsForSeed(
 	coordinateEventTiming(selected, seed);
 
 	return selected;
+}
+
+/**
+ * Removes excess standalone major events when more than MAX_STANDALONE_MAJORS
+ * are selected. Uses seeded random to decide which to drop so the result is
+ * deterministic per seed. Mutates the array in place.
+ */
+function capStandaloneMajors(events: EventInstance[], seed: number): void {
+	const majorIndices: number[] = [];
+	for (let i = 0; i < events.length; i++) {
+		const def = eventPool.find((e) => e.id === events[i]?.id);
+		if (def?.type === "major" && !def.arcId) {
+			majorIndices.push(i);
+		}
+	}
+
+	if (majorIndices.length <= MAX_STANDALONE_MAJORS) return;
+
+	// Seeded shuffle to pick which to keep
+	const shuffled = seededShuffle(majorIndices, seed + SALT_MAJOR_CAP);
+	const toDrop = new Set(shuffled.slice(MAX_STANDALONE_MAJORS));
+
+	// Remove in reverse order to preserve indices
+	for (const idx of [...toDrop].sort((a, b) => b - a)) {
+		events.splice(idx, 1);
+	}
 }
 
 /** Salt offset for day scheduling (distinct from selection salts). */
@@ -308,12 +348,29 @@ export function coordinateEventTiming(
 		occupied.add(slotKey(instance.scheduledDay, def.timing.phase));
 	}
 
-	// Phase 2: Place standalone events, reassigning on conflict
+	// Phase 2: Place standalone events, reassigning on conflict.
+	// Sort by constraint level (fewest allowed days first) so the most
+	// constrained events get first pick and less constrained ones adapt.
+	const standaloneIndices: number[] = [];
 	for (let i = 0; i < events.length; i++) {
 		const instance = events[i];
 		if (!instance || instance.scheduledDay === undefined) continue;
 		const def = eventPool.find((e) => e.id === instance.id);
-		if (!def || def.arcId) continue; // standalone only
+		if (!def || def.arcId) continue;
+		standaloneIndices.push(i);
+	}
+	standaloneIndices.sort((a, b) => {
+		const defA = eventPool.find((e) => e.id === events[a]?.id);
+		const defB = eventPool.find((e) => e.id === events[b]?.id);
+		if (!defA || !defB) return 0;
+		return getAllowedDays(defA).length - getAllowedDays(defB).length;
+	});
+
+	for (const i of standaloneIndices) {
+		const instance = events[i];
+		if (!instance || instance.scheduledDay === undefined) continue;
+		const def = eventPool.find((e) => e.id === instance.id);
+		if (!def) continue;
 
 		const k = slotKey(instance.scheduledDay, def.timing.phase);
 		if (!occupied.has(k)) {

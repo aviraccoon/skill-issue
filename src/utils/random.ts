@@ -54,13 +54,12 @@ export function nextRoll(store: RollStore): number {
 	return value;
 }
 
-/** Seeded shuffle using Fisher-Yates algorithm. */
+/** Seeded shuffle using Fisher-Yates with mulberry32 PRNG. */
 export function seededShuffle<T>(array: T[], seed: number): T[] {
 	const result = [...array];
-	let s = seed;
+	const rng = mulberry32(seed);
 	for (let i = result.length - 1; i > 0; i--) {
-		s = (s * 1103515245 + 12345) & 0x7fffffff;
-		const j = s % (i + 1);
+		const j = Math.floor(rng() * (i + 1));
 		const temp = result[i];
 		result[i] = result[j] as T;
 		result[j] = temp as T;
