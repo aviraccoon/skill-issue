@@ -696,6 +696,88 @@ export const eventPool: readonly EventDefinition[] = [
 			},
 		],
 	},
+	// =====================
+	// Tier 2: Opportunity - Rooftop BBQ
+	// =====================
+
+	{
+		id: "rooftop-bbq",
+		tier: 2,
+		type: "major",
+		timing: {
+			day: "saturday",
+			phase: "dayStart",
+		},
+		choices: [
+			{
+				id: "go",
+				effects: { energy: -M.MODERATE, momentum: M.MAJOR },
+			},
+			{
+				id: "stop-by",
+				effects: { energy: -M.NUDGE, momentum: M.MINOR },
+			},
+			{
+				id: "stay-in",
+				effects: { momentum: -M.NUDGE },
+			},
+		],
+	},
+
+	// =====================
+	// Tier 2: Opportunity - Friend's Birthday
+	// =====================
+
+	{
+		id: "friends-birthday",
+		tier: 2,
+		type: "major",
+		timing: {
+			day: ["friday", "saturday"],
+			phase: "dayStart",
+		},
+		choices: [
+			{
+				id: "go-to-party",
+				effects: { energy: -M.MODERATE, momentum: M.MAJOR },
+			},
+			{
+				id: "send-message",
+				effects: { momentum: M.NUDGE },
+			},
+			{
+				id: "text-tomorrow",
+				effects: { momentum: -M.MINOR },
+			},
+		],
+	},
+
+	// =====================
+	// Tier 2: Opportunity - Nice Weather
+	// =====================
+
+	{
+		id: "nice-weather-opportunity",
+		tier: 2,
+		type: "major",
+		timing: {
+			day: ["monday", "tuesday", "wednesday", "thursday", "friday"],
+			phase: "dayStart",
+		},
+		choices: [
+			{
+				id: "go-for-walk",
+				effects: { energy: M.MINOR, momentum: M.MODERATE },
+			},
+			{
+				id: "open-window",
+				effects: { momentum: M.NUDGE },
+			},
+			{
+				id: "later",
+			},
+		],
+	},
 ];
 
 /** Gets an event definition by ID. */

@@ -857,3 +857,214 @@ describe("obligation consequence conditions", () => {
 		expect(checkForEvent(state, "dayEnd")).toBeNull();
 	});
 });
+
+describe("opportunity events", () => {
+	it("rooftop-bbq has 3 choices with correct effects", () => {
+		const def = getEventDefinition("rooftop-bbq");
+		expect(def).toBeDefined();
+		expect(def?.type).toBe("major");
+		expect(def?.tier).toBe(2);
+		expect(def?.choices).toHaveLength(3);
+
+		const go = def?.choices?.find((c) => c.id === "go");
+		expect(go?.effects?.energy).toBeLessThan(0);
+		expect(go?.effects?.momentum).toBeGreaterThan(0);
+
+		const stopBy = def?.choices?.find((c) => c.id === "stop-by");
+		expect(stopBy?.effects?.energy).toBeLessThan(0);
+		expect(stopBy?.effects?.momentum).toBeGreaterThan(0);
+
+		const stayIn = def?.choices?.find((c) => c.id === "stay-in");
+		expect(stayIn?.effects?.momentum).toBeLessThan(0);
+		expect(stayIn?.effects?.energy).toBeUndefined();
+	});
+
+	it("rooftop-bbq fires on saturday dayStart", () => {
+		const state = createTestState({
+			events: [{ id: "rooftop-bbq", status: "pending", scheduledDay: 5 }],
+			day: "saturday",
+			dayIndex: 5,
+		});
+		expect(checkForEvent(state, "dayStart")).toBe("rooftop-bbq");
+	});
+
+	it("rooftop-bbq does not fire on weekdays", () => {
+		const state = createTestState({
+			events: [{ id: "rooftop-bbq", status: "pending" }],
+			day: "wednesday",
+			dayIndex: 2,
+		});
+		expect(checkForEvent(state, "dayStart")).toBeNull();
+	});
+
+	it("friends-birthday has 3 choices with correct effects", () => {
+		const def = getEventDefinition("friends-birthday");
+		expect(def).toBeDefined();
+		expect(def?.type).toBe("major");
+		expect(def?.tier).toBe(2);
+		expect(def?.choices).toHaveLength(3);
+
+		const goToParty = def?.choices?.find((c) => c.id === "go-to-party");
+		expect(goToParty?.effects?.energy).toBeLessThan(0);
+		expect(goToParty?.effects?.momentum).toBeGreaterThan(0);
+
+		const sendMessage = def?.choices?.find((c) => c.id === "send-message");
+		expect(sendMessage?.effects?.momentum).toBeGreaterThan(0);
+		expect(sendMessage?.effects?.energy).toBeUndefined();
+
+		const textTomorrow = def?.choices?.find((c) => c.id === "text-tomorrow");
+		expect(textTomorrow?.effects?.momentum).toBeLessThan(0);
+	});
+
+	it("friends-birthday fires on friday or saturday dayStart", () => {
+		const stateFriday = createTestState({
+			events: [{ id: "friends-birthday", status: "pending", scheduledDay: 4 }],
+			day: "friday",
+			dayIndex: 4,
+		});
+		expect(checkForEvent(stateFriday, "dayStart")).toBe("friends-birthday");
+
+		const stateSaturday = createTestState({
+			events: [{ id: "friends-birthday", status: "pending", scheduledDay: 5 }],
+			day: "saturday",
+			dayIndex: 5,
+		});
+		expect(checkForEvent(stateSaturday, "dayStart")).toBe("friends-birthday");
+	});
+
+	it("nice-weather-opportunity has 3 choices with correct effects", () => {
+		const def = getEventDefinition("nice-weather-opportunity");
+		expect(def).toBeDefined();
+		expect(def?.type).toBe("major");
+		expect(def?.tier).toBe(2);
+		expect(def?.choices).toHaveLength(3);
+
+		const walk = def?.choices?.find((c) => c.id === "go-for-walk");
+		expect(walk?.effects?.energy).toBeGreaterThan(0);
+		expect(walk?.effects?.momentum).toBeGreaterThan(0);
+
+		const window = def?.choices?.find((c) => c.id === "open-window");
+		expect(window?.effects?.momentum).toBeGreaterThan(0);
+
+		const later = def?.choices?.find((c) => c.id === "later");
+		expect(later?.effects).toBeUndefined();
+	});
+
+	it("nice-weather-opportunity fires on weekdays only", () => {
+		const stateWed = createTestState({
+			events: [
+				{
+					id: "nice-weather-opportunity",
+					status: "pending",
+					scheduledDay: 2,
+				},
+			],
+			day: "wednesday",
+			dayIndex: 2,
+		});
+		expect(checkForEvent(stateWed, "dayStart")).toBe(
+			"nice-weather-opportunity",
+		);
+
+		// Should not fire on weekend
+		const stateSat = createTestState({
+			events: [{ id: "nice-weather-opportunity", status: "pending" }],
+			day: "saturday",
+			dayIndex: 5,
+		});
+		expect(checkForEvent(stateSat, "dayStart")).toBeNull();
+	});
+
+	it("rooftop-bbq applies effects correctly via resolveEvent", () => {
+		const state = createTestState({
+			events: [{ id: "rooftop-bbq", status: "active" }],
+			activeEventId: "rooftop-bbq",
+			energy: 0.5,
+			momentum: 0.5,
+		});
+		const store = createStore(state);
+
+		resolveEvent(store, "go");
+
+		// go: energy -MODERATE, momentum +MAJOR
+		expect(store.getState().energy).toBeLessThan(0.5);
+		expect(store.getState().momentum).toBeGreaterThan(0.5);
+	});
+
+	it("friends-birthday text-tomorrow applies momentum penalty", () => {
+		const state = createTestState({
+			events: [{ id: "friends-birthday", status: "active" }],
+			activeEventId: "friends-birthday",
+			energy: 0.5,
+			momentum: 0.5,
+		});
+		const store = createStore(state);
+
+		resolveEvent(store, "text-tomorrow");
+
+		expect(store.getState().energy).toBe(0.5);
+		expect(store.getState().momentum).toBeLessThan(0.5);
+	});
+
+	it("nice-weather-opportunity later has no effects", () => {
+		const state = createTestState({
+			events: [{ id: "nice-weather-opportunity", status: "active" }],
+			activeEventId: "nice-weather-opportunity",
+			energy: 0.5,
+			momentum: 0.5,
+		});
+		const store = createStore(state);
+
+		resolveEvent(store, "later");
+
+		expect(store.getState().energy).toBe(0.5);
+		expect(store.getState().momentum).toBe(0.5);
+	});
+
+	it("rooftop-bbq variant labels produce multiple variants across seeds", () => {
+		const recaps = new Set<string | null>();
+		for (let seed = 0; seed < 30; seed++) {
+			recaps.add(getEventRecap("rooftop-bbq", "go", seed));
+		}
+		expect(recaps.size).toBeGreaterThan(1);
+	});
+
+	it("friends-birthday variant labels produce multiple variants across seeds", () => {
+		const recaps = new Set<string | null>();
+		for (let seed = 0; seed < 30; seed++) {
+			recaps.add(getEventRecap("friends-birthday", "go-to-party", seed));
+		}
+		expect(recaps.size).toBeGreaterThan(1);
+	});
+
+	it("nice-weather-opportunity recap works for each choice", () => {
+		const walkRecap = getEventRecap(
+			"nice-weather-opportunity",
+			"go-for-walk",
+			42,
+		);
+		expect(walkRecap).not.toBeNull();
+		expect(typeof walkRecap).toBe("string");
+
+		const windowRecap = getEventRecap(
+			"nice-weather-opportunity",
+			"open-window",
+			42,
+		);
+		expect(windowRecap).not.toBeNull();
+
+		const laterRecap = getEventRecap("nice-weather-opportunity", "later", 42);
+		expect(laterRecap).not.toBeNull();
+	});
+
+	it("opportunity events are all standalone (no arcId)", () => {
+		for (const id of [
+			"rooftop-bbq",
+			"friends-birthday",
+			"nice-weather-opportunity",
+		] as const) {
+			const def = getEventDefinition(id);
+			expect(def?.arcId).toBeUndefined();
+		}
+	});
+});

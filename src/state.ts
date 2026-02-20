@@ -77,7 +77,11 @@ export type EventId =
 	| "vet-missed"
 	// Tier 2: Obligation - Work Deadline
 	| "work-reminder"
-	| "work-missed";
+	| "work-missed"
+	// Tier 2: Opportunity
+	| "rooftop-bbq"
+	| "friends-birthday"
+	| "nice-weather-opportunity";
 
 /** Runtime state of an event instance during a run. */
 export interface EventInstance {

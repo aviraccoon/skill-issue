@@ -1756,6 +1756,208 @@ export const en = {
 				],
 			},
 		},
+
+		// =====================
+		// Tier 2: Opportunity - Rooftop BBQ
+		// =====================
+
+		"rooftop-bbq": {
+			title: "Rooftop Thing",
+			description:
+				"Someone put a note under your door. Building BBQ on the roof tonight. There's even a little drawing of a grill. You can hear chairs scraping above you. People are going. People you've maybe nodded at in the hallway. It sounds like it could be nice. It also sounds like a lot.",
+			choices: {
+				go: [
+					{
+						label: "Go up",
+						description:
+							"Roof. People. Food you didn't make. Conversation with near-strangers. The full experience.",
+						recap:
+							"You went to the rooftop BBQ. There were people and food and the kind of easy conversation that comes with shared grill smoke. You stayed longer than you planned.",
+					},
+					{
+						label: "Go to the thing",
+						description:
+							"You can hear them up there. Might as well see what it's about. You can always leave.",
+						recap:
+							"The rooftop thing happened and you were there for it. The food was good. The company was fine. You can always leave, but you didn't.",
+					},
+					{
+						label: "Head up",
+						description:
+							"The roof is one flight of stairs. The hardest part is the door.",
+						recap:
+							"You went up. One flight of stairs, one door, one evening of being around people. The stairs were the easy part.",
+					},
+				],
+				"stop-by": [
+					{
+						label: "Stop by briefly",
+						description:
+							"Show face, grab a plate, leave before it gets draining. Strategic socializing.",
+						recap:
+							"You stopped by the roof thing. Grabbed a plate, said hi, left before the energy ran out. Efficient.",
+					},
+					{
+						label: "Quick appearance",
+						description:
+							"Go up, be seen, come back down. Five minutes. Ten, tops.",
+						recap:
+							"You made a quick appearance on the roof. Ten minutes of being a person who goes to things. Then back downstairs.",
+					},
+					{
+						label: "Just for a bit",
+						description:
+							"A brief visit. Enough to count, not enough to exhaust.",
+						recap:
+							"You went up for a bit. Just long enough to eat something and remember what other people sound like up close.",
+					},
+				],
+				"stay-in": [
+					{
+						label: "Stay in",
+						description:
+							"The roof will be there. So will you, down here, where it's quiet.",
+						recap:
+							"The BBQ happened one floor up. You could hear it through the ceiling. It sounded fine. You were fine too.",
+					},
+					{
+						label: "Not tonight",
+						description:
+							"The note goes on the counter. Maybe next time. Maybe.",
+						recap:
+							"The building had a BBQ. You had your apartment. Both are valid venues for a Saturday.",
+					},
+					{
+						label: "Pass",
+						description: "Social energy: insufficient. The couch understands.",
+						recap:
+							"There was a thing on the roof and you weren't at it. The evening was quiet. Not bad, just quiet.",
+					},
+				],
+			},
+		},
+
+		// =====================
+		// Tier 2: Opportunity - Friend's Birthday
+		// =====================
+
+		"friends-birthday": {
+			title: "Birthday",
+			description:
+				"Your friend's birthday is today. There's a thing happening -- drinks, people, probably cake. You said you'd be there. That was three days ago when 'being there' felt possible. Now it's today and being there requires putting on real clothes, leaving the apartment, and sustaining multiple conversations. The intention was genuine. The execution is another matter.",
+			choices: {
+				"go-to-party": [
+					{
+						label: "Go to the party",
+						description:
+							"Get dressed. Leave. Be there. It's their birthday. You said you would.",
+						recap:
+							"You went to the birthday thing. Real clothes, real people, real conversation. Your friend was glad you came. So were you, eventually.",
+					},
+					{
+						label: "Show up",
+						description:
+							"You said you'd be there. The gap between saying and doing is wide, but not always uncrossable.",
+						recap:
+							"You showed up. The gap between saying and doing closed just enough. Your friend smiled when they saw you.",
+					},
+					{
+						label: "Go",
+						description:
+							"Just go. Don't think about it too much. Thinking is where the leaving stops happening.",
+						recap:
+							"You went. Didn't think about it too much, just did it. The party was loud and your friend was happy and for a few hours the world was bigger than the apartment.",
+					},
+				],
+				"send-message": [
+					{
+						label: "Send a message",
+						description:
+							"Type something. Send it. It's not nothing. It's not the same, but it's not nothing.",
+						recap:
+							"You sent the birthday message. Heartfelt emoji, genuine words. Not the same as being there, but not nothing.",
+					},
+					{
+						label: "Text happy birthday",
+						description:
+							"A message, a few words, maybe an emoji. Low commitment, but sincere.",
+						recap:
+							"Happy birthday, sent. The text was short but you meant it. Your friend replied with a heart.",
+					},
+					{
+						label: "Write something nice",
+						description:
+							"You can't go, but you can reach out. The phone is right here.",
+						recap:
+							"You wrote something nice. Couldn't be there in person, but the message was real.",
+					},
+				],
+				"text-tomorrow": [
+					{
+						label: "You'll text tomorrow",
+						description:
+							"Tomorrow. Definitely tomorrow. The thought counts, right? The thought always counts.",
+						recap:
+							"You didn't text. You were going to. Tomorrow, you said. Tomorrow is now last week.",
+					},
+					{
+						label: "Later",
+						description:
+							"Not now. You'll think of something good to say when you're not... this. Later.",
+						recap:
+							"Later never came. Or it came and you still didn't text. The birthday was last week now.",
+					},
+					{
+						label: "You'll figure it out",
+						description:
+							"Something will come to you. The right words, the right moment. Just not this one.",
+						recap:
+							"The right moment didn't arrive. Neither did a text. Your friend probably understands. Probably.",
+					},
+				],
+			},
+		},
+
+		// =====================
+		// Tier 2: Opportunity - Nice Weather
+		// =====================
+
+		"nice-weather-opportunity": {
+			title: "Outside",
+			description:
+				"It's one of those days. The kind of day where the light coming through the window is almost aggressive in how nice it is. Warm air, clear sky, the whole production. The kind of day that feels wasted from indoors. The door is right there.",
+			choices: {
+				"go-for-walk": {
+					label: "Go for a walk",
+					description:
+						"Leave the apartment. Walk around. Feel the sun on your face. It's simple in theory.",
+				},
+				"open-window": {
+					label: "Open the window",
+					description:
+						"The outside can come in. Fresh air, sounds of life, sun on the desk. Without the leaving part.",
+				},
+				later: {
+					label: "Later",
+					description:
+						"The weather will probably hold. And if it doesn't, that's also fine.",
+				},
+			},
+			recap: {
+				"go-for-walk": [
+					"You went outside. On purpose. The sun was real and the air was warm and for twenty minutes you were a person who goes for walks.",
+					"The walk happened. Fresh air, sunlight, the whole thing. Simple in execution, impossible in initiation. But it happened.",
+				],
+				"open-window": [
+					"You opened the window. The outside came in. It wasn't the same as going out, but the air was good.",
+					"Window open, fresh air in. A compromise between inside and outside. Both parties found it acceptable.",
+				],
+				later: [
+					"The nice weather came and went. So did 'later.'",
+					"It was nice outside. You know because the window exists. 'Later' never materialized, but then, it rarely does.",
+				],
+			},
+		},
 	},
 
 	weekStory: {
