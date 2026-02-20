@@ -1500,12 +1500,12 @@ export const en = {
 		},
 		"leak-worse": {
 			notification: [
-				"The towel is soaked through. The dripping sounds louder now, or maybe you're just more aware of it. This is becoming a situation.",
-				"The leak is worse. The towel solution has quietly reached its theoretical limits. Tomorrow. Definitely tomorrow.",
+				"Maintenance is here. The water reached the apartment below. They need access to your kitchen. The next few hours aren't yours anymore.",
+				"The landlord sent someone about the leak. They're under your sink now while you hover uselessly in the kitchen. This is your morning.",
 			],
 			recap: [
-				"The leak got worse. The towel strategy reached its theoretical limits. Some problems don't solve themselves.",
-				"That dripping under the sink? Still going. Louder now. The towel is doing its best.",
+				"The leak you put a towel on? It reached the apartment below. Maintenance showed up and took over your morning.",
+				"Someone came about the leak. Not because you called. Because it got bad enough that you didn't have a choice anymore.",
 			],
 			phoneFragment: [
 				"You keep almost googling plumbers. The search bar remembers your hesitation.",

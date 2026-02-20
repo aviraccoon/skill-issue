@@ -477,6 +477,18 @@ function getNarrativeEventInfo(state: GameState): NarrativeEventInfo {
 			(c) => !c.requiresFlag || state.eventFlags.includes(c.requiresFlag),
 		);
 		const variantSeed = getEventVariantSeed(state.runSeed, eventId);
+		const resolvedChoices = choiceEntries.map((c) => {
+			const choices = content.choices as Record<
+				string,
+				ChoiceContent | ChoiceContent[] | undefined
+			>;
+			const resolved = resolveChoiceContent(choices[c.id], variantSeed);
+			return {
+				id: c.id,
+				label: resolved.label || c.id,
+				description: resolved.description,
+			};
+		});
 		return {
 			type: "narrativeEvent",
 			eventType: "major",
@@ -484,18 +496,7 @@ function getNarrativeEventInfo(state: GameState): NarrativeEventInfo {
 			text: "",
 			title: content.title,
 			description: content.description,
-			choices: choiceEntries.map((c) => {
-				const choices = content.choices as Record<
-					string,
-					ChoiceContent | ChoiceContent[] | undefined
-				>;
-				const resolved = resolveChoiceContent(choices[c.id], variantSeed);
-				return {
-					id: c.id,
-					label: resolved.label || c.id,
-					description: resolved.description,
-				};
-			}),
+			choices: resolvedChoices.sort(() => Math.random() - 0.5),
 			decisions,
 		};
 	}

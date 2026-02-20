@@ -47,6 +47,10 @@ export const priorityStrategy: Strategy = {
 			return availableDecisions.find((d) => d.type === "sleep") as Decision;
 		}
 
+		if (screen === "narrativeEvent") {
+			return pickEventChoice(availableDecisions, "best", context.roll);
+		}
+
 		// Find task attempts by priority
 		const taskAttempts = availableDecisions.filter(
 			(d) => d.type === "attempt",
@@ -117,6 +121,10 @@ export const worstCaseStrategy: Strategy = {
 			);
 		}
 
+		if (screen === "narrativeEvent") {
+			return pickEventChoice(availableDecisions, "worst", context.roll);
+		}
+
 		// Always check phone if available
 		const checkPhone = availableDecisions.find((d) => d.type === "checkPhone");
 		if (checkPhone && context.roll() < 0.5) {
@@ -179,6 +187,10 @@ export const bestCaseStrategy: Strategy = {
 		if (screen === "nightChoice") {
 			// Always sleep - rest is important
 			return availableDecisions.find((d) => d.type === "sleep") as Decision;
+		}
+
+		if (screen === "narrativeEvent") {
+			return pickEventChoice(availableDecisions, "best", context.roll);
 		}
 
 		// Pick easiest tasks first (highest base rate)
@@ -245,6 +257,10 @@ export const realisticStrategy: Strategy = {
 			return availableDecisions.find((d) => d.type === "sleep") as Decision;
 		}
 
+		if (screen === "narrativeEvent") {
+			return pickEventChoice(availableDecisions, "random", context.roll);
+		}
+
 		// Occasionally check phone (10% chance when low momentum)
 		const checkPhone = availableDecisions.find((d) => d.type === "checkPhone");
 		if (checkPhone && state.momentum < 0.3 && context.roll() < 0.1) {
@@ -302,6 +318,29 @@ export const realisticStrategy: Strategy = {
 		);
 	},
 };
+
+/**
+ * Picks an event choice based on strategy preference.
+ * Uses ordinal position: choices are authored from most engaged (first)
+ * to most avoidant (last). Strategies pick by position, not effect values.
+ */
+function pickEventChoice(
+	decisions: Decision[],
+	preference: "best" | "worst" | "random",
+	roll: () => number,
+): Decision {
+	const dismiss = decisions.find((d) => d.type === "dismissEvent");
+	if (dismiss) return dismiss;
+
+	const choices = decisions.filter((d) => d.type === "eventChoice");
+	if (choices.length === 0) return decisions[0] as Decision;
+
+	if (preference === "best") return choices[0] as Decision;
+	if (preference === "worst") return choices[choices.length - 1] as Decision;
+
+	const index = Math.floor(roll() * choices.length);
+	return choices[index] ?? (choices[0] as Decision);
+}
 
 /**
  * Strategy factories by name. Creates a fresh instance per call.

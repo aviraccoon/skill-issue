@@ -1395,3 +1395,121 @@ describe("contextual task variants (modifyTask)", () => {
 		});
 	});
 });
+
+describe("consequence ripple (skipCurrentBlock)", () => {
+	it("leak-worse has skipCurrentBlock in its effects", () => {
+		const def = getEventDefinition("leak-worse");
+		expect(def?.effects?.skipCurrentBlock).toBe(true);
+	});
+
+	it("leak-worse still has momentum and energy penalties", () => {
+		const def = getEventDefinition("leak-worse");
+		expect(def?.effects?.momentum).toBeLessThan(0);
+		expect(def?.effects?.energy).toBeLessThan(0);
+	});
+
+	it("skipCurrentBlock sets slotsRemaining to 0 on weekday", () => {
+		const state = createTestState({
+			events: [
+				{ id: "leak-drip", status: "resolved" },
+				{
+					id: "leak-found",
+					status: "resolved",
+					choiceId: "towel",
+				},
+				{ id: "leak-worse", status: "pending", scheduledDay: 4 },
+			],
+			eventFlags: ["leak-ignored"],
+			day: "friday",
+			dayIndex: 4,
+			timeBlock: "morning",
+			slotsRemaining: 3,
+			momentum: 0.5,
+			energy: 0.5,
+		});
+		const store = createStore(state);
+
+		activateEvent(store, "leak-worse");
+
+		expect(store.getState().slotsRemaining).toBe(0);
+	});
+
+	it("skipCurrentBlock deducts weekend points on weekend", () => {
+		const state = createTestState({
+			events: [
+				{ id: "leak-drip", status: "resolved" },
+				{
+					id: "leak-found",
+					status: "resolved",
+					choiceId: "towel",
+				},
+				{ id: "leak-worse", status: "pending", scheduledDay: 5 },
+			],
+			eventFlags: ["leak-ignored"],
+			day: "saturday",
+			dayIndex: 5,
+			weekendPointsRemaining: 8,
+			momentum: 0.5,
+			energy: 0.5,
+		});
+		const store = createStore(state);
+
+		activateEvent(store, "leak-worse");
+
+		expect(store.getState().weekendPointsRemaining).toBe(5);
+	});
+
+	it("skipCurrentBlock weekend deduction does not go below 0", () => {
+		const state = createTestState({
+			events: [
+				{ id: "leak-drip", status: "resolved" },
+				{
+					id: "leak-found",
+					status: "resolved",
+					choiceId: "towel",
+				},
+				{ id: "leak-worse", status: "pending", scheduledDay: 5 },
+			],
+			eventFlags: ["leak-ignored"],
+			day: "saturday",
+			dayIndex: 5,
+			weekendPointsRemaining: 1,
+			momentum: 0.5,
+			energy: 0.5,
+		});
+		const store = createStore(state);
+
+		activateEvent(store, "leak-worse");
+
+		expect(store.getState().weekendPointsRemaining).toBe(0);
+	});
+
+	it("applies momentum and energy effects alongside skipCurrentBlock", () => {
+		const state = createTestState({
+			events: [
+				{ id: "leak-drip", status: "resolved" },
+				{
+					id: "leak-found",
+					status: "resolved",
+					choiceId: "towel",
+				},
+				{ id: "leak-worse", status: "pending", scheduledDay: 4 },
+			],
+			eventFlags: ["leak-ignored"],
+			day: "friday",
+			dayIndex: 4,
+			timeBlock: "morning",
+			slotsRemaining: 3,
+			momentum: 0.5,
+			energy: 0.5,
+		});
+		const store = createStore(state);
+
+		activateEvent(store, "leak-worse");
+
+		// Slots consumed AND momentum/energy hit
+		expect(store.getState().slotsRemaining).toBe(0);
+		expect(store.getState().momentum).toBeLessThan(0.5);
+		expect(store.getState().energy).toBeLessThan(0.5);
+	});
+});

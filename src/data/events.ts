@@ -42,6 +42,8 @@ export interface EventEffects {
 	setFlag?: string;
 	/** Mark a task as succeeded (used by obligation consequence "do it now" choices). */
 	succeedTask?: TaskId;
+	/** Consume the current time block (weekday: slots = 0, weekend: deduct points). */
+	skipCurrentBlock?: boolean;
 }
 
 /** Definition for in-place modification of an existing task by an event. */
@@ -81,7 +83,11 @@ export interface EventDefinition {
 	condition?: (state: GameState) => boolean;
 	/** Direct effects for minor events (applied on display). */
 	effects?: EventEffects;
-	/** Choices for major events. At least 2 required for major type. */
+	/**
+	 * Choices for major events. At least 2 required for major type.
+	 * Order from most engaged (first) to most avoidant (last).
+	 * This order is canonical for strategies; display order is shuffled per seed.
+	 */
 	choices?: EventChoice[];
 	/** Arc ID for connected event sequences. */
 	arcId?: string;
@@ -471,7 +477,11 @@ export const eventPool: readonly EventDefinition[] = [
 		condition: (state) => state.eventFlags.includes("leak-ignored"),
 		arcId: "leak",
 		arcStep: 2,
-		effects: { momentum: -M.MODERATE, energy: -M.MINOR },
+		effects: {
+			momentum: -M.MODERATE,
+			energy: -M.MINOR,
+			skipCurrentBlock: true,
+		},
 	},
 
 	// =====================

@@ -12,12 +12,14 @@ import {
 	type TaskModification,
 } from "../data/events";
 import { getTaskStatic, type TaskId } from "../data/tasks";
+import { SLOTS_PER_BLOCK } from "../data/timeBlocks";
 import { strings } from "../i18n";
 import {
 	DAYS,
 	type Day,
 	type EventId,
 	type GameState,
+	isWeekend,
 	type Task,
 	type TimeBlock,
 } from "../state";
@@ -344,5 +346,14 @@ function applyEventEffects(
 		store.update("tasks", (tasks) =>
 			tasks.map((t) => (t.id === taskId ? { ...t, succeededToday: true } : t)),
 		);
+	}
+	if (effects.skipCurrentBlock) {
+		if (isWeekend(store.getState())) {
+			store.update("weekendPointsRemaining", (p) =>
+				Math.max(p - SLOTS_PER_BLOCK, 0),
+			);
+		} else {
+			store.set("slotsRemaining", 0);
+		}
 	}
 }
