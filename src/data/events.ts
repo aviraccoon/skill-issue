@@ -44,6 +44,14 @@ export interface EventEffects {
 	succeedTask?: TaskId;
 }
 
+/** Definition for in-place modification of an existing task by an event. */
+export interface TaskModification {
+	/** Task to modify (must exist in the seed's pool). */
+	taskId: TaskId;
+	/** Override the task's base success rate. */
+	baseRate?: number;
+}
+
 /** Definition for a task injected by an obligation notification event. */
 export interface ObligationDef {
 	taskId: TaskId;
@@ -85,6 +93,8 @@ export interface EventDefinition {
 	deliveryStyle?: DeliveryStyle;
 	/** Obligation task to inject when this notification event fires. */
 	obligation?: ObligationDef;
+	/** Modify an existing task in-place when this event fires. */
+	modifyTask?: TaskModification;
 }
 
 /** Gets event content from i18n by event ID. */
@@ -134,6 +144,7 @@ export function getEventRecap(
 	id: EventId,
 	choiceId: string | undefined,
 	seed: number,
+	taskModificationResult?: "succeeded" | "succeeded-variant",
 ): string | null {
 	const content = getEventContent(id);
 	const variantSeed = getEventVariantSeed(seed, id);
@@ -150,6 +161,18 @@ export function getEventRecap(
 				variantSeed,
 			);
 			if (resolved.recap) return resolved.recap;
+		}
+	}
+
+	// Task modification outcome-aware recap (e.g. "cooked for friend" vs "ordered pizza")
+	if (taskModificationResult) {
+		const recapKey =
+			taskModificationResult === "succeeded-variant"
+				? "recapVariant"
+				: "recapSucceeded";
+		const outcomeRecap = (content as Record<string, unknown>)[recapKey];
+		if (Array.isArray(outcomeRecap) && outcomeRecap.length > 0) {
+			return pickVariant(outcomeRecap as [string, ...string[]], variantSeed);
 		}
 	}
 
@@ -539,7 +562,11 @@ export const eventPool: readonly EventDefinition[] = [
 		},
 		arcId: "neighbor",
 		arcStep: 0,
+		// Skip if cook is already contextually modified (e.g. by friend-visits)
+		condition: (state) =>
+			!state.tasks.some((t) => t.id === "cook" && t.contextModifiedBy),
 		effects: { momentum: M.NUDGE },
+		modifyTask: { taskId: "cook", baseRate: 0.08 },
 	},
 
 	{
@@ -777,6 +804,27 @@ export const eventPool: readonly EventDefinition[] = [
 				id: "later",
 			},
 		],
+	},
+
+	// =====================
+	// Tier 2: Contextual Task Variant - Friend Visits
+	// =====================
+
+	{
+		id: "friend-visits",
+		tier: 2,
+		type: "minor",
+		timing: {
+			day: ["wednesday", "thursday", "friday"],
+			timeBlock: ["afternoon", "evening"],
+			phase: "blockStart",
+		},
+		// Skip if cook is already contextually modified (e.g. by neighbor-hello)
+		condition: (state) =>
+			!state.tasks.some((t) => t.id === "cook" && t.contextModifiedBy),
+		effects: { momentum: M.NUDGE },
+		deliveryStyle: "message",
+		modifyTask: { taskId: "cook", baseRate: 0.13 },
 	},
 ];
 

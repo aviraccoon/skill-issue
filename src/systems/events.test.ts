@@ -11,9 +11,11 @@ import { createInitialState, type GameState, type Task } from "../state";
 import { createStore } from "../store";
 import {
 	activateEvent,
+	applyTaskModification,
 	checkForEvent,
 	createObligationTask,
 	resolveEvent,
+	revertTaskModification,
 } from "./events";
 
 const VARIANCE_FACTOR = 0.2;
@@ -1066,5 +1068,330 @@ describe("opportunity events", () => {
 			const def = getEventDefinition(id);
 			expect(def?.arcId).toBeUndefined();
 		}
+	});
+});
+
+describe("contextual task variants (modifyTask)", () => {
+	/** Creates a cook task matching the default pool. */
+	function makeCookTask(): Task {
+		return {
+			id: "cook" as TaskId,
+			name: "Cook Meal",
+			category: "food",
+			baseRate: 0.1,
+			minimalVariant: {
+				name: "Microwave something",
+				baseRate: 0.5,
+				unlockHints: ["hint"],
+			},
+			availableBlocks: ["morning", "afternoon", "evening"],
+			failureCount: 0,
+			attemptedToday: false,
+			succeededToday: false,
+		};
+	}
+
+	it("neighbor-hello has a modifyTask targeting cook", () => {
+		const def = getEventDefinition("neighbor-hello");
+		expect(def?.modifyTask).toBeDefined();
+		expect(def?.modifyTask?.taskId).toBe("cook");
+		expect(def?.modifyTask?.baseRate).toBeDefined();
+	});
+
+	it("changes task name and sets contextModifiedBy", () => {
+		const state = createTestState({ tasks: [makeCookTask()] });
+		const store = createStore(state);
+
+		applyTaskModification(store, "neighbor-hello", {
+			taskId: "cook",
+			baseRate: 0.08,
+		});
+
+		const task = store.getState().tasks.find((t) => t.id === "cook");
+		expect(task?.name).toBe("Cook for Neighbor");
+		expect(task?.contextModifiedBy).toBe("neighbor-hello");
+	});
+
+	it("changes task baseRate when specified", () => {
+		const state = createTestState({ tasks: [makeCookTask()] });
+		const store = createStore(state);
+
+		applyTaskModification(store, "neighbor-hello", {
+			taskId: "cook",
+			baseRate: 0.08,
+		});
+
+		const task = store.getState().tasks.find((t) => t.id === "cook");
+		expect(task?.baseRate).toBe(0.08);
+	});
+
+	it("updates minimalVariant name when variant exists", () => {
+		const state = createTestState({ tasks: [makeCookTask()] });
+		const store = createStore(state);
+
+		applyTaskModification(store, "neighbor-hello", {
+			taskId: "cook",
+			baseRate: 0.08,
+		});
+
+		const task = store.getState().tasks.find((t) => t.id === "cook");
+		expect(task?.minimalVariant?.name).toBe("Order Pizza for Neighbor");
+	});
+
+	it("preserves minimalVariant baseRate", () => {
+		const state = createTestState({ tasks: [makeCookTask()] });
+		const store = createStore(state);
+
+		applyTaskModification(store, "neighbor-hello", {
+			taskId: "cook",
+			baseRate: 0.08,
+		});
+
+		const task = store.getState().tasks.find((t) => t.id === "cook");
+		expect(task?.minimalVariant?.baseRate).toBe(0.5);
+	});
+
+	it("does nothing when task is not in pool", () => {
+		const otherTask: Task = {
+			id: "shower" as TaskId,
+			name: "Shower",
+			category: "hygiene",
+			baseRate: 0.35,
+			availableBlocks: ["morning", "evening"],
+			failureCount: 0,
+			attemptedToday: false,
+			succeededToday: false,
+		};
+		const state = createTestState({ tasks: [otherTask] });
+		const store = createStore(state);
+
+		applyTaskModification(store, "neighbor-hello", {
+			taskId: "cook",
+			baseRate: 0.08,
+		});
+
+		// Tasks unchanged
+		expect(store.getState().tasks).toHaveLength(1);
+		expect(store.getState().tasks[0]?.name).toBe("Shower");
+	});
+
+	it("activateEvent applies modifyTask for minor events", () => {
+		const state = createTestState({
+			events: [{ id: "neighbor-hello", status: "pending" }],
+			day: "tuesday",
+			dayIndex: 1,
+			timeBlock: "afternoon",
+			tasks: [makeCookTask()],
+		});
+		const store = createStore(state);
+
+		const delivery = activateEvent(store, "neighbor-hello");
+
+		expect(delivery).toBe("inline");
+		const task = store.getState().tasks.find((t) => t.id === "cook");
+		expect(task?.name).toBe("Cook for Neighbor");
+		expect(task?.baseRate).toBe(0.08);
+		expect(task?.minimalVariant?.name).toBe("Order Pizza for Neighbor");
+	});
+
+	it("does not modify task when cook is absent from seed pool", () => {
+		const state = createTestState({
+			events: [{ id: "neighbor-hello", status: "pending" }],
+			day: "tuesday",
+			dayIndex: 1,
+			timeBlock: "afternoon",
+			tasks: [],
+		});
+		const store = createStore(state);
+
+		activateEvent(store, "neighbor-hello");
+
+		expect(store.getState().tasks).toHaveLength(0);
+	});
+
+	it("still applies momentum effect alongside task modification", () => {
+		const state = createTestState({
+			events: [{ id: "neighbor-hello", status: "pending" }],
+			day: "tuesday",
+			dayIndex: 1,
+			timeBlock: "afternoon",
+			tasks: [makeCookTask()],
+			momentum: 0.5,
+		});
+		const store = createStore(state);
+
+		activateEvent(store, "neighbor-hello");
+
+		// neighbor-hello has effects: { momentum: M.NUDGE (0.03) }
+		expect(store.getState().momentum).toBeGreaterThan(0.5);
+	});
+
+	it("revertTaskModification restores original name and rate", () => {
+		const state = createTestState({ tasks: [makeCookTask()] });
+		const store = createStore(state);
+
+		applyTaskModification(store, "neighbor-hello", {
+			taskId: "cook",
+			baseRate: 0.08,
+		});
+		expect(store.getState().tasks.find((t) => t.id === "cook")?.name).toBe(
+			"Cook for Neighbor",
+		);
+
+		revertTaskModification(store, "cook" as TaskId);
+
+		const task = store.getState().tasks.find((t) => t.id === "cook");
+		expect(task?.name).toBe("Cook Meal");
+		expect(task?.baseRate).toBe(0.1);
+		expect(task?.contextModifiedBy).toBeUndefined();
+	});
+
+	it("revertTaskModification restores minimalVariant name", () => {
+		const state = createTestState({ tasks: [makeCookTask()] });
+		const store = createStore(state);
+
+		applyTaskModification(store, "neighbor-hello", {
+			taskId: "cook",
+			baseRate: 0.08,
+		});
+		expect(
+			store.getState().tasks.find((t) => t.id === "cook")?.minimalVariant?.name,
+		).toBe("Order Pizza for Neighbor");
+
+		revertTaskModification(store, "cook" as TaskId);
+
+		const task = store.getState().tasks.find((t) => t.id === "cook");
+		expect(task?.minimalVariant?.name).toBe("Microwave something");
+		expect(task?.minimalVariant?.baseRate).toBe(0.5);
+	});
+
+	it("revertTaskModification does nothing if task not modified", () => {
+		const state = createTestState({ tasks: [makeCookTask()] });
+		const store = createStore(state);
+
+		// No modification applied -- revert should be a no-op
+		revertTaskModification(store, "cook" as TaskId);
+
+		const task = store.getState().tasks.find((t) => t.id === "cook");
+		expect(task?.name).toBe("Cook Meal");
+		expect(task?.baseRate).toBe(0.1);
+	});
+
+	describe("friend-visits", () => {
+		it("has a modifyTask targeting cook with higher rate", () => {
+			const def = getEventDefinition("friend-visits");
+			expect(def?.modifyTask).toBeDefined();
+			expect(def?.modifyTask?.taskId).toBe("cook");
+			expect(def?.modifyTask?.baseRate).toBeGreaterThan(0.1);
+		});
+
+		it("changes task name to Cook for Friend", () => {
+			const state = createTestState({ tasks: [makeCookTask()] });
+			const store = createStore(state);
+
+			applyTaskModification(store, "friend-visits", {
+				taskId: "cook",
+				baseRate: 0.13,
+			});
+
+			const task = store.getState().tasks.find((t) => t.id === "cook");
+			expect(task?.name).toBe("Cook for Friend");
+			expect(task?.contextModifiedBy).toBe("friend-visits");
+		});
+
+		it("sets easier baseRate (motivated by social context)", () => {
+			const state = createTestState({ tasks: [makeCookTask()] });
+			const store = createStore(state);
+
+			applyTaskModification(store, "friend-visits", {
+				taskId: "cook",
+				baseRate: 0.13,
+			});
+
+			const task = store.getState().tasks.find((t) => t.id === "cook");
+			expect(task?.baseRate).toBe(0.13);
+		});
+
+		it("updates minimalVariant name", () => {
+			const state = createTestState({ tasks: [makeCookTask()] });
+			const store = createStore(state);
+
+			applyTaskModification(store, "friend-visits", {
+				taskId: "cook",
+				baseRate: 0.13,
+			});
+
+			const task = store.getState().tasks.find((t) => t.id === "cook");
+			expect(task?.minimalVariant?.name).toBe("Order Pizza for Friend");
+		});
+
+		it("activateEvent applies modification inline", () => {
+			const state = createTestState({
+				events: [{ id: "friend-visits", status: "pending" }],
+				day: "thursday",
+				dayIndex: 3,
+				timeBlock: "evening",
+				tasks: [makeCookTask()],
+			});
+			const store = createStore(state);
+
+			const delivery = activateEvent(store, "friend-visits");
+
+			expect(delivery).toBe("inline");
+			const task = store.getState().tasks.find((t) => t.id === "cook");
+			expect(task?.name).toBe("Cook for Friend");
+			expect(task?.baseRate).toBe(0.13);
+			expect(task?.minimalVariant?.name).toBe("Order Pizza for Friend");
+		});
+
+		it("does not fire when cook is already contextually modified", () => {
+			const modifiedCook = {
+				...makeCookTask(),
+				name: "Cook for Neighbor",
+				baseRate: 0.08,
+				contextModifiedBy: "neighbor-hello" as const,
+			};
+			const state = createTestState({
+				events: [{ id: "friend-visits", status: "pending" }],
+				day: "thursday",
+				dayIndex: 3,
+				timeBlock: "evening",
+				tasks: [modifiedCook],
+			});
+
+			const def = getEventDefinition("friend-visits");
+			expect(def?.condition?.(state)).toBe(false);
+		});
+
+		it("fires when cook has no active modification", () => {
+			const state = createTestState({
+				events: [{ id: "friend-visits", status: "pending" }],
+				day: "thursday",
+				dayIndex: 3,
+				timeBlock: "evening",
+				tasks: [makeCookTask()],
+			});
+
+			const def = getEventDefinition("friend-visits");
+			expect(def?.condition?.(state)).toBe(true);
+		});
+
+		it("fires after neighbor modification is reverted via success", () => {
+			const state = createTestState({
+				events: [{ id: "friend-visits", status: "pending" }],
+				day: "friday",
+				dayIndex: 4,
+				timeBlock: "afternoon",
+				tasks: [makeCookTask()], // no contextModifiedBy = reverted
+			});
+
+			const def = getEventDefinition("friend-visits");
+			expect(def?.condition?.(state)).toBe(true);
+		});
+
+		it("uses message delivery style", () => {
+			const def = getEventDefinition("friend-visits");
+			expect(def?.deliveryStyle).toBe("message");
+		});
 	});
 });

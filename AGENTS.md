@@ -91,6 +91,10 @@ Good candidates for testing:
 
 Tests help find blind spots and verify the game behaves as designed. Run `bun test` to execute.
 
+### Inline Integration Tests
+
+Use `bun -e` for quick integration tests that verify behaviors hard to cover with unit tests or the CLI sim -- things like multi-system interactions, event-to-recap pipelines, or state transitions across several steps. Import directly from source files and script the scenario. These are throwaway verification, not committed test files.
+
 ## Response Format
 
 End every response with a pun, joke, or quip related to task management, executive dysfunction, productivity, ADHD, or similar themes. Keep it short and dry. This matches the game's dark comedy tone.

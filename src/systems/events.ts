@@ -9,7 +9,9 @@ import {
 	getEventContent,
 	getEventDefinition,
 	type ObligationDef,
+	type TaskModification,
 } from "../data/events";
+import { getTaskStatic, type TaskId } from "../data/tasks";
 import { strings } from "../i18n";
 import {
 	DAYS,
@@ -140,6 +142,11 @@ export function activateEvent(
 			store.update("tasks", (tasks) => [...tasks, task]);
 		}
 
+		// Modify an existing task if this event has a task modification
+		if (definition.modifyTask) {
+			applyTaskModification(store, eventId, definition.modifyTask);
+		}
+
 		// Build banner text from i18n
 		const content = getEventContent(eventId);
 		let text = "";
@@ -225,6 +232,84 @@ export function resolveEvent(
 	store.set("activeEventId", null);
 
 	return definition?.timing.phase ?? null;
+}
+
+/**
+ * Reverts a contextual task modification, restoring original name and rate
+ * from task statics and i18n. Called on task success.
+ */
+export function revertTaskModification(
+	store: Store<GameState>,
+	taskId: TaskId,
+): void {
+	const s = strings();
+	const taskContent = s.tasks[taskId];
+	const taskStatic = getTaskStatic(taskId);
+
+	store.update("tasks", (tasks) =>
+		tasks.map((t) => {
+			if (t.id !== taskId || !t.contextModifiedBy) return t;
+			return {
+				...t,
+				name: taskContent.name,
+				baseRate: taskStatic?.baseRate ?? t.baseRate,
+				contextModifiedBy: undefined,
+				...(t.minimalVariant && "variant" in taskContent
+					? {
+							minimalVariant: {
+								...t.minimalVariant,
+								name: (taskContent as { variant: { name: string } }).variant
+									.name,
+							},
+						}
+					: {}),
+			};
+		}),
+	);
+}
+
+/**
+ * Modifies an existing task in-place when an event fires.
+ * Silently does nothing if the task isn't in the seed's pool.
+ * Name and variant name come from i18n; rate override comes from the definition.
+ */
+export function applyTaskModification(
+	store: Store<GameState>,
+	eventId: EventId,
+	mod: TaskModification,
+): void {
+	const state = store.getState();
+	if (!state.tasks.some((t) => t.id === mod.taskId)) return;
+
+	const content = getEventContent(eventId);
+	const modContent =
+		"taskModification" in content
+			? (
+					content as {
+						taskModification: { name: string; variantName?: string };
+					}
+				).taskModification
+			: undefined;
+
+	store.update("tasks", (tasks) =>
+		tasks.map((t) => {
+			if (t.id !== mod.taskId) return t;
+			return {
+				...t,
+				contextModifiedBy: eventId,
+				...(modContent?.name ? { name: modContent.name } : {}),
+				...(mod.baseRate !== undefined ? { baseRate: mod.baseRate } : {}),
+				...(t.minimalVariant && modContent?.variantName
+					? {
+							minimalVariant: {
+								...t.minimalVariant,
+								name: modContent.variantName,
+							},
+						}
+					: {}),
+			};
+		}),
+	);
 }
 
 /** Applies energy/momentum/flag effects from an event with seed variance. */

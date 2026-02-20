@@ -7,6 +7,7 @@ import {
 	calculateTaskEnergyEffect,
 	getSaturdayWorkPenalty,
 } from "../systems/energy";
+import { revertTaskModification } from "../systems/events";
 import {
 	FRIEND_RESCUE_THRESHOLD,
 	PHONE_BUZZ_THRESHOLD,
@@ -172,6 +173,25 @@ export function attemptTask(
 					return { ...t, succeededToday: true };
 				}),
 			);
+		}
+
+		// Revert contextual task modification on success (e.g. "Cook for Neighbor" -> "Cook Meal")
+		if (task.contextModifiedBy) {
+			const modResult = useVariant ? "succeeded-variant" : "succeeded";
+			const modEventId = task.contextModifiedBy;
+			store.update("events", (events) =>
+				events.map((e) =>
+					e.id === modEventId
+						? {
+								...e,
+								taskModificationResult: modResult as
+									| "succeeded"
+									| "succeeded-variant",
+							}
+						: e,
+				),
+			);
+			revertTaskModification(store, task.id);
 		}
 
 		// Saturday work penalty: drains energy for Sunday (varies by seed)

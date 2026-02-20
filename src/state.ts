@@ -81,7 +81,9 @@ export type EventId =
 	// Tier 2: Opportunity
 	| "rooftop-bbq"
 	| "friends-birthday"
-	| "nice-weather-opportunity";
+	| "nice-weather-opportunity"
+	// Tier 2: Contextual task variant
+	| "friend-visits";
 
 /** Runtime state of an event instance during a run. */
 export interface EventInstance {
@@ -93,6 +95,8 @@ export interface EventInstance {
 	scheduledDay?: number;
 	/** Day index when obligation task appears. Set on notification events with obligations. */
 	obligationDay?: number;
+	/** Outcome of a modifyTask effect: set when the modified task succeeds. */
+	taskModificationResult?: "succeeded" | "succeeded-variant";
 }
 
 /**
@@ -157,6 +161,8 @@ export interface Task {
 	sourceEvent?: EventId;
 	/** Whether this is an obligation task (exempt from daily jitter). */
 	isObligation?: boolean;
+	/** Event that contextually modified this task. Present = modified, revert on success. */
+	contextModifiedBy?: EventId;
 }
 
 export type Screen =

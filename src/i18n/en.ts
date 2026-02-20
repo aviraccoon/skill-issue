@@ -1609,6 +1609,18 @@ export const en = {
 				"A 'just moved in!' post in the building chat. That's probably them.",
 				"The building chat has a new member. Same floor, apparently.",
 			],
+			taskModification: {
+				name: "Cook for Neighbor",
+				variantName: "Order Pizza for Neighbor",
+			},
+			recapSucceeded: [
+				"You cooked for the neighbor. A welcome gesture. The kind of thing a person who has it together would do. You did it anyway.",
+				"The new neighbor got a home-cooked meal out of you. Pressure works, apparently, when it comes with a face.",
+			],
+			recapVariant: [
+				"You ordered pizza for the neighbor. A welcome gesture that required a phone and a doorbell, not a kitchen.",
+				"The new neighbor got pizza. You ordered it. Close enough to neighborly.",
+			],
 		},
 		"neighbor-invite": {
 			title: "The Invite",
@@ -1957,6 +1969,33 @@ export const en = {
 					"It was nice outside. You know because the window exists. 'Later' never materialized, but then, it rarely does.",
 				],
 			},
+		},
+
+		// =====================
+		// Tier 2: Contextual Task Variant - Friend Visits
+		// =====================
+
+		"friend-visits": {
+			notification: [
+				"Hey, thinking of coming over later. Cool?",
+				"I'm free tonight, want to hang out at yours?",
+			],
+			taskModification: {
+				name: "Cook for Friend",
+				variantName: "Order Pizza for Friend",
+			},
+			recap: [
+				"Your friend came over. The cooking didn't happen, but the company did. That was the point anyway.",
+				"The friend stopped by. You didn't cook. You didn't need to. Being around someone was enough.",
+			],
+			recapSucceeded: [
+				"Your friend came over and you cooked for them. Actual food, in your kitchen, for another person. It wasn't a masterpiece but it existed.",
+				"The friend stopped by. You cooked. Real cooking, not just the idea of it. Having someone to cook for made the difference.",
+			],
+			recapVariant: [
+				"Your friend came over. You ordered pizza. Nobody pretended that was cooking. It was better.",
+				"The friend stopped by and you ordered food together. Sharing a pizza on the couch counts. It counts.",
+			],
 		},
 	},
 
