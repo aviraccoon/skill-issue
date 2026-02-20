@@ -229,6 +229,12 @@ export const en = {
 
 		// Variant available
 		variantAvailable: (name: string) => `Or try: ${name}.`,
+
+		// Delivery style prefixes for screen readers (sr-only, not visible)
+		deliveryPrefix: {
+			notification: "Notification:",
+			message: "Message:",
+		},
 	},
 
 	a11yStatement: {

@@ -135,7 +135,24 @@ export function showNotification(
 	notification.textContent = "";
 	requestAnimationFrame(() => {
 		setTimeout(() => {
-			notification.textContent = text;
+			// Add sr-only delivery style prefix for screen readers
+			const s = strings();
+			const prefix =
+				style === "notification"
+					? s.a11y.deliveryPrefix.notification
+					: style === "message"
+						? s.a11y.deliveryPrefix.message
+						: "";
+			if (prefix) {
+				const span = document.createElement("span");
+				span.className = "sr-only";
+				span.textContent = `${prefix} `;
+				notification.textContent = "";
+				notification.appendChild(span);
+				notification.appendChild(document.createTextNode(text));
+			} else {
+				notification.textContent = text;
+			}
 			notification.classList.add(appStyles.notificationVisible);
 			// Apply delivery style class (thought = default italic, no extra class)
 			const styleClass = style ? deliveryStyleClasses[style] : undefined;
