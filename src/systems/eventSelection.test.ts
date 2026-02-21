@@ -56,14 +56,11 @@ describe("getProgressionTier", () => {
 		expect(getProgressionTier(patternsWithCompletions(1))).toBe(1);
 	});
 
-	it("returns tier 2 with 2-3 main-mode completions", () => {
+	it("returns tier 2 (max) with 2+ main-mode completions", () => {
 		expect(getProgressionTier(patternsWithCompletions(2))).toBe(2);
 		expect(getProgressionTier(patternsWithCompletions(3))).toBe(2);
-	});
-
-	it("returns tier 3 with 4+ main-mode completions", () => {
-		expect(getProgressionTier(patternsWithCompletions(4))).toBe(3);
-		expect(getProgressionTier(patternsWithCompletions(10))).toBe(3);
+		expect(getProgressionTier(patternsWithCompletions(4))).toBe(2);
+		expect(getProgressionTier(patternsWithCompletions(10))).toBe(2);
 	});
 
 	it("ignores seeded-mode completions for tier calculation", () => {

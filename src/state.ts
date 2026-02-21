@@ -55,6 +55,9 @@ export type EventId =
 	| "found-cash"
 	| "good-smell"
 	| "neighbor-cookies"
+	| "fridge-empty"
+	| "good-song"
+	| "broken-mug"
 	// Tier 1: Arc - Leak
 	| "leak-drip"
 	| "leak-found"
@@ -69,6 +72,10 @@ export type EventId =
 	// Tier 1: Arc - Neighbor
 	| "neighbor-hello"
 	| "neighbor-invite"
+	// Tier 1: Arc - Power Outage
+	| "power-flicker"
+	| "power-out"
+	| "power-back"
 	// Tier 2: Obligation - Dentist
 	| "dentist-reminder"
 	| "dentist-missed"
@@ -78,10 +85,19 @@ export type EventId =
 	// Tier 2: Obligation - Work Deadline
 	| "work-reminder"
 	| "work-missed"
+	// Tier 2: Obligation - Building Inspection
+	| "inspection-notice"
+	| "inspection-failed"
 	// Tier 2: Opportunity
 	| "rooftop-bbq"
 	| "friends-birthday"
 	| "nice-weather-opportunity"
+	| "creative-spark"
+	// Tier 2: Arc - Dog Emergency
+	| "azor-sick"
+	| "azor-vet-choice"
+	| "azor-recovered"
+	| "azor-worse"
 	// Tier 2: Contextual task variant
 	| "friend-visits";
 

@@ -51,6 +51,7 @@ const TASK_FURNITURE_MAP: Record<TaskId, FurnitureName> = {
 	"dentist-visit": "door",
 	"vet-visit": "door",
 	"work-deadline": "desk",
+	"tidy-for-inspection": "kitchen",
 };
 
 /**

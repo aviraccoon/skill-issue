@@ -1375,6 +1375,7 @@ export const en = {
 		"dentist-visit": { name: "Dentist Appointment" },
 		"vet-visit": { name: "Vet Visit" },
 		"work-deadline": { name: "Work Deadline" },
+		"tidy-for-inspection": { name: "Tidy for Inspection" },
 	},
 
 	events: {
@@ -1557,6 +1558,36 @@ export const en = {
 					"Cookies were offered and declined. Sometimes even free kindness costs too much energy.",
 				],
 			},
+		},
+
+		"fridge-empty": {
+			notification: [
+				"You opened the fridge. It's not that there's nothing good -- there's nothing. A condiment, maybe. Some optimistic leftovers from a week you don't remember.",
+				"The fridge light comes on like it has something to show you. It doesn't. A jar of mustard and a question about your life choices.",
+				"Empty fridge. Not 'empty' like you need to go shopping. Empty like the shopping has been not-happening for a while now.",
+			],
+			recap: [
+				"The fridge was empty. Not in a dramatic way. In the slow, accumulating way of someone who keeps meaning to go shopping.",
+				"You opened the fridge and found the evidence of several days of not dealing with it.",
+			],
+		},
+		"good-song": {
+			notification: [
+				"A song came on and something shifted. Not fixed, not solved. Just -- shifted. The right notes at the right time.",
+				"Whatever's playing right now is hitting different. You don't move to change it. For once, staying still feels right.",
+				"The song caught you off guard. A melody you forgot you knew. For a few minutes, the apartment felt less like a container and more like a place.",
+			],
+		},
+		"broken-mug": {
+			notification: [
+				"You dropped your mug. The good one. It hit the floor and now it's in three pieces and the morning is already going like that.",
+				"Your favorite mug is on the floor in pieces. It's just a mug. It's not just a mug. It was the one that felt right.",
+				"The mug broke. The one you always reach for without thinking. Now you'll have to think about it every time.",
+			],
+			recap: [
+				"You broke your favorite mug. Small loss, but those are the ones that land.",
+				"The mug broke. You'll use another one. It won't be the same.",
+			],
 		},
 
 		// Tier 1: Arc - The Leak
@@ -1751,6 +1782,40 @@ export const en = {
 		},
 
 		// =====================
+		// Tier 1: Arc - Power Outage
+		// =====================
+
+		"power-flicker": {
+			notification: [
+				"The lights flickered. Just for a second. Could be nothing. Probably nothing.",
+				"A brief flicker -- the lights dimmed and came back. The fridge made a sound it doesn't usually make.",
+				"The lights blinked. Everything came back on. You noticed, filed it under 'not my problem,' and moved on.",
+			],
+		},
+		"power-out": {
+			notification: [
+				"The power's out. No light, no internet, no fridge hum. Just you and the silence and the realization that everything you do requires electricity.",
+				"Everything went dark. The building's power is out. Your phone has battery. Your patience doesn't.",
+				"Power's gone. The apartment is quiet in a way it never is. Every plan you had just became 'wait.'",
+			],
+			recap: [
+				"The power went out. A whole day of realizing how much of your routine is plugged in.",
+				"No electricity for a day. You sat in the quiet and waited. Not unlike a normal day, but louder about it.",
+			],
+			phoneFragment: [
+				"Building chat: 'power out for anyone else??' Twelve replies in two minutes.",
+				"You're doom-scrolling about the outage on a phone that's losing battery. Priorities.",
+			],
+		},
+		"power-back": {
+			notification: [
+				"The power came back. The fridge hums. The router blinks. You didn't realize how tense you were until the noise returned.",
+				"Lights on. The apartment fills with the sound of things doing their jobs again. You exhale.",
+				"Power's back. The clock on the microwave is blinking 12:00. You won't fix it. It'll blink until the next outage.",
+			],
+		},
+
+		// =====================
 		// Tier 2: Obligation - Dentist
 		// =====================
 
@@ -1867,6 +1932,29 @@ export const en = {
 					},
 				],
 			},
+		},
+
+		// =====================
+		// Tier 2: Obligation - Building Inspection
+		// =====================
+
+		"inspection-notice": {
+			notification: [
+				(day: Day, blocks: readonly TimeBlock[]) =>
+					`Notice: Building inspection -- ${days[day]}, ${timeBlocks[blocks[0] ?? "afternoon"]}. Please ensure your unit is presentable.`,
+				(day: Day, blocks: readonly TimeBlock[]) =>
+					`Landlord notice: Apartment inspection on ${days[day]}. ${timeBlocks[blocks[0] ?? "afternoon"]}.`,
+			],
+		},
+		"inspection-failed": {
+			notification: [
+				"The landlord came. You saw their eyes move across the apartment. The dishes. The laundry. The everything. They didn't say much. They didn't have to.",
+				"Inspection happened. You were here for it. So was everything else -- every unwashed dish, every pile, every surface that tells the story of a week you couldn't manage.",
+			],
+			recap: [
+				"The landlord inspected your apartment. The apartment told on you. Every surface was evidence.",
+				"The inspection happened. You were present. So was every dish, every pile, every postponed chore. The landlord's face said enough.",
+			],
 		},
 
 		// =====================
@@ -2069,6 +2157,148 @@ export const en = {
 					"It was nice outside. You know because the window exists. 'Later' never materialized, but then, it rarely does.",
 				],
 			},
+		},
+
+		// =====================
+		// Tier 2: Opportunity - Creative Spark
+		// =====================
+
+		"creative-spark": {
+			title: "The Idea",
+			description:
+				"Something clicked. An idea, a direction, a thing you could make. It arrived without warning, the way they always do -- at a time when you have other things to deal with. You could chase it now, while it's alive. Or you could write it down and hope it survives until later. It won't. They never do. But maybe this one's different.",
+			choices: {
+				"go-for-it": [
+					{
+						label: "Go for it",
+						description:
+							"Drop everything. The idea is here now. Everything else can wait.",
+						recap:
+							"You chased the idea. Dropped everything else, sat down, and made something. It cost you the rest of the day but the thing exists now.",
+					},
+					{
+						label: "Start now",
+						description:
+							"While it's fresh. While you can still see it clearly. Before the feeling fades.",
+						recap:
+							"You started while the idea was fresh. Hours disappeared. The thing you made isn't finished, but it's real.",
+					},
+					{
+						label: "Sit down and do it",
+						description:
+							"The spark is here. Your energy isn't, but the spark doesn't care about that.",
+						recap:
+							"You sat down and did the thing. Energy be damned. The creative spark burned through the fog for a few hours.",
+					},
+				],
+				"think-about-it": [
+					{
+						label: "Think about it",
+						description:
+							"Let it simmer. Turn it over. Maybe it'll be clearer after some time.",
+						recap:
+							"You thought about the idea. It's still there, somewhere, in the back of your mind. Simmering. Maybe.",
+					},
+					{
+						label: "Write it down",
+						description:
+							"A note. A voice memo. Something to anchor it before it dissolves.",
+						recap:
+							"You wrote it down. A note on your phone between grocery lists and passwords. Whether you'll find it again is another question.",
+					},
+				],
+				"not-today": [
+					{
+						label: "Not today",
+						description:
+							"The idea can wait. You have things to do. Important things. Theoretically.",
+						recap:
+							"The idea came and you let it pass. There were other things to do. Whether you did them is a separate question.",
+					},
+					{
+						label: "Maybe later",
+						description:
+							"Later, when you have more energy. Later, when the timing is right. Later.",
+						recap:
+							"The creative moment arrived and departed. 'Maybe later' is where ideas go to become regrets.",
+					},
+				],
+			},
+		},
+
+		// =====================
+		// Tier 2: Arc - Dog Emergency
+		// =====================
+
+		"azor-sick": {
+			notification: [
+				"Azor didn't eat this morning. He looked at the bowl and walked away. He never does that.",
+				"Something's off with Azor. He's lying in his spot but not sleeping. Just... staring. Dogs don't stare at nothing without reason.",
+				"Azor threw up. Once, small. He seems okay after, but he's quieter than usual. You're watching him from across the room.",
+			],
+			phoneFragment: [
+				"You googled 'dog not eating.' The results range from 'he's fine' to 'emergency.' Helpful.",
+				"A pet health forum says 'monitor for 24 hours.' You're already monitoring. You've been monitoring since breakfast.",
+			],
+		},
+		"azor-vet-choice": {
+			title: "Azor",
+			description:
+				"He's still not right. The not-eating continued, and now he's doing that thing where he follows you from room to room but won't settle. You know what the right move is. The emergency vet is open. The walk there is fifteen minutes. The cost is... you'll deal with the cost. The question isn't what to do. The question is whether you can make yourself do it right now.",
+			choices: {
+				"take-him-in": [
+					{
+						label: "Take him in",
+						description:
+							"Leash, door, walk, vet. Your morning is gone but he'll be looked at.",
+						recap:
+							"You took Azor to the vet. The morning disappeared into waiting rooms and worried silence. He let you hold his leash the whole time.",
+					},
+					{
+						label: "Go now",
+						description:
+							"Don't think about it. Grab the leash. He needs you to be the person who handles things.",
+						recap:
+							"You went. Didn't think, just grabbed the leash and walked. The vet said you did the right thing. Azor leaned against your leg in the waiting room.",
+					},
+				],
+				"wait-and-see": [
+					{
+						label: "Wait and see",
+						description:
+							"He might be fine by tonight. Dogs get weird sometimes. You'll watch him.",
+						recap:
+							"You waited. Watched him from across the room. Told yourself dogs get weird sometimes. He didn't get better.",
+					},
+					{
+						label: "Give it a day",
+						description:
+							"Twenty-four hours. If he's still off tomorrow, then you'll go. That's reasonable.",
+						recap:
+							"You gave it a day. The day passed. He wasn't better. The reasonable window closed while you watched.",
+					},
+				],
+			},
+		},
+		"azor-recovered": {
+			notification: [
+				"The vet said he's fine. Something he ate, probably. Medication for a few days. He's already perked up. The relief hits you harder than you expected.",
+				"Azor's better. Eating again, tail going, the whole performance. The vet visit was worth it. The worry was the expensive part.",
+			],
+			recap: [
+				"Azor's fine. The vet said so. The morning you spent in the waiting room bought peace of mind and a dog who's eating again.",
+				"The vet visit paid off. Azor recovered quickly. You recovered from the worry less quickly.",
+			],
+		},
+		"azor-worse": {
+			notification: [
+				"Azor's worse. He won't get up. The waiting-and-seeing is over. The emergency vet isn't optional anymore. The guilt of yesterday's hesitation sits in your stomach like a stone.",
+				"He's not okay. You knew yesterday and you waited anyway. The leash is by the door. The vet is a fifteen-minute walk that should have happened twenty-four hours ago.",
+			],
+			recap: [
+				"Azor got worse because you waited. The emergency vet visit was harder, scarier, and longer than it would have been the day before. He's okay now. You're less sure about yourself.",
+				"You waited on the vet. Azor paid for it with a worse day. He's recovering, but the guilt of 'I should have gone yesterday' isn't going anywhere.",
+			],
 		},
 
 		// =====================

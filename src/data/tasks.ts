@@ -94,7 +94,8 @@ export type TaskId =
 	// Obligations (injected by events, not in seed pool)
 	| "dentist-visit"
 	| "vet-visit"
-	| "work-deadline";
+	| "work-deadline"
+	| "tidy-for-inspection";
 
 /** Static task data that doesn't change (rates, blocks, category). */
 export interface TaskStatic {

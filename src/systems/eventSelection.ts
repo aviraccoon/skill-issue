@@ -9,6 +9,7 @@ import {
 	type EventPhase,
 	type EventTier,
 	eventPool,
+	MAX_EVENT_TIER,
 } from "../data/events";
 import { DAYS, type EventInstance } from "../state";
 import { seededRandom, seededShuffle } from "../utils/random";
@@ -32,7 +33,6 @@ const UNITS_PER_TIER: Record<EventTier, { min: number; max: number }> = {
 	0: { min: 1, max: 2 },
 	1: { min: 1, max: 3 },
 	2: { min: 1, max: 3 },
-	3: { min: 1, max: 3 },
 };
 
 /**
@@ -52,7 +52,6 @@ export function getProgressionTier(patterns: PatternsData): EventTier {
 		(run) => !run.gameMode || run.gameMode === "main",
 	).length;
 
-	if (mainCompletions >= 4) return 3;
 	if (mainCompletions >= 2) return 2;
 	if (mainCompletions >= 1) return 1;
 	return 0;
@@ -132,7 +131,7 @@ export function selectEventsForSeed(
 	bypassProgression = false,
 ): EventInstance[] {
 	const maxTier: EventTier = bypassProgression
-		? 3
+		? MAX_EVENT_TIER
 		: getProgressionTier(patterns);
 
 	const available = getAvailableEvents(maxTier);

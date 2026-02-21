@@ -13,7 +13,10 @@ import { TIME_BLOCKS, type TimeBlock } from "./timeBlocks";
 export type { EventId };
 
 /** Progression tier determines which events are available. */
-export type EventTier = 0 | 1 | 2 | 3;
+export type EventTier = 0 | 1 | 2;
+
+/** Highest progression tier. Used for bypass-progression and tier cap logic. */
+export const MAX_EVENT_TIER: EventTier = 2;
 
 /** Event presentation: minor = inline banner, major = full-screen choice. */
 export type EventType = "minor" | "major";
@@ -224,7 +227,7 @@ export const EVENT_MAGNITUDE = {
 	MODERATE: 0.1,
 	/** Friend-rescue-level. Significant. */
 	MAJOR: 0.15,
-	/** Crisis-level. Tier 3 convergence only. */
+	/** Crisis-level. Reserved for compounding consequences. */
 	SEVERE: 0.2,
 } as const;
 
@@ -814,6 +817,247 @@ export const eventPool: readonly EventDefinition[] = [
 				id: "later",
 			},
 		],
+	},
+
+	// =====================
+	// Tier 1: Standalone - Fridge Empty
+	// =====================
+
+	{
+		id: "fridge-empty",
+		tier: 1,
+		type: "minor",
+		timing: {
+			day: ["tuesday", "wednesday", "thursday"],
+			phase: "dayStart",
+		},
+		effects: { momentum: -M.MINOR },
+	},
+
+	// =====================
+	// Tier 1: Standalone - Good Song
+	// =====================
+
+	{
+		id: "good-song",
+		tier: 1,
+		type: "minor",
+		timing: {
+			timeBlock: ["afternoon", "evening", "night"],
+			phase: "blockStart",
+		},
+		effects: { momentum: M.NUDGE },
+	},
+
+	// =====================
+	// Tier 1: Standalone - Broken Mug
+	// =====================
+
+	{
+		id: "broken-mug",
+		tier: 1,
+		type: "minor",
+		timing: {
+			day: ["monday", "tuesday", "wednesday", "thursday", "friday"],
+			timeBlock: "morning",
+			phase: "blockStart",
+		},
+		effects: { energy: -M.NUDGE, momentum: -M.NUDGE },
+	},
+
+	// =====================
+	// Tier 1: Arc - Power Outage
+	// =====================
+
+	{
+		id: "power-flicker",
+		tier: 1,
+		type: "minor",
+		timing: {
+			day: ["monday", "tuesday", "wednesday"],
+			timeBlock: ["afternoon", "evening"],
+			phase: "blockStart",
+		},
+		arcId: "power",
+		arcStep: 0,
+	},
+
+	{
+		id: "power-out",
+		tier: 1,
+		type: "minor",
+		timing: {
+			day: ["tuesday", "wednesday", "thursday"],
+			phase: "dayStart",
+		},
+		requires: ["power-flicker"],
+		arcId: "power",
+		arcStep: 1,
+		effects: { energy: -M.MODERATE },
+	},
+
+	{
+		id: "power-back",
+		tier: 1,
+		type: "minor",
+		timing: {
+			day: ["thursday", "friday", "saturday"],
+			phase: "dayStart",
+		},
+		requires: ["power-out"],
+		arcId: "power",
+		arcStep: 2,
+		effects: { momentum: M.NUDGE },
+	},
+
+	// =====================
+	// Tier 2: Obligation - Building Inspection
+	// =====================
+
+	{
+		id: "inspection-notice",
+		tier: 2,
+		type: "minor",
+		timing: {
+			day: ["monday", "tuesday", "wednesday"],
+			phase: "dayStart",
+		},
+		deliveryStyle: "notification",
+		arcId: "inspection",
+		arcStep: 0,
+		obligation: {
+			taskId: "tidy-for-inspection",
+			category: "chores",
+			baseRate: 0.3,
+			availableBlocks: ["morning", "afternoon"],
+			dayOffset: [2, 3],
+		},
+	},
+
+	{
+		id: "inspection-failed",
+		tier: 2,
+		type: "minor",
+		timing: { phase: "blockStart" },
+		requires: ["inspection-notice"],
+		arcId: "inspection",
+		arcStep: 1,
+		condition: (state) => {
+			const task = state.tasks.find((t) => t.id === "tidy-for-inspection");
+			return (
+				task != null &&
+				!task.succeededToday &&
+				TIME_BLOCKS.indexOf(state.timeBlock) > TIME_BLOCKS.indexOf("afternoon")
+			);
+		},
+		effects: { momentum: -M.SEVERE },
+	},
+
+	// =====================
+	// Tier 2: Opportunity - Creative Spark
+	// =====================
+
+	{
+		id: "creative-spark",
+		tier: 2,
+		type: "major",
+		timing: {
+			day: ["tuesday", "wednesday", "thursday", "friday"],
+			timeBlock: ["afternoon", "evening"],
+			phase: "blockStart",
+		},
+		choices: [
+			{
+				id: "go-for-it",
+				effects: { energy: -M.MODERATE, momentum: M.MAJOR },
+			},
+			{
+				id: "think-about-it",
+				effects: { momentum: M.NUDGE },
+			},
+			{
+				id: "not-today",
+			},
+		],
+	},
+
+	// =====================
+	// Tier 2: Arc - Dog Emergency
+	// =====================
+
+	{
+		id: "azor-sick",
+		tier: 2,
+		type: "minor",
+		timing: {
+			day: ["monday", "tuesday", "wednesday"],
+			phase: "dayStart",
+		},
+		deliveryStyle: "message",
+		arcId: "azor-emergency",
+		arcStep: 0,
+		effects: { energy: -M.NUDGE },
+	},
+
+	{
+		id: "azor-vet-choice",
+		tier: 2,
+		type: "major",
+		timing: {
+			day: ["tuesday", "wednesday", "thursday"],
+			phase: "dayStart",
+		},
+		requires: ["azor-sick"],
+		arcId: "azor-emergency",
+		arcStep: 1,
+		choices: [
+			{
+				id: "take-him-in",
+				effects: {
+					energy: -M.MAJOR,
+					momentum: M.MINOR,
+					skipCurrentBlock: true,
+					setFlag: "azor-vet-went",
+				},
+			},
+			{
+				id: "wait-and-see",
+				effects: { setFlag: "azor-vet-waited" },
+			},
+		],
+	},
+
+	{
+		id: "azor-recovered",
+		tier: 2,
+		type: "minor",
+		timing: {
+			day: ["thursday", "friday", "saturday"],
+			phase: "dayStart",
+		},
+		requires: ["azor-vet-choice"],
+		condition: (state) => state.eventFlags.includes("azor-vet-went"),
+		arcId: "azor-emergency",
+		arcStep: 2,
+		effects: { momentum: M.MODERATE },
+	},
+
+	{
+		id: "azor-worse",
+		tier: 2,
+		type: "minor",
+		timing: {
+			day: ["thursday", "friday", "saturday"],
+			phase: "dayStart",
+		},
+		requires: ["azor-vet-choice"],
+		condition: (state) => state.eventFlags.includes("azor-vet-waited"),
+		arcId: "azor-emergency",
+		arcStep: 2,
+		effects: {
+			energy: -M.SEVERE,
+			skipCurrentBlock: true,
+		},
 	},
 
 	// =====================
