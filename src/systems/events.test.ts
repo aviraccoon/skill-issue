@@ -1,5 +1,6 @@
 import { describe, expect, it } from "bun:test";
 import {
+	type ChoiceContent,
 	getEventContent,
 	getEventDefinition,
 	getEventRecap,
@@ -403,29 +404,32 @@ describe("resolveChoiceContent", () => {
 		expect(result.description).toBe("Do it");
 	});
 
-	it("picks variant from array based on seed", () => {
+	it("picks variant from array deterministically based on seed", () => {
 		const content = [
 			{ label: "Go get it", description: "Walk there." },
 			{ label: "Just go", description: "Fifteen minutes." },
 			{ label: "Hurry", description: "Window closing." },
 		];
-		const result = resolveChoiceContent(content, 0);
-		expect(result.label).toBe("Go get it");
+		// Same seed always picks the same variant
+		const result1 = resolveChoiceContent(content, 42);
+		const result2 = resolveChoiceContent(content, 42);
+		expect(result1.label).toBe(result2.label);
 
-		const result2 = resolveChoiceContent(content, 1);
-		expect(result2.label).toBe("Just go");
-
-		const result3 = resolveChoiceContent(content, 2);
-		expect(result3.label).toBe("Hurry");
+		// Result is always a valid variant
+		const labels = content.map((c) => c.label);
+		expect(labels).toContain(result1.label);
 	});
 
-	it("wraps around for large seeds", () => {
+	it("different seeds can produce different variants", () => {
 		const content = [
 			{ label: "A", description: "" },
 			{ label: "B", description: "" },
 		];
-		expect(resolveChoiceContent(content, 100).label).toBe("A"); // 100 % 2 = 0
-		expect(resolveChoiceContent(content, 101).label).toBe("B"); // 101 % 2 = 1
+		const picks = new Set<string>();
+		for (let seed = 0; seed < 20; seed++) {
+			picks.add(resolveChoiceContent(content, seed).label);
+		}
+		expect(picks.size).toBeGreaterThan(1);
 	});
 
 	it("returns empty content for undefined", () => {
@@ -467,15 +471,15 @@ describe("variant choice labels (delivery-deadline)", () => {
 		const variantSeed = getEventVariantSeed(seed, "delivery-deadline");
 		const content = getEventContent("delivery-deadline");
 		const choices = (content as Record<string, unknown>).choices as
-			| Record<string, { label: string; recap: string }[]>
+			| Record<string, ChoiceContent[]>
 			| undefined;
 		const goVariants = choices?.go ?? [];
-		const index = variantSeed % goVariants.length;
 
-		// The same variantSeed picks both label and recap from the same object
+		// resolveChoiceContent and getEventRecap use the same seed -> same variant
+		const resolved = resolveChoiceContent(goVariants, variantSeed);
 		const recap = getEventRecap("delivery-deadline", "go", seed);
 		expect(goVariants.length).toBeGreaterThan(0);
-		expect(recap).toBe(goVariants[index]?.recap ?? null);
+		expect(recap).toBe(resolved.recap ?? null);
 	});
 
 	it("different seeds can produce different variants", () => {

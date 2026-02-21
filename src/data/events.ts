@@ -24,6 +24,15 @@ export type EventType = "minor" | "major";
 /** Visual treatment for inline minor event banners. */
 export type DeliveryStyle = "thought" | "notification" | "message";
 
+/** Narrative bucket for grouping events in the week story. */
+export type StoryCategory =
+	| "dog"
+	| "home"
+	| "social"
+	| "obligations"
+	| "survival"
+	| "creative";
+
 /** When in the game loop the event fires. */
 export type EventPhase = "blockStart" | "dayStart" | "dayEnd";
 
@@ -106,6 +115,8 @@ export interface EventDefinition {
 	modifyTask?: TaskModification;
 	/** Multiplier on friend rescue probability when active same day. Default 1.0. */
 	friendAvailability?: number;
+	/** Narrative category for week story grouping. Omit for flavor events with no story role. */
+	storyCategory?: StoryCategory;
 }
 
 /** Gets event content from i18n by event ID. */
@@ -348,6 +359,7 @@ export const eventPool: readonly EventDefinition[] = [
 			phase: "dayStart",
 		},
 		effects: { energy: -M.MINOR },
+		storyCategory: "home",
 	},
 
 	{
@@ -360,6 +372,7 @@ export const eventPool: readonly EventDefinition[] = [
 			phase: "blockStart",
 		},
 		effects: { momentum: M.MINOR },
+		storyCategory: "home",
 	},
 
 	{
@@ -371,6 +384,7 @@ export const eventPool: readonly EventDefinition[] = [
 			phase: "dayStart",
 		},
 		effects: { energy: -M.MODERATE },
+		storyCategory: "home",
 	},
 
 	{
@@ -383,6 +397,7 @@ export const eventPool: readonly EventDefinition[] = [
 			phase: "blockStart",
 		},
 		effects: { energy: -M.NUDGE, momentum: -M.MINOR },
+		storyCategory: "home",
 	},
 
 	{
@@ -406,6 +421,7 @@ export const eventPool: readonly EventDefinition[] = [
 			phase: "blockStart",
 		},
 		effects: { momentum: -M.NUDGE },
+		storyCategory: "home",
 	},
 
 	{
@@ -426,6 +442,7 @@ export const eventPool: readonly EventDefinition[] = [
 				id: "decline",
 			},
 		],
+		storyCategory: "social",
 	},
 
 	// =====================
@@ -444,6 +461,7 @@ export const eventPool: readonly EventDefinition[] = [
 		arcId: "leak",
 		arcStep: 0,
 		effects: { momentum: -M.NUDGE },
+		storyCategory: "home",
 	},
 
 	{
@@ -471,6 +489,7 @@ export const eventPool: readonly EventDefinition[] = [
 				effects: { setFlag: "leak-ignored" },
 			},
 		],
+		storyCategory: "home",
 	},
 
 	{
@@ -486,6 +505,7 @@ export const eventPool: readonly EventDefinition[] = [
 		arcId: "leak",
 		arcStep: 2,
 		effects: { momentum: M.MINOR },
+		storyCategory: "home",
 	},
 
 	{
@@ -505,6 +525,7 @@ export const eventPool: readonly EventDefinition[] = [
 			energy: -M.MINOR,
 			skipCurrentBlock: true,
 		},
+		storyCategory: "home",
 	},
 
 	// =====================
@@ -523,6 +544,7 @@ export const eventPool: readonly EventDefinition[] = [
 		arcId: "delivery",
 		arcStep: 0,
 		effects: { momentum: -M.NUDGE },
+		storyCategory: "home",
 	},
 
 	{
@@ -547,6 +569,7 @@ export const eventPool: readonly EventDefinition[] = [
 				effects: { momentum: -M.MINOR },
 			},
 		],
+		storyCategory: "home",
 	},
 
 	// =====================
@@ -564,6 +587,7 @@ export const eventPool: readonly EventDefinition[] = [
 		arcId: "construction",
 		arcStep: 0,
 		effects: { energy: -M.MINOR },
+		storyCategory: "home",
 	},
 
 	{
@@ -578,6 +602,7 @@ export const eventPool: readonly EventDefinition[] = [
 		arcId: "construction",
 		arcStep: 1,
 		effects: { energy: M.NUDGE },
+		storyCategory: "home",
 	},
 
 	// =====================
@@ -600,6 +625,7 @@ export const eventPool: readonly EventDefinition[] = [
 			!state.tasks.some((t) => t.id === "cook" && t.contextModifiedBy),
 		effects: { momentum: M.NUDGE },
 		modifyTask: { taskId: "cook", baseRate: 0.08 },
+		storyCategory: "social",
 	},
 
 	{
@@ -623,6 +649,7 @@ export const eventPool: readonly EventDefinition[] = [
 				effects: { momentum: -M.MINOR },
 			},
 		],
+		storyCategory: "social",
 	},
 
 	// =====================
@@ -647,6 +674,7 @@ export const eventPool: readonly EventDefinition[] = [
 			availableBlocks: ["afternoon"],
 			dayOffset: [2, 3],
 		},
+		storyCategory: "obligations",
 	},
 
 	{
@@ -666,6 +694,7 @@ export const eventPool: readonly EventDefinition[] = [
 			);
 		},
 		effects: { momentum: -M.MODERATE },
+		storyCategory: "obligations",
 	},
 
 	// =====================
@@ -690,6 +719,7 @@ export const eventPool: readonly EventDefinition[] = [
 			availableBlocks: ["morning"],
 			dayOffset: [1, 2],
 		},
+		storyCategory: "obligations",
 	},
 
 	{
@@ -709,6 +739,7 @@ export const eventPool: readonly EventDefinition[] = [
 			);
 		},
 		effects: { momentum: -M.MODERATE },
+		storyCategory: "obligations",
 	},
 
 	// =====================
@@ -733,6 +764,7 @@ export const eventPool: readonly EventDefinition[] = [
 			availableBlocks: ["morning", "afternoon", "evening", "night"],
 			dayOffset: [3, 4],
 		},
+		storyCategory: "obligations",
 	},
 
 	{
@@ -755,6 +787,7 @@ export const eventPool: readonly EventDefinition[] = [
 				effects: { momentum: -M.MAJOR },
 			},
 		],
+		storyCategory: "obligations",
 	},
 	// =====================
 	// Tier 2: Opportunity - Rooftop BBQ
@@ -783,6 +816,7 @@ export const eventPool: readonly EventDefinition[] = [
 				effects: { momentum: -M.NUDGE },
 			},
 		],
+		storyCategory: "social",
 	},
 
 	// =====================
@@ -812,6 +846,7 @@ export const eventPool: readonly EventDefinition[] = [
 				effects: { momentum: -M.MINOR },
 			},
 		],
+		storyCategory: "social",
 	},
 
 	// =====================
@@ -839,6 +874,7 @@ export const eventPool: readonly EventDefinition[] = [
 				id: "later",
 			},
 		],
+		storyCategory: "social",
 	},
 
 	// =====================
@@ -854,6 +890,7 @@ export const eventPool: readonly EventDefinition[] = [
 			phase: "dayStart",
 		},
 		effects: { momentum: -M.MINOR },
+		storyCategory: "home",
 	},
 
 	// =====================
@@ -885,6 +922,7 @@ export const eventPool: readonly EventDefinition[] = [
 			phase: "blockStart",
 		},
 		effects: { energy: -M.NUDGE, momentum: -M.NUDGE },
+		storyCategory: "home",
 	},
 
 	// =====================
@@ -902,6 +940,7 @@ export const eventPool: readonly EventDefinition[] = [
 		},
 		arcId: "power",
 		arcStep: 0,
+		storyCategory: "home",
 	},
 
 	{
@@ -917,6 +956,7 @@ export const eventPool: readonly EventDefinition[] = [
 		arcStep: 1,
 		effects: { energy: -M.MODERATE },
 		friendAvailability: 1.2,
+		storyCategory: "home",
 	},
 
 	{
@@ -931,6 +971,7 @@ export const eventPool: readonly EventDefinition[] = [
 		arcId: "power",
 		arcStep: 2,
 		effects: { momentum: M.NUDGE },
+		storyCategory: "home",
 	},
 
 	// =====================
@@ -955,6 +996,7 @@ export const eventPool: readonly EventDefinition[] = [
 			availableBlocks: ["morning", "afternoon"],
 			dayOffset: [2, 3],
 		},
+		storyCategory: "home",
 	},
 
 	{
@@ -975,6 +1017,7 @@ export const eventPool: readonly EventDefinition[] = [
 		},
 		effects: { momentum: -M.SEVERE },
 		friendAvailability: 1.3,
+		storyCategory: "home",
 	},
 
 	// =====================
@@ -1003,6 +1046,7 @@ export const eventPool: readonly EventDefinition[] = [
 				id: "not-today",
 			},
 		],
+		storyCategory: "creative",
 	},
 
 	// =====================
@@ -1022,6 +1066,7 @@ export const eventPool: readonly EventDefinition[] = [
 		arcStep: 0,
 		effects: { energy: -M.NUDGE },
 		friendAvailability: 1.3,
+		storyCategory: "dog",
 	},
 
 	{
@@ -1050,6 +1095,7 @@ export const eventPool: readonly EventDefinition[] = [
 				effects: { setFlag: "azor-vet-waited" },
 			},
 		],
+		storyCategory: "dog",
 	},
 
 	{
@@ -1065,6 +1111,7 @@ export const eventPool: readonly EventDefinition[] = [
 		arcId: "azor-emergency",
 		arcStep: 2,
 		effects: { momentum: M.MODERATE },
+		storyCategory: "dog",
 	},
 
 	{
@@ -1084,6 +1131,7 @@ export const eventPool: readonly EventDefinition[] = [
 			skipCurrentBlock: true,
 		},
 		friendAvailability: 1.5,
+		storyCategory: "dog",
 	},
 
 	// =====================
@@ -1106,6 +1154,7 @@ export const eventPool: readonly EventDefinition[] = [
 		deliveryStyle: "message",
 		modifyTask: { taskId: "cook", baseRate: 0.13 },
 		friendAvailability: 0.5,
+		storyCategory: "social",
 	},
 ];
 

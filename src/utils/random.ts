@@ -20,9 +20,12 @@ export type NonEmptyArray<T> = readonly [T, ...T[]];
 /**
  * Picks a variant from an array deterministically based on seed.
  * Same seed always picks the same variant.
+ * Uses mulberry32 to hash the seed, avoiding correlation between
+ * sequential seeds (seed+1, seed+2) or same-length arrays.
  */
 export function pickVariant<T>(variants: NonEmptyArray<T>, seed: number): T {
-	const index = seed % variants.length;
+	const rng = mulberry32(seed);
+	const index = Math.floor(rng() * variants.length);
 	return variants[index] ?? variants[0];
 }
 

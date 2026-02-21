@@ -1650,6 +1650,14 @@ export const en = {
 				"The leak you put a towel on? It reached the apartment below. Maintenance showed up and took over your morning.",
 				"Someone came about the leak. Not because you called. Because it got bad enough that you didn't have a choice anymore.",
 			],
+			storyOpener: [
+				"The apartment had a leak this week. That set the tone.",
+				"Water has a way of making itself the priority. This week, it did.",
+			],
+			storyCloser: [
+				"The leak is handled. Not by you, but it's handled. The towel is still wet.",
+				"Someone fixed what you couldn't bring yourself to call about. The apartment dries. The pattern doesn't.",
+			],
 			phoneFragment: [
 				"You keep almost googling plumbers. The search bar remembers your hesitation.",
 				"A home repair thread. The comments all say 'call someone.' Noted.",
@@ -1785,6 +1793,14 @@ export const en = {
 			title: "The Invite",
 			description:
 				"A knock at the door. It's the neighbor from the hallway -- the one who waved. There's a thing happening on the roof tonight. Casual, they said. Just a few people from the building, some drinks. You're invited. They seem like they mean it.",
+			storyOpener: [
+				"The neighbor knocked this week. That was unexpected.",
+				"Someone in the building invited you to something. That's what this week had.",
+			],
+			storyCloser: [
+				"The neighbor's invite changed the shape of the week. Small thing. Big difference.",
+				"You live in a building full of people. This week, one of them noticed you. That matters more than it should.",
+			],
 			choices: {
 				go: {
 					label: "Go up",
@@ -1927,6 +1943,14 @@ export const en = {
 			title: "The Deadline Passed",
 			description:
 				"The deadline was today. The day is over. The work isn't done. Your inbox already has the follow-up email you haven't opened. What now?",
+			storyOpener: [
+				"There was a deadline this week. That's the shape the week took.",
+				"The work deadline hung over everything. Even the days before it, somehow.",
+			],
+			storyCloser: [
+				"The deadline passed. One way or another, it's behind you. The inbox will have opinions about that tomorrow.",
+				"Work happened or it didn't. Either way, the week moved on. The email is still there.",
+			],
 			choices: {
 				"do-it-now": [
 					{
@@ -2015,6 +2039,14 @@ export const en = {
 				"The landlord inspected your apartment. The apartment told on you. Every surface was evidence.",
 				"The inspection happened. You were present. So was every dish, every pile, every postponed chore. The landlord's face said enough.",
 			],
+			storyOpener: [
+				"The landlord came this week. That's the part you remember.",
+				"Someone saw how you've been living. That happened this week. Everything else is details.",
+			],
+			storyCloser: [
+				"The inspection is over. The apartment is the same. You're the same. But someone saw it now.",
+				"The landlord left. The dishes are still there. Nothing changed except that someone else knows.",
+			],
 			friendRescue: {
 				opener: [
 					"The inspection thing -- don't worry about it. Want to get out?",
@@ -2035,6 +2067,14 @@ export const en = {
 			title: "Rooftop Thing",
 			description:
 				"Someone put a note under your door. Building BBQ on the roof tonight. There's even a little drawing of a grill. You can hear chairs scraping above you. People are going. People you've maybe nodded at in the hallway. It sounds like it could be nice. It also sounds like a lot.",
+			storyOpener: [
+				"There was a thing on the roof this week. That was the bright spot.",
+				"The building had a BBQ. That's what you'll remember about this week.",
+			],
+			storyCloser: [
+				"The rooftop thing was nice. You went and it was nice. That's allowed to be the takeaway.",
+				"One evening on the roof with near-strangers. It shouldn't matter this much. It does.",
+			],
 			choices: {
 				go: [
 					{
@@ -2115,6 +2155,14 @@ export const en = {
 			title: "Birthday",
 			description:
 				"Your friend's birthday is today. There's a thing happening -- drinks, people, probably cake. You said you'd be there. That was three days ago when 'being there' felt possible. Now it's today and being there requires putting on real clothes, leaving the apartment, and sustaining multiple conversations. The intention was genuine. The execution is another matter.",
+			storyOpener: [
+				"Your friend had a birthday this week. That anchored everything.",
+				"There was a birthday. Theirs. That's the thing that happened this week.",
+			],
+			storyCloser: [
+				"The birthday happened. Whether you were there or not, your friend knows you thought about it. That's something.",
+				"Birthdays keep coming. People keep mattering. The gap between caring and showing up is real, but so is the caring.",
+			],
 			choices: {
 				"go-to-party": [
 					{
@@ -2237,6 +2285,14 @@ export const en = {
 			title: "The Idea",
 			description:
 				"Something clicked. An idea, a direction, a thing you could make. It arrived without warning, the way they always do -- at a time when you have other things to deal with. You could chase it now, while it's alive. Or you could write it down and hope it survives until later. It won't. They never do. But maybe this one's different.",
+			storyOpener: [
+				"Something creative happened this week. That changes the shape of it.",
+				"The idea arrived midweek. That's what made this one different.",
+			],
+			storyCloser: [
+				"The creative thing happened or it didn't. Either way, the spark was real. That part isn't nothing.",
+				"You had an idea this week. What you did with it is its own story. But you had it.",
+			],
 			choices: {
 				"go-for-it": [
 					{
@@ -2325,6 +2381,14 @@ export const en = {
 			title: "Azor",
 			description:
 				"He's still not right. The not-eating continued, and now he's doing that thing where he follows you from room to room but won't settle. You know what the right move is. The emergency vet is open. The walk there is fifteen minutes. The cost is... you'll deal with the cost. The question isn't what to do. The question is whether you can make yourself do it right now.",
+			storyOpener: [
+				"It was the week you took Azor to the vet. That's the part that stays.",
+				"Azor needed you this week. You showed up. The rest of the week arranged itself around that.",
+			],
+			storyCloser: [
+				"You did the hard thing for someone who depends on you. The morning it cost you was worth it. You know that. You knew it then.",
+				"Azor's fine. The morning you lost is gone. But when he climbs onto the couch next to you, you know it was right.",
+			],
 			choices: {
 				"take-him-in": [
 					{
@@ -2384,6 +2448,14 @@ export const en = {
 			recap: [
 				"Azor got worse because you waited. The emergency vet visit was harder, scarier, and longer than it would have been the day before. He's okay now. You're less sure about yourself.",
 				"You waited on the vet. Azor paid for it with a worse day. He's recovering, but the guilt of 'I should have gone yesterday' isn't going anywhere.",
+			],
+			storyOpener: [
+				"It was the week Azor got sick. Everything else happened around that.",
+				"Most of the week was fine. And then there was Azor.",
+			],
+			storyCloser: [
+				"Azor is okay now. That's what matters. The rest -- the tasks, the attempts -- background noise around the thing that actually mattered.",
+				"He's fine. You keep checking, but he's fine. The guilt is yours to carry. He already forgot.",
 			],
 			friendRescue: {
 				opener: [
@@ -2503,6 +2575,11 @@ export const en = {
 				"The dog walks were... mostly successful. A few were more 'quick trip outside' than 'actual walk.' He didn't complain.",
 				"Azor got what he needed, more or less. Some proper walks, some minimal versions. He's patient like that.",
 			],
+			dogAfterRecovery: [
+				"The walks after the vet were quieter. Slower. You both needed that.",
+				"Azor's walks settled into something gentler after the scare. You held the leash a little tighter.",
+				"The walks changed after the vet visit. Less routine, more deliberate. You noticed things you usually don't.",
+			],
 			dogStruggled: [
 				"Azor deserved better this week. The walks happened, but barely. A lot of standing outside pretending that counts.",
 				"The dog walks were rough. More failures than successes. He still loves you, but there was definitely some canine disappointment.",
@@ -2544,6 +2621,50 @@ export const en = {
 					"The essentials got done, in their own imperfect way.",
 				],
 			},
+		},
+
+		home: {
+			framing: [
+				"The apartment had opinions this week.",
+				"Meanwhile, the building was doing its own thing.",
+				"The apartment didn't make things easier.",
+			],
+		},
+
+		obligations: {
+			framing: [
+				"There were things with deadlines. Real ones, not the self-imposed kind.",
+				"The outside world made demands this week.",
+				"Some things had fixed dates. Those are harder to reschedule than your own tasks.",
+			],
+		},
+
+		curiosity: {
+			creativeUntouched: [
+				"The creative stuff sat on your list all week. Untouched. Not even a failed attempt.",
+				"You had creative tasks available. You never clicked one. Not once.",
+				"The music practice, the project -- they were right there. Seven days of not trying.",
+			],
+			declinedCookies: [
+				"Your neighbor brought cookies. You said no. Sometimes the door is just too far.",
+				"Someone baked for you and you turned them down. That's a choice that sits with you.",
+			],
+			phonePlusFriend: [
+				"You checked your phone constantly but also said yes when your friend showed up. Two different kinds of reaching out.",
+				"Heavy scrolling, but you accepted the friend rescues. The phone is a habit. The friend is a choice.",
+			],
+			noFoodAttempts: [
+				"You didn't try to eat all week. Not once. The food tasks sat there, untouched. You survived on whatever was already around.",
+				"Zero food attempts. The cooking, the ordering -- none of it happened. Eating was ambient at best.",
+			],
+			dogPerfectRoughWeek: [
+				"The dog got walked every time. Everything else fell apart, but Azor got his walks. He doesn't know about the rest.",
+				"Rough week, but Azor never missed a walk. External accountability is the one system that doesn't break.",
+			],
+			variantsHelped: [
+				"You lowered the bar a few times this week. The week went well. Maybe that's connected.",
+				"The smaller versions of tasks -- you used them, and things worked out. Meeting yourself where you are is a strategy, not a compromise.",
+			],
 		},
 
 		attempts: {
