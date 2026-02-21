@@ -1,7 +1,16 @@
 import { describe, expect, test } from "bun:test";
 import { strings } from "../i18n";
-import { createInitialState, type GameState } from "../state";
-import { getPatternHint } from "./friendRescue";
+import {
+	createInitialState,
+	type EventInstance,
+	type GameState,
+} from "../state";
+import { getEventFriendRescue } from "./events";
+import {
+	getMostRecentEventWithContent,
+	getPatternHint,
+	getRandomRescueMessage,
+} from "./friendRescue";
 import { getTasksWithVariants } from "./tasks";
 
 /**
@@ -321,5 +330,212 @@ describe("variant unlock hints", () => {
 		// Low energy should give variant hints a slight edge
 		// The +3 bonus should shift the balance somewhat
 		expect(lowEnergyVariant).toBeGreaterThanOrEqual(normalEnergyVariant);
+	});
+});
+
+// --- Event-Aware Friend Rescue ---
+
+/** Creates a minimal EventInstance for testing. */
+function makeEvent(
+	id: GameState["events"][number]["id"],
+	overrides: Partial<EventInstance> = {},
+): EventInstance {
+	return {
+		id,
+		status: "resolved",
+		scheduledDay: 1,
+		...overrides,
+	};
+}
+
+describe("getEventFriendRescue", () => {
+	test("returns opener for event with friendRescue.opener", () => {
+		const fr = getEventFriendRescue("leak-drip");
+		expect(fr).toBeDefined();
+		expect(fr?.opener?.length).toBeGreaterThan(0);
+	});
+
+	test("returns hint for event with friendRescue.hint", () => {
+		const fr = getEventFriendRescue("leak-worse");
+		expect(fr).toBeDefined();
+		expect(fr?.hint?.length).toBeGreaterThan(0);
+	});
+
+	test("returns both opener and hint when event has both", () => {
+		const fr = getEventFriendRescue("azor-sick");
+		expect(fr).toBeDefined();
+		expect(fr?.opener?.length).toBeGreaterThan(0);
+		expect(fr?.hint?.length).toBeGreaterThan(0);
+	});
+
+	test("returns undefined for event without friendRescue", () => {
+		const fr = getEventFriendRescue("rain");
+		expect(fr).toBeUndefined();
+	});
+});
+
+describe("getMostRecentEventWithContent", () => {
+	test("finds event with opener", () => {
+		const state = createTestState({
+			dayIndex: 3,
+			events: [makeEvent("leak-drip", { scheduledDay: 1 })],
+		});
+		const result = getMostRecentEventWithContent(state, "opener");
+		expect(result).toBe("leak-drip");
+	});
+
+	test("finds event with hint", () => {
+		const state = createTestState({
+			dayIndex: 3,
+			events: [makeEvent("leak-fixed", { scheduledDay: 2 })],
+		});
+		const result = getMostRecentEventWithContent(state, "hint");
+		expect(result).toBe("leak-fixed");
+	});
+
+	test("returns null when no events have content", () => {
+		const state = createTestState({
+			dayIndex: 3,
+			events: [makeEvent("rain", { scheduledDay: 1 })],
+		});
+		const result = getMostRecentEventWithContent(state, "opener");
+		expect(result).toBeNull();
+	});
+
+	test("returns null for pending events", () => {
+		const state = createTestState({
+			dayIndex: 3,
+			events: [makeEvent("leak-drip", { status: "pending", scheduledDay: 1 })],
+		});
+		const result = getMostRecentEventWithContent(state, "opener");
+		expect(result).toBeNull();
+	});
+
+	test("skips future events", () => {
+		const state = createTestState({
+			dayIndex: 1,
+			events: [makeEvent("leak-drip", { scheduledDay: 3 })],
+		});
+		const result = getMostRecentEventWithContent(state, "opener");
+		expect(result).toBeNull();
+	});
+
+	test("picks most recent event when multiple qualify", () => {
+		const state = createTestState({
+			dayIndex: 4,
+			events: [
+				makeEvent("leak-drip", { scheduledDay: 1 }),
+				makeEvent("azor-sick", { scheduledDay: 3 }),
+			],
+		});
+		const result = getMostRecentEventWithContent(state, "opener");
+		expect(result).toBe("azor-sick");
+	});
+});
+
+describe("event-aware rescue messages", () => {
+	test("uses event opener when matching event exists", () => {
+		const state = createTestState({
+			dayIndex: 3,
+			runSeed: 42,
+			events: [makeEvent("leak-drip", { scheduledDay: 1 })],
+		});
+		const message = getRandomRescueMessage(state);
+		const fr = getEventFriendRescue("leak-drip");
+		expect(fr?.opener).toContain(message);
+	});
+
+	test("falls back to generic when no event openers match", () => {
+		const state = createTestState({
+			dayIndex: 3,
+			runSeed: 42,
+			events: [makeEvent("rain", { scheduledDay: 1 })],
+		});
+		const message = getRandomRescueMessage(state);
+		const s = strings();
+		expect(s.friend.rescueMessages).toContain(message);
+	});
+
+	test("falls back to generic with no events at all", () => {
+		const state = createTestState({
+			dayIndex: 3,
+			runSeed: 42,
+			events: [],
+		});
+		const message = getRandomRescueMessage(state);
+		const s = strings();
+		expect(s.friend.rescueMessages).toContain(message);
+	});
+
+	test("uses most recent event's opener", () => {
+		const state = createTestState({
+			dayIndex: 4,
+			runSeed: 42,
+			events: [
+				makeEvent("leak-drip", { scheduledDay: 1 }),
+				makeEvent("azor-sick", { scheduledDay: 3 }),
+			],
+		});
+		const message = getRandomRescueMessage(state);
+		const fr = getEventFriendRescue("azor-sick");
+		expect(fr?.opener).toContain(message);
+	});
+});
+
+describe("event-aware pattern hints", () => {
+	test("event hint competes with other hints", () => {
+		// With a resolved event that has hint content and neutral personality,
+		// the event hint should appear in some seeds
+		let eventHintCount = 0;
+		const trials = 100;
+
+		for (let i = 0; i < trials; i++) {
+			const state = createTestState({
+				runSeed: i * 13,
+				dayIndex: 3,
+				rollCount: i,
+				energy: 0.5,
+				momentum: 0.5,
+				events: [makeEvent("leak-worse", { scheduledDay: 2 })],
+			});
+			// Zero out task failures so variant hints don't compete
+			state.tasks = state.tasks.map((t) => ({
+				...t,
+				failureCount: 0,
+				succeededToday: false,
+			}));
+
+			const result = getPatternHint(state);
+			const fr = getEventFriendRescue("leak-worse");
+			if (fr?.hint && (fr.hint as readonly string[]).includes(result.hint)) {
+				eventHintCount++;
+			}
+		}
+
+		// Should fire sometimes but not always (competes with general struggle, etc.)
+		expect(eventHintCount).toBeGreaterThan(0);
+	});
+
+	test("event hint does not appear when no events have hint content", () => {
+		const state = createTestState({
+			runSeed: 42,
+			dayIndex: 3,
+			energy: 0.5,
+			momentum: 0.5,
+			events: [makeEvent("rain", { scheduledDay: 1 })],
+		});
+		state.tasks = state.tasks.map((t) => ({
+			...t,
+			failureCount: 0,
+			succeededToday: false,
+		}));
+
+		const result = getPatternHint(state);
+		// Rain has no friendRescue content, so the hint should come from elsewhere
+		const fr = getEventFriendRescue("rain");
+		expect(fr).toBeUndefined();
+		// Should get fallback (no other conditions match with neutral personality)
+		const s = strings();
+		expect(s.hints.fallback).toContain(result.hint);
 	});
 });

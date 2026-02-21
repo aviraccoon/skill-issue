@@ -4,8 +4,9 @@
  */
 
 import { strings } from "../i18n";
-import type { GameState } from "../state";
+import type { EventId, GameState } from "../state";
 import { pickVariant } from "../utils/random";
+import { getEventFriendRescue } from "./events";
 
 /**
  * Gets a rescue result message based on tier correctness.
@@ -283,13 +284,54 @@ export function getPhoneIgnoredText(state: GameState): string {
 }
 
 /**
+ * Finds the most recent active/resolved event with friend rescue content.
+ * Returns the event ID, or null if none qualify.
+ */
+export function getMostRecentEventWithContent(
+	state: GameState,
+	field: "opener" | "hint",
+): EventId | null {
+	let bestId: EventId | null = null;
+	let bestDay = -1;
+
+	for (const instance of state.events) {
+		if (instance.status !== "active" && instance.status !== "resolved")
+			continue;
+
+		const day = instance.scheduledDay ?? 0;
+		if (day > state.dayIndex) continue;
+
+		const fr = getEventFriendRescue(instance.id);
+		if (!fr?.[field]?.length) continue;
+
+		if (day > bestDay) {
+			bestId = instance.id;
+			bestDay = day;
+		}
+	}
+
+	return bestId;
+}
+
+/**
  * Gets a rescue message using seeded selection.
- * Uses day and failure count to vary within a run.
+ * Prefers event-specific openers when a relevant event is active/resolved.
+ * Falls back to generic rescue messages.
  */
 export function getRandomRescueMessage(state: GameState): string {
 	const seed = Math.abs(
 		state.runSeed + state.dayIndex * 100 + state.consecutiveFailures * 17,
 	);
+
+	// Check for event-specific opener
+	const eventId = getMostRecentEventWithContent(state, "opener");
+	if (eventId) {
+		const fr = getEventFriendRescue(eventId);
+		if (fr?.opener?.length) {
+			return pickVariant(fr.opener as [string, ...string[]], seed);
+		}
+	}
+
 	return pickVariant(strings().friend.rescueMessages, seed);
 }
 
@@ -313,9 +355,13 @@ function resolveWeight(
 	return typeof weight === "function" ? weight(state) : weight;
 }
 
+/** Weight for event-aware hints (comparable to personality hints). */
+const EVENT_HINT_WEIGHT = 10;
+
 /**
  * Gets a pattern hint based on game state.
  * Uses weighted random selection from all matching hints.
+ * Includes event-aware hints when relevant events are active/resolved.
  */
 export function getPatternHint(state: GameState): PatternHintResult {
 	const s = strings();
@@ -329,6 +375,22 @@ export function getPatternHint(state: GameState): PatternHintResult {
 			if (weight > 0) {
 				candidates.push({ group, weight });
 			}
+		}
+	}
+
+	// Event-aware hint: friend references recent events
+	const hintEventId = getMostRecentEventWithContent(state, "hint");
+	if (hintEventId) {
+		const fr = getEventFriendRescue(hintEventId);
+		if (fr?.hint?.length) {
+			candidates.push({
+				group: {
+					condition: () => true,
+					messages: fr.hint as readonly string[],
+					weight: EVENT_HINT_WEIGHT,
+				},
+				weight: EVENT_HINT_WEIGHT,
+			});
 		}
 	}
 

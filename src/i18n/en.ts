@@ -1601,6 +1601,12 @@ export const en = {
 				"A DIY plumbing video in your feed. The algorithm knows.",
 				"You almost googled 'dripping sound apartment.' Almost.",
 			],
+			friendRescue: {
+				opener: [
+					"Hey, something about a pipe at your place? Want to get out for a bit?",
+					"Heard there's a dripping situation. Coffee? My treat.",
+				],
+			},
 		},
 		"leak-found": {
 			title: "The Source",
@@ -1628,6 +1634,12 @@ export const en = {
 				"The leak got fixed. Twenty minutes of someone else's competence. The hardest part was picking up the phone.",
 				"You called about the leak and someone came. Why was the phone call the obstacle, not the actual pipe?",
 			],
+			friendRescue: {
+				hint: [
+					"Glad the pipe thing's sorted. Making the call is always the hardest part.",
+					"The leak's done? Good. One less thing following you around.",
+				],
+			},
 		},
 		"leak-worse": {
 			notification: [
@@ -1642,6 +1654,16 @@ export const en = {
 				"You keep almost googling plumbers. The search bar remembers your hesitation.",
 				"A home repair thread. The comments all say 'call someone.' Noted.",
 			],
+			friendRescue: {
+				opener: [
+					"Saw maintenance outside your building. You okay?",
+					"The pipe thing got worse? Come hang out, get out of there.",
+				],
+				hint: [
+					"The pipe thing -- next time, maybe call sooner? No judgment.",
+					"That plumbing stuff is stressful. At least it's getting handled now.",
+				],
+			},
 		},
 
 		// Tier 1: Arc - Missed Delivery
@@ -1718,6 +1740,12 @@ export const en = {
 				"Noise complaint thread in the neighborhood group. Everyone's suffering together, online.",
 				"Someone posted a photo of the construction. It looks worse from the outside.",
 			],
+			friendRescue: {
+				opener: [
+					"The construction noise sounds awful. Want to come hang out somewhere quiet?",
+					"Jackhammers again? Get out of there for a bit. Let's go somewhere.",
+				],
+			},
 		},
 		"construction-weekend": {
 			notification: [
@@ -1806,6 +1834,16 @@ export const en = {
 				"Building chat: 'power out for anyone else??' Twelve replies in two minutes.",
 				"You're doom-scrolling about the outage on a phone that's losing battery. Priorities.",
 			],
+			friendRescue: {
+				opener: [
+					"No power? Come over. I have electricity and coffee.",
+					"Heard the power's out over there. Want to come hang out?",
+				],
+				hint: [
+					"A whole day without power is brutal. Go easy on yourself.",
+					"No power means no routine. That's a lot of structure gone at once.",
+				],
+			},
 		},
 		"power-back": {
 			notification: [
@@ -1836,6 +1874,12 @@ export const en = {
 				"The dentist appointment happened without you. You were in the building the whole time.",
 				"You missed the dentist. The rescheduling email is sitting in drafts.",
 			],
+			friendRescue: {
+				hint: [
+					"Did you reschedule the dentist yet? No rush. Just... eventually.",
+					"The dentist thing -- it's fine. Just try to rebook when you can.",
+				],
+			},
 		},
 
 		// =====================
@@ -1859,6 +1903,12 @@ export const en = {
 				"You missed Azor's vet appointment. He's fine. Probably. You'll call to reschedule. Probably.",
 				"The vet visit didn't happen. Azor doesn't know he was supposed to go. You do.",
 			],
+			friendRescue: {
+				hint: [
+					"You should reschedule the vet when you can. For Azor.",
+					"The vet thing -- I know it's hard. But he needs you on that one.",
+				],
+			},
 		},
 
 		// =====================
@@ -1932,6 +1982,16 @@ export const en = {
 					},
 				],
 			},
+			friendRescue: {
+				opener: [
+					"That work thing still weighing on you? Let's go somewhere.",
+					"Hey. The deadline stuff. Want to not think about it for an hour?",
+				],
+				hint: [
+					"The work deadline -- don't spiral on it. It happened. Deal with the next thing.",
+					"Everyone misses deadlines. The world doesn't end. It just feels like it should.",
+				],
+			},
 		},
 
 		// =====================
@@ -1955,6 +2015,16 @@ export const en = {
 				"The landlord inspected your apartment. The apartment told on you. Every surface was evidence.",
 				"The inspection happened. You were present. So was every dish, every pile, every postponed chore. The landlord's face said enough.",
 			],
+			friendRescue: {
+				opener: [
+					"The inspection thing -- don't worry about it. Want to get out?",
+					"Hey. Heard about the landlord visit. That's rough. Come hang out.",
+				],
+				hint: [
+					"The apartment thing -- everyone's place is a mess. Theirs included, probably.",
+					"Don't let the inspection get to you. It's a snapshot, not a verdict.",
+				],
+			},
 		},
 
 		// =====================
@@ -2240,6 +2310,16 @@ export const en = {
 				"You googled 'dog not eating.' The results range from 'he's fine' to 'emergency.' Helpful.",
 				"A pet health forum says 'monitor for 24 hours.' You're already monitoring. You've been monitoring since breakfast.",
 			],
+			friendRescue: {
+				opener: [
+					"How's Azor doing? Want some company?",
+					"Worried about Azor? Let's go for a walk. Both of you could use the air.",
+				],
+				hint: [
+					"Keep an eye on him. If it doesn't clear up, take him in. You'll know.",
+					"Dogs get weird sometimes. He's probably fine. But trust your gut on this.",
+				],
+			},
 		},
 		"azor-vet-choice": {
 			title: "Azor",
@@ -2289,6 +2369,12 @@ export const en = {
 				"Azor's fine. The vet said so. The morning you spent in the waiting room bought peace of mind and a dog who's eating again.",
 				"The vet visit paid off. Azor recovered quickly. You recovered from the worry less quickly.",
 			],
+			friendRescue: {
+				hint: [
+					"Glad Azor's doing better. You did the right thing taking him in.",
+					"See? He's fine. And you handled it. Remember that next time you're stuck.",
+				],
+			},
 		},
 		"azor-worse": {
 			notification: [
@@ -2299,6 +2385,16 @@ export const en = {
 				"Azor got worse because you waited. The emergency vet visit was harder, scarier, and longer than it would have been the day before. He's okay now. You're less sure about yourself.",
 				"You waited on the vet. Azor paid for it with a worse day. He's recovering, but the guilt of 'I should have gone yesterday' isn't going anywhere.",
 			],
+			friendRescue: {
+				opener: [
+					"How's Azor? I've been thinking about him. Want company?",
+					"Is Azor okay? I can come over. Or we can go out. Whatever you need.",
+				],
+				hint: [
+					"He's going to be fine. But next time -- don't wait, okay? For him.",
+					"I know you feel bad about the vet thing. He doesn't hold it against you. Dogs don't work like that.",
+				],
+			},
 		},
 
 		// =====================
@@ -2326,6 +2422,12 @@ export const en = {
 				"Your friend came over. You ordered pizza. Nobody pretended that was cooking. It was better.",
 				"The friend stopped by and you ordered food together. Sharing a pizza on the couch counts. It counts.",
 			],
+			friendRescue: {
+				opener: [
+					"I'm already here. You seem off. Want to go do something?",
+					"Hey. I can tell it's a rough one. Let's get out for a bit.",
+				],
+			},
 		},
 	},
 

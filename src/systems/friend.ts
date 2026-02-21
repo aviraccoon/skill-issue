@@ -1,3 +1,4 @@
+import { getEventDefinition } from "../data/events";
 import { strings } from "../i18n";
 import { type GameState, isWeekend } from "../state";
 import type { Store } from "../store";
@@ -90,6 +91,27 @@ export const WRONG_TIER_MOMENTUM = 0.03;
 export const WRONG_TIER_ENERGY_PENALTY = 0.08;
 
 /**
+ * Computes a friend availability multiplier from same-day events.
+ * Events with friendAvailability < 1 reduce rescue chance (friend is busy).
+ * Events with friendAvailability > 1 increase it (friend is more attentive).
+ * Only considers events that fired today (scheduledDay === dayIndex).
+ */
+export function getFriendAvailabilityModifier(state: GameState): number {
+	let modifier = 1.0;
+	for (const instance of state.events) {
+		if (instance.status !== "active" && instance.status !== "resolved")
+			continue;
+		if ((instance.scheduledDay ?? -1) !== state.dayIndex) continue;
+
+		const def = getEventDefinition(instance.id);
+		if (def?.friendAvailability != null) {
+			modifier *= def.friendAvailability;
+		}
+	}
+	return modifier;
+}
+
+/**
  * Checks if the friend rescue should trigger.
  * Called after a failed task attempt.
  */
@@ -105,9 +127,13 @@ export function shouldTriggerFriendRescue(store: Store<GameState>): boolean {
 	// Check if player can afford it (no point offering if they can't accept)
 	if (!canAffordRescue(state)) return false;
 
-	// Roll the dice (chance varies by seed + bonus from "Something Nice" phone outcome)
+	// Roll the dice (chance varies by seed + bonus from phone + event availability)
 	const baseChance = getFriendRescueChance(state.runSeed);
-	const totalChance = Math.min(baseChance + state.friendRescueChanceBonus, 0.9);
+	const availabilityModifier = getFriendAvailabilityModifier(state);
+	const totalChance = Math.min(
+		(baseChance + state.friendRescueChanceBonus) * availabilityModifier,
+		0.9,
+	);
 	return nextRoll(store) < totalChance;
 }
 

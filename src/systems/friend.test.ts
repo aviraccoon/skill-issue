@@ -1,7 +1,11 @@
 import { describe, expect, test } from "bun:test";
 import { getRandomRescueMessage } from "../data/friendRescue";
 import { strings } from "../i18n";
-import { createInitialState, type GameState } from "../state";
+import {
+	createInitialState,
+	type EventInstance,
+	type GameState,
+} from "../state";
 import { createStore } from "../store";
 import {
 	ACTIVITIES,
@@ -13,6 +17,7 @@ import {
 	FRIEND_RESCUE_COST_WEEKEND,
 	FRIEND_RESCUE_THRESHOLD,
 	getActivityEffects,
+	getFriendAvailabilityModifier,
 	getFriendRescueChance,
 	getRescueCost,
 	isCorrectTier,
@@ -284,5 +289,94 @@ describe("getFriendRescueChance", () => {
 	test("base and variance are correct", () => {
 		expect(FRIEND_RESCUE_CHANCE_BASE).toBe(0.4);
 		expect(FRIEND_RESCUE_CHANCE_VARIANCE).toBe(0.05);
+	});
+});
+
+// --- Event Availability Modifier ---
+
+/** Creates a minimal EventInstance for testing. */
+function makeEvent(
+	id: GameState["events"][number]["id"],
+	overrides: Partial<EventInstance> = {},
+): EventInstance {
+	return {
+		id,
+		status: "resolved",
+		scheduledDay: 0,
+		...overrides,
+	};
+}
+
+describe("getFriendAvailabilityModifier", () => {
+	test("returns 1.0 with no events", () => {
+		const state = createTestState({ events: [], dayIndex: 0 });
+		expect(getFriendAvailabilityModifier(state)).toBe(1.0);
+	});
+
+	test("returns 1.0 for events without friendAvailability", () => {
+		const state = createTestState({
+			dayIndex: 0,
+			events: [makeEvent("rain", { scheduledDay: 0 })],
+		});
+		expect(getFriendAvailabilityModifier(state)).toBe(1.0);
+	});
+
+	test("applies reduced availability from friends-birthday (same day)", () => {
+		const state = createTestState({
+			dayIndex: 5,
+			events: [makeEvent("friends-birthday", { scheduledDay: 5 })],
+		});
+		expect(getFriendAvailabilityModifier(state)).toBe(0.5);
+	});
+
+	test("ignores events on different days", () => {
+		const state = createTestState({
+			dayIndex: 6, // Sunday
+			events: [makeEvent("friends-birthday", { scheduledDay: 5 })], // Saturday
+		});
+		expect(getFriendAvailabilityModifier(state)).toBe(1.0);
+	});
+
+	test("applies increased availability from azor-sick (same day)", () => {
+		const state = createTestState({
+			dayIndex: 1,
+			events: [makeEvent("azor-sick", { scheduledDay: 1 })],
+		});
+		expect(getFriendAvailabilityModifier(state)).toBe(1.3);
+	});
+
+	test("multiplies modifiers from multiple same-day events", () => {
+		const state = createTestState({
+			dayIndex: 5,
+			events: [
+				makeEvent("rooftop-bbq", { scheduledDay: 5 }), // 0.8
+				makeEvent("friends-birthday", { scheduledDay: 5 }), // 0.5
+			],
+		});
+		expect(getFriendAvailabilityModifier(state)).toBeCloseTo(0.4);
+	});
+
+	test("ignores pending events", () => {
+		const state = createTestState({
+			dayIndex: 1,
+			events: [makeEvent("azor-sick", { scheduledDay: 1, status: "pending" })],
+		});
+		expect(getFriendAvailabilityModifier(state)).toBe(1.0);
+	});
+
+	test("applies azor-worse increased availability", () => {
+		const state = createTestState({
+			dayIndex: 4,
+			events: [makeEvent("azor-worse", { scheduledDay: 4 })],
+		});
+		expect(getFriendAvailabilityModifier(state)).toBe(1.5);
+	});
+
+	test("applies friend-visits reduced availability (friend already there)", () => {
+		const state = createTestState({
+			dayIndex: 3,
+			events: [makeEvent("friend-visits", { scheduledDay: 3 })],
+		});
+		expect(getFriendAvailabilityModifier(state)).toBe(0.5);
 	});
 });

@@ -104,12 +104,32 @@ export interface EventDefinition {
 	obligation?: ObligationDef;
 	/** Modify an existing task in-place when this event fires. */
 	modifyTask?: TaskModification;
+	/** Multiplier on friend rescue probability when active same day. Default 1.0. */
+	friendAvailability?: number;
 }
 
 /** Gets event content from i18n by event ID. */
 export function getEventContent(id: EventId) {
 	const s = strings();
 	return s.events[id];
+}
+
+/** Gets friend rescue content (opener/hint) from an event's i18n, if any. */
+export function getEventFriendRescue(
+	id: EventId,
+): { opener?: readonly string[]; hint?: readonly string[] } | undefined {
+	const content = getEventContent(id);
+	const fr = (content as Record<string, unknown>).friendRescue;
+	if (!fr || typeof fr !== "object") return undefined;
+	const obj = fr as Record<string, unknown>;
+	const opener = Array.isArray(obj.opener)
+		? (obj.opener as readonly string[])
+		: undefined;
+	const hint = Array.isArray(obj.hint)
+		? (obj.hint as readonly string[])
+		: undefined;
+	if (!opener && !hint) return undefined;
+	return { opener, hint };
 }
 
 /**
@@ -748,6 +768,7 @@ export const eventPool: readonly EventDefinition[] = [
 			day: "saturday",
 			phase: "dayStart",
 		},
+		friendAvailability: 0.8,
 		choices: [
 			{
 				id: "go",
@@ -776,6 +797,7 @@ export const eventPool: readonly EventDefinition[] = [
 			day: ["friday", "saturday"],
 			phase: "dayStart",
 		},
+		friendAvailability: 0.5,
 		choices: [
 			{
 				id: "go-to-party",
@@ -894,6 +916,7 @@ export const eventPool: readonly EventDefinition[] = [
 		arcId: "power",
 		arcStep: 1,
 		effects: { energy: -M.MODERATE },
+		friendAvailability: 1.2,
 	},
 
 	{
@@ -951,6 +974,7 @@ export const eventPool: readonly EventDefinition[] = [
 			);
 		},
 		effects: { momentum: -M.SEVERE },
+		friendAvailability: 1.3,
 	},
 
 	// =====================
@@ -997,6 +1021,7 @@ export const eventPool: readonly EventDefinition[] = [
 		arcId: "azor-emergency",
 		arcStep: 0,
 		effects: { energy: -M.NUDGE },
+		friendAvailability: 1.3,
 	},
 
 	{
@@ -1058,6 +1083,7 @@ export const eventPool: readonly EventDefinition[] = [
 			energy: -M.SEVERE,
 			skipCurrentBlock: true,
 		},
+		friendAvailability: 1.5,
 	},
 
 	// =====================
@@ -1079,6 +1105,7 @@ export const eventPool: readonly EventDefinition[] = [
 		effects: { momentum: M.NUDGE },
 		deliveryStyle: "message",
 		modifyTask: { taskId: "cook", baseRate: 0.13 },
+		friendAvailability: 0.5,
 	},
 ];
 
