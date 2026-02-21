@@ -66,6 +66,10 @@ interface WeekContext {
 	// Time patterns
 	bestTimeBlock: TimeBlock | null;
 	worstTimeBlock: TimeBlock | null;
+	nightBlockSucceeded: number;
+
+	// Weekly shape (from byDay tracking)
+	weeklyShape: WeeklyShape | null;
 
 	// Event analysis
 	resolvedEvents: ResolvedEvent[];
@@ -138,6 +142,120 @@ function categoryTaskStats(
 		}
 	}
 	return { succeeded, failed, attempted: succeeded + failed };
+}
+
+/** Weekly trajectory with event-awareness. */
+interface WeeklyShape {
+	trajectory: "improving" | "declining" | "rocky";
+	/** True when a big event in the relevant half explains the shift. */
+	eventDriven: boolean;
+}
+
+/** Threshold for "big event" -- MAJOR effects or higher (|energy| or |momentum| >= 0.1). */
+const BIG_EVENT_THRESHOLD = 0.1;
+
+/**
+ * Detects the weekly trajectory from byDay data, qualified by event timing.
+ * Compares first-half (Mon-Wed) vs second-half (Thu-Sun) success rates.
+ * If a big negative event fired in the declining half, marks it event-driven
+ * so the story doesn't misattribute the drop to the player's stamina.
+ */
+function computeWeeklyShape(
+	byDay: { attempted: number; succeeded: number }[] | undefined,
+	resolvedEvents: ResolvedEvent[],
+): WeeklyShape | null {
+	if (!byDay || byDay.length < 7) return null;
+
+	// Split into first half (Mon-Wed, indices 0-2) and second half (Thu-Sun, indices 3-6)
+	let firstAttempted = 0;
+	let firstSucceeded = 0;
+	let secondAttempted = 0;
+	let secondSucceeded = 0;
+
+	for (let i = 0; i < 3; i++) {
+		const day = byDay[i];
+		if (day) {
+			firstAttempted += day.attempted;
+			firstSucceeded += day.succeeded;
+		}
+	}
+	for (let i = 3; i < 7; i++) {
+		const day = byDay[i];
+		if (day) {
+			secondAttempted += day.attempted;
+			secondSucceeded += day.succeeded;
+		}
+	}
+
+	// Need meaningful attempts in both halves
+	if (firstAttempted < 3 || secondAttempted < 3) return null;
+
+	const firstRate = firstSucceeded / firstAttempted;
+	const secondRate = secondSucceeded / secondAttempted;
+	const diff = secondRate - firstRate;
+
+	// Check for big events in each half
+	const hasBigNegativeInSecondHalf = resolvedEvents.some((e) => {
+		const day = e.instance.scheduledDay ?? 0;
+		if (day < 3) return false;
+		const effects = getResolvedEffects(e.instance, e.definition);
+		if (!effects) return false;
+		return (
+			Math.min(effects.energy ?? 0, 0) < -BIG_EVENT_THRESHOLD ||
+			Math.min(effects.momentum ?? 0, 0) < -BIG_EVENT_THRESHOLD
+		);
+	});
+
+	const hasBigPositiveInSecondHalf = resolvedEvents.some((e) => {
+		const day = e.instance.scheduledDay ?? 0;
+		if (day < 3) return false;
+		const effects = getResolvedEffects(e.instance, e.definition);
+		if (!effects) return false;
+		return (
+			(effects.energy ?? 0) > BIG_EVENT_THRESHOLD ||
+			(effects.momentum ?? 0) > BIG_EVENT_THRESHOLD
+		);
+	});
+
+	const hasBigNegativeInFirstHalf = resolvedEvents.some((e) => {
+		const day = e.instance.scheduledDay ?? 0;
+		if (day >= 3) return false;
+		const effects = getResolvedEffects(e.instance, e.definition);
+		if (!effects) return false;
+		return (
+			Math.min(effects.energy ?? 0, 0) < -BIG_EVENT_THRESHOLD ||
+			Math.min(effects.momentum ?? 0, 0) < -BIG_EVENT_THRESHOLD
+		);
+	});
+
+	// Need a meaningful difference (15%+ shift) to call it a trajectory
+	if (diff > 0.15) {
+		// Improving: did a big negative event in the first half cause the bad start,
+		// or a big positive event in the second half cause the good finish?
+		const eventDriven = hasBigNegativeInFirstHalf || hasBigPositiveInSecondHalf;
+		return { trajectory: "improving", eventDriven };
+	}
+	if (diff < -0.15) {
+		// Declining: did a big negative event in the second half cause the drop?
+		return { trajectory: "declining", eventDriven: hasBigNegativeInSecondHalf };
+	}
+
+	// Check for rockiness: look at day-to-day variance
+	const rates: number[] = [];
+	for (const day of byDay) {
+		if (day && day.attempted >= 2) {
+			rates.push(day.succeeded / day.attempted);
+		}
+	}
+	if (rates.length >= 4) {
+		let swings = 0;
+		for (let i = 1; i < rates.length; i++) {
+			if (Math.abs((rates[i] ?? 0) - (rates[i - 1] ?? 0)) > 0.3) swings++;
+		}
+		if (swings >= 2) return { trajectory: "rocky", eventDriven: false };
+	}
+
+	return null;
 }
 
 // --- Context Building ---
@@ -274,8 +392,14 @@ function buildContext(state: GameState): WeekContext {
 
 	// Derived flags
 	const resolvedIds = new Set(resolvedEvents.map((e) => e.instance.id));
-	const hasContextualCook =
-		resolvedIds.has("friend-visits") || resolvedIds.has("neighbor-hello");
+	// Only suppress generic food observation when the event's recap actually
+	// covers cooking (taskModificationResult means the cook task succeeded).
+	const hasContextualCook = resolvedEvents.some(
+		(e) =>
+			(e.instance.id === "friend-visits" ||
+				e.instance.id === "neighbor-hello") &&
+			e.instance.taskModificationResult != null,
+	);
 	const hasAzorRecovery = resolvedIds.has("azor-recovered");
 
 	// Choices made (for curiosity observations about player decisions)
@@ -301,6 +425,9 @@ function buildContext(state: GameState): WeekContext {
 		if (!attemptedCategories.has(cat)) untouchedCategories.add(cat);
 	}
 
+	// Weekly shape from byDay data, qualified by event timing
+	const weeklyShape = computeWeeklyShape(runStats.byDay, resolvedEvents);
+
 	return {
 		tone,
 		personality,
@@ -317,6 +444,8 @@ function buildContext(state: GameState): WeekContext {
 		variantsUsed: runStats.variantsUsed,
 		bestTimeBlock,
 		worstTimeBlock,
+		nightBlockSucceeded: runStats.byTimeBlock.night.succeeded,
+		weeklyShape,
 		resolvedEvents,
 		focalPoints,
 		eventsByCategory,
@@ -406,27 +535,61 @@ function buildRhythm(ctx: WeekContext): string {
 		parts.push(pickVariant(s.weekStory.rhythm.neutralTime, seed + 2));
 	}
 
+	let hasTimeBlockObs = false;
 	if (
 		ctx.bestTimeBlock &&
 		ctx.worstTimeBlock &&
 		ctx.bestTimeBlock !== ctx.worstTimeBlock
 	) {
-		const timeObs = pickVariant(
-			s.weekStory.rhythm.timeBlockObservations,
-			seed + 3,
-		);
-		parts.push(timeObs(ctx.bestTimeBlock, ctx.worstTimeBlock));
+		hasTimeBlockObs = true;
+		const { time } = ctx.personality;
+		if (time === "nightOwl" && ctx.bestTimeBlock === "night") {
+			const obs = pickVariant(s.weekStory.rhythm.nightOwlConfirmed, seed + 3);
+			parts.push(obs(ctx.worstTimeBlock));
+		} else if (time === "nightOwl") {
+			const obs = pickVariant(s.weekStory.rhythm.nightOwlSurprised, seed + 3);
+			parts.push(obs(ctx.bestTimeBlock, ctx.worstTimeBlock));
+		} else if (time === "earlyBird" && ctx.bestTimeBlock === "morning") {
+			const obs = pickVariant(s.weekStory.rhythm.earlyBirdConfirmed, seed + 3);
+			parts.push(obs(ctx.worstTimeBlock));
+		} else if (time === "earlyBird") {
+			const obs = pickVariant(s.weekStory.rhythm.earlyBirdSurprised, seed + 3);
+			parts.push(obs(ctx.bestTimeBlock, ctx.worstTimeBlock));
+		} else {
+			const obs = pickVariant(
+				s.weekStory.rhythm.timeBlockObservations,
+				seed + 3,
+			);
+			parts.push(obs(ctx.bestTimeBlock, ctx.worstTimeBlock));
+		}
 	}
 
 	if (ctx.allNighters > 0) {
-		parts.push(
-			pickVariant(
-				ctx.allNighters === 1
-					? s.weekStory.rhythm.allNighterSingle
-					: s.weekStory.rhythm.allNighterMultiple,
-				seed + 4,
-			),
-		);
+		const productive = ctx.nightBlockSucceeded > 0;
+		const single = ctx.allNighters === 1;
+		const pool = productive
+			? single
+				? s.weekStory.rhythm.allNighterSingle
+				: s.weekStory.rhythm.allNighterMultiple
+			: single
+				? s.weekStory.rhythm.allNighterSingleFlat
+				: s.weekStory.rhythm.allNighterMultipleFlat;
+		parts.push(pickVariant(pool, seed + 4));
+	}
+
+	// Suppress rocky weeklyShape when a time-block observation already noted a
+	// pattern -- "at least there's a pattern" then "no pattern to it" contradicts.
+	if (ctx.weeklyShape) {
+		const { trajectory, eventDriven } = ctx.weeklyShape;
+		if (trajectory !== "rocky" || !hasTimeBlockObs) {
+			const shapeKey =
+				eventDriven && trajectory !== "rocky"
+					? (`${trajectory}Event` as const)
+					: trajectory;
+			parts.push(
+				pickVariant(s.weekStory.rhythm.weeklyShape[shapeKey], seed + 5),
+			);
+		}
 	}
 
 	return parts.join(" ");
@@ -464,7 +627,7 @@ function buildDogParagraph(ctx: WeekContext): string | null {
 	parts.push(...recaps);
 
 	if (parts.length === 0) return null;
-	return parts.join(" ");
+	return parts.join("\n");
 }
 
 /** Home category: apartment events (leak, construction, power, inspection, etc.). */
@@ -480,7 +643,7 @@ function buildHomeParagraph(ctx: WeekContext): string | null {
 	}
 
 	parts.push(...recaps);
-	return parts.join(" ");
+	return parts.join("\n");
 }
 
 /** Social category: friend rescue stats + social event recaps. */
@@ -513,7 +676,7 @@ function buildSocialParagraph(ctx: WeekContext): string | null {
 	}
 
 	if (parts.length === 0) return null;
-	return parts.join(" ");
+	return parts.join("\n");
 }
 
 /** Obligations category: work deadline, dentist, vet consequence events. */
@@ -529,7 +692,7 @@ function buildObligationsParagraph(ctx: WeekContext): string | null {
 	}
 
 	parts.push(...recaps);
-	return parts.join(" ");
+	return parts.join("\n");
 }
 
 /** Survival category: food + hygiene + chores stats, merged basics. */
@@ -587,7 +750,7 @@ function buildCreativeParagraph(ctx: WeekContext): string | null {
 	}
 
 	if (parts.length === 0) return null;
-	return parts.join(" ");
+	return parts.join("\n");
 }
 
 /** Coping paragraph: phone usage. */
@@ -596,11 +759,16 @@ function buildCopingParagraph(ctx: WeekContext): string | null {
 	const parts: string[] = [];
 	const seed = ctx.seed + 600;
 
-	if (ctx.phoneChecks > 15) {
+	// Skip phone observation when phonePlusFriend curiosity would fire --
+	// it already says "constantly" and the moderate text here would contradict.
+	const phoneCoveredByCuriosity =
+		ctx.phoneChecks > 10 && ctx.friendRescues.accepted >= 2;
+
+	if (ctx.phoneChecks > 15 && !phoneCoveredByCuriosity) {
 		parts.push(pickVariant(s.weekStory.help.phoneHeavy, seed));
-	} else if (ctx.phoneChecks > 5) {
+	} else if (ctx.phoneChecks > 5 && !phoneCoveredByCuriosity) {
 		parts.push(pickVariant(s.weekStory.help.phoneModerate, seed + 1));
-	} else if (ctx.phoneChecks > 0) {
+	} else if (ctx.phoneChecks > 0 && !phoneCoveredByCuriosity) {
 		parts.push(pickVariant(s.weekStory.help.phoneLight, seed + 2));
 	}
 
@@ -631,7 +799,11 @@ function buildCuriosityObservation(ctx: WeekContext): string | null {
 	}
 
 	// Declined neighbor-cookies (a small social choice the player might not have thought about)
-	if (ctx.choicesMade.has("neighbor-cookies:decline")) {
+	// Skip when the social paragraph already includes the neighbor-cookies recap.
+	const cookiesRecapped = (ctx.eventsByCategory.get("social") ?? []).some(
+		(e) => e.instance.id === "neighbor-cookies" && e.recap != null,
+	);
+	if (ctx.choicesMade.has("neighbor-cookies:decline") && !cookiesRecapped) {
 		candidates.push(
 			pickVariant(s.weekStory.curiosity.declinedCookies, seed + 2),
 		);

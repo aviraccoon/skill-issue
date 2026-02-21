@@ -1,5 +1,5 @@
 import { TIME_BLOCKS, type TimeBlock } from "../data/timeBlocks";
-import { seededVariation } from "../utils/random";
+import { mulberry32, seededVariation } from "../utils/random";
 
 /**
  * Time preference axis - affects when you're most productive.
@@ -137,27 +137,19 @@ export function getSoloSuccessEnergyEffect(personality: Personality): number {
  * Uses different bits of the seed for each axis to ensure variety.
  */
 export function getPersonalityFromSeed(seed: number): Personality {
-	// Use lower bits for time preference (3 options)
-	const timeBits = seed % 100;
-	let time: TimePreference;
-	if (timeBits < 33) {
-		time = "nightOwl";
-	} else if (timeBits < 66) {
-		time = "earlyBird";
-	} else {
-		time = "neutral";
-	}
+	const rng = mulberry32(seed);
+	const timeRoll = rng();
+	const socialRoll = rng();
 
-	// Use different bits for social preference (3 options)
-	const socialBits = Math.floor(seed / 100) % 100;
-	let social: SocialPreference;
-	if (socialBits < 33) {
-		social = "socialBattery";
-	} else if (socialBits < 66) {
-		social = "hermit";
-	} else {
-		social = "neutral";
-	}
+	const time: TimePreference =
+		timeRoll < 1 / 3 ? "nightOwl" : timeRoll < 2 / 3 ? "earlyBird" : "neutral";
+
+	const social: SocialPreference =
+		socialRoll < 1 / 3
+			? "socialBattery"
+			: socialRoll < 2 / 3
+				? "hermit"
+				: "neutral";
 
 	return { time, social };
 }
@@ -167,10 +159,9 @@ export function getPersonalityFromSeed(seed: number): Personality {
  * Range: 0.55 to 0.65 (55-65%)
  */
 export function getStartingEnergyFromSeed(seed: number): number {
-	// Use different bits than personality
-	const energyBits = Math.floor(seed / 10000) % 1000;
-	const normalized = energyBits / 999; // 0 to 1
-	return 0.55 + normalized * 0.1; // 0.55 to 0.65
+	// Salt separates this from personality draws
+	const rng = mulberry32(seed + 7919);
+	return 0.55 + rng() * 0.1;
 }
 
 /**
@@ -178,10 +169,9 @@ export function getStartingEnergyFromSeed(seed: number): number {
  * Range: 0.45 to 0.55 (45-55%)
  */
 export function getStartingMomentumFromSeed(seed: number): number {
-	// Use different bits than energy
-	const momentumBits = Math.floor(seed / 10000000) % 1000;
-	const normalized = momentumBits / 999; // 0 to 1
-	return 0.45 + normalized * 0.1; // 0.45 to 0.55
+	// Salt separates this from energy draws
+	const rng = mulberry32(seed + 15731);
+	return 0.45 + rng() * 0.1;
 }
 
 /**

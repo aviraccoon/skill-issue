@@ -2446,16 +2446,16 @@ export const en = {
 				"He's not okay. You knew yesterday and you waited anyway. The leash is by the door. The vet is a fifteen-minute walk that should have happened twenty-four hours ago.",
 			],
 			recap: [
-				"Azor got worse because you waited. The emergency vet visit was harder, scarier, and longer than it would have been the day before. He's okay now. You're less sure about yourself.",
-				"You waited on the vet. Azor paid for it with a worse day. He's recovering, but the guilt of 'I should have gone yesterday' isn't going anywhere.",
+				"Azor got worse because you waited. The emergency vet visit was harder, scarier, and longer than it would have been the day before. You're still not sure he's okay.",
+				"You waited on the vet. Azor paid for it with a worse day. The guilt of 'I should have gone yesterday' isn't going anywhere.",
 			],
 			storyOpener: [
 				"It was the week Azor got sick. Everything else happened around that.",
 				"Most of the week was fine. And then there was Azor.",
 			],
 			storyCloser: [
-				"Azor is okay now. That's what matters. The rest -- the tasks, the attempts -- background noise around the thing that actually mattered.",
-				"He's fine. You keep checking, but he's fine. The guilt is yours to carry. He already forgot.",
+				"Azor's not right. The week ended and you're still watching him. The rest of it -- the tasks, the attempts -- background noise around the thing that actually matters.",
+				"He's not okay yet. You keep checking. The vet said to wait. You're not good at waiting.",
 			],
 			friendRescue: {
 				opener: [
@@ -2551,16 +2551,89 @@ export const en = {
 				(best: TimeBlock, worst: TimeBlock) =>
 					`The data says ${timeBlocks[best].toLowerCase()} was your time. ${timeBlocks[worst]} says you should probably just... not, during those hours.`,
 			],
+			/** When a night owl's best block is actually night -- data confirms identity. */
+			nightOwlConfirmed: [
+				(worst: TimeBlock) =>
+					`Night delivered. ${timeBlocks[worst]} didn't. Your body knew the schedule all along.`,
+				(worst: TimeBlock) =>
+					`The numbers agree with your circadian rhythm. Night worked. ${timeBlocks[worst]} was dead weight.`,
+				(worst: TimeBlock) =>
+					`Night was your time, and the success rates prove it. ${timeBlocks[worst]} was just waiting for sunset.`,
+			],
+			/** When a night owl's best block is NOT night -- data contradicts identity. */
+			nightOwlSurprised: [
+				(best: TimeBlock, worst: TimeBlock) =>
+					`Somehow ${timeBlocks[best].toLowerCase()} was where things actually worked this week. Night didn't show up the way it usually does. ${timeBlocks[worst]} was the worst of it.`,
+				(best: TimeBlock, worst: TimeBlock) =>
+					`The data says ${timeBlocks[best].toLowerCase()} was your best window. Not night. ${timeBlocks[worst]} was a write-off either way.`,
+				(best: TimeBlock, worst: TimeBlock) =>
+					`${timeBlocks[best]} outperformed night this week. Your body's schedule got its own schedule wrong. ${timeBlocks[worst]} was just noise.`,
+			],
+			/** When an early bird's best block is actually morning -- data confirms identity. */
+			earlyBirdConfirmed: [
+				(worst: TimeBlock) =>
+					`Morning came through. ${timeBlocks[worst]} didn't. The early window is real.`,
+				(worst: TimeBlock) =>
+					`The numbers back it up: morning was your time. ${timeBlocks[worst]} was where things fell apart.`,
+				(worst: TimeBlock) =>
+					`Morning delivered. ${timeBlocks[worst]} was a different story. You got your hours right.`,
+			],
+			/** When an early bird's best block is NOT morning -- data contradicts identity. */
+			earlyBirdSurprised: [
+				(best: TimeBlock, worst: TimeBlock) =>
+					`${timeBlocks[best]} beat morning this week. The early-riser advantage didn't materialize. ${timeBlocks[worst]} was the worst of it.`,
+				(best: TimeBlock, worst: TimeBlock) =>
+					`Your morning window didn't hold. ${timeBlocks[best]} was actually where things clicked. ${timeBlocks[worst]} was dead time.`,
+				(best: TimeBlock, worst: TimeBlock) =>
+					`The data says ${timeBlocks[best].toLowerCase()}, not morning. Your wiring took the week off. ${timeBlocks[worst]} didn't help either.`,
+			],
 			allNighterSingle: [
 				"One night you pushed through. Rode the wave past when you should have stopped. Worth it? Hard to say. The next day was a blur.",
 				"There was an all-nighter in there. The kind where sleep feels optional until suddenly it very much isn't.",
 				"You stayed up. All the way through. The 2am energy carried you until it didn't, and then morning was already happening.",
+			],
+			allNighterSingleFlat: [
+				"You stayed up all night. Nothing came of it. The hours passed and you were just... awake.",
+				"There was an all-nighter in there. Not the productive kind. Just the awake kind.",
+				"One night you pushed through. Through to nothing. The 2am energy never showed.",
 			],
 			allNighterMultiple: [
 				"Multiple all-nighters. Your sleep schedule is more of a suggestion at this point. The nights blurred together.",
 				"You pushed through more than once. The late hours were productive. The following days were... less so.",
 				"All-nighters, plural. You rode the nocturnal productivity waves and paid for it in daylight confusion.",
 			],
+			allNighterMultipleFlat: [
+				"Multiple all-nighters. Nothing to show for them. Just lost sleep stacked on lost sleep.",
+				"You stayed up more than once. The late hours weren't productive. The following days weren't either.",
+				"All-nighters, plural. The nocturnal productivity never materialized. Just you and the ceiling.",
+			],
+			weeklyShape: {
+				improving: [
+					"The first few days were rough. Then something shifted and the second half actually worked.",
+					"It took a while to find the rhythm. By midweek, things started clicking. Late momentum is still momentum.",
+					"The week got better as it went. Monday you was struggling. Thursday you was getting things done.",
+				],
+				/** Improving, but a big event in the first half explains the rough start. */
+				improvingEvent: [
+					"The early days took a hit. After that settled, the second half found its footing.",
+					"Something knocked you off balance early on. The rest of the week was recovery, and the recovery worked.",
+				],
+				declining: [
+					"The week started strong. By Thursday, whatever was carrying you had run out.",
+					"Early momentum didn't last. The first half had a rhythm. The second half lost it.",
+					"You front-loaded the productivity. By the time the weekend came, the tank was empty.",
+				],
+				/** Declining, but a big event in the second half explains the drop. */
+				decliningEvent: [
+					"Things were working until they weren't. Something hit midweek and the rhythm never came back.",
+					"The first half was fine. Then the week happened to you and the numbers dropped.",
+				],
+				rocky: [
+					"Good days, bad days, no pattern to it. The week lurched between working and not working.",
+					"Some days everything clicked. Other days, nothing. No arc to it, just noise.",
+					"The consistency wasn't there. Day to day, it was a coin flip whether things would work.",
+				],
+			},
 		},
 
 		basics: {
@@ -2582,7 +2655,7 @@ export const en = {
 			],
 			dogStruggled: [
 				"Azor deserved better this week. The walks happened, but barely. A lot of standing outside pretending that counts.",
-				"The dog walks were rough. More failures than successes. He still loves you, but there was definitely some canine disappointment.",
+				"The dog walks were rough. Too many didn't happen. He still loves you, but there was definitely some canine disappointment.",
 				"Azor got short-changed this week. You tried. The trying didn't always translate to walking. He forgives you. Probably.",
 			],
 			foodCooked: [

@@ -151,13 +151,17 @@ export function attemptTask(
 				attempted: stats.tasks.attempted + 1,
 				succeeded: stats.tasks.succeeded + (succeeded ? 1 : 0),
 			},
-			byTimeBlock: {
-				...stats.byTimeBlock,
-				[timeBlock]: {
-					attempted: blockStats.attempted + 1,
-					succeeded: blockStats.succeeded + (succeeded ? 1 : 0),
-				},
-			},
+			// Skip byTimeBlock on weekends -- state.timeBlock is stale (last
+			// weekday value) and weekend performance isn't time-of-day dependent.
+			byTimeBlock: weekend
+				? stats.byTimeBlock
+				: {
+						...stats.byTimeBlock,
+						[timeBlock]: {
+							attempted: blockStats.attempted + 1,
+							succeeded: blockStats.succeeded + (succeeded ? 1 : 0),
+						},
+					},
 			byDay: newByDay,
 			variantsUsed: newVariantsUsed,
 		};
