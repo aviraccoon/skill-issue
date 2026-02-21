@@ -34,6 +34,7 @@ function makeTask(overrides: Partial<Task> = {}): Task {
 		baseRate: 0.5,
 		availableBlocks: ["morning", "afternoon", "evening", "night"],
 		failureCount: 0,
+		successCount: 0,
 		attemptedToday: false,
 		succeededToday: false,
 		...overrides,

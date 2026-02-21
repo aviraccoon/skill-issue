@@ -11,6 +11,7 @@ function makeTask(baseRate: number): Task {
 		baseRate,
 		availableBlocks: ["morning", "afternoon", "evening", "night"],
 		failureCount: 0,
+		successCount: 0,
 		attemptedToday: false,
 		succeededToday: false,
 	};

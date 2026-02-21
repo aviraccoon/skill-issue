@@ -19,6 +19,7 @@ function makeTask(id: string, blocks: TimeBlock[]): Task {
 		baseRate: 0.5,
 		availableBlocks: blocks,
 		failureCount: 0,
+		successCount: 0,
 		attemptedToday: false,
 		succeededToday: false,
 	};

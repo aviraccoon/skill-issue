@@ -35,6 +35,7 @@ const STORAGE_KEY = "skill-issue-save";
 interface SavedTask {
 	id: TaskId;
 	failureCount: number;
+	successCount?: number;
 	attemptedToday: boolean;
 	succeededToday: boolean;
 }
@@ -136,6 +137,7 @@ function toSavedTask(task: Task): SavedTask {
 	return {
 		id: task.id,
 		failureCount: task.failureCount,
+		successCount: task.successCount,
 		attemptedToday: task.attemptedToday,
 		succeededToday: task.succeededToday,
 	};
@@ -287,6 +289,7 @@ export function loadGame(mode: GameMode): GameState | null {
 		const savedTask = savedTaskMap.get(task.id);
 		if (savedTask) {
 			task.failureCount = savedTask.failureCount;
+			task.successCount = savedTask.successCount ?? 0;
 			task.attemptedToday = savedTask.attemptedToday;
 			task.succeededToday = savedTask.succeededToday;
 		}
@@ -387,6 +390,7 @@ function fromSavedState(saved: SavedState): GameState {
 		return {
 			...fresh,
 			failureCount: savedTask.failureCount,
+			successCount: savedTask.successCount ?? 0,
 			attemptedToday: savedTask.attemptedToday,
 			succeededToday: savedTask.succeededToday,
 		};

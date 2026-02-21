@@ -123,6 +123,8 @@ export interface RunStats {
 	tasks: { attempted: number; succeeded: number };
 	/** Attempts/successes per time block. */
 	byTimeBlock: Record<TimeBlock, { attempted: number; succeeded: number }>;
+	/** Attempts/successes per day (indexed by dayIndex 0-6). */
+	byDay?: { attempted: number; succeeded: number }[];
 	/** Scroll trap (Check Phone) count. */
 	phoneChecks: number;
 	/** All-nighter count. */
@@ -143,6 +145,7 @@ export function createInitialRunStats(): RunStats {
 			evening: { attempted: 0, succeeded: 0 },
 			night: { attempted: 0, succeeded: 0 },
 		},
+		byDay: Array.from({ length: 7 }, () => ({ attempted: 0, succeeded: 0 })),
 		phoneChecks: 0,
 		allNighters: 0,
 		friendRescues: { triggered: 0, accepted: 0 },
@@ -169,6 +172,7 @@ export interface Task {
 	};
 	autoSatisfies?: string; // when this task succeeds, also mark another task as succeeded
 	failureCount: number; // how many times failed this week
+	successCount: number; // how many times succeeded this week
 	attemptedToday: boolean;
 	succeededToday: boolean;
 	/** If set, task only appears on this dayIndex (0-6). Used for obligation tasks. */

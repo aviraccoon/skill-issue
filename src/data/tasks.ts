@@ -387,6 +387,7 @@ export function createInitialTasks(
 			energyEffect: ts.energyEffect,
 			autoSatisfies: ts.autoSatisfies,
 			failureCount: 0,
+			successCount: 0,
 			attemptedToday: false,
 			succeededToday: false,
 		};

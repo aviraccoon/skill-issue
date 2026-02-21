@@ -108,6 +108,7 @@ export function createObligationTask(
 		availableBlocks: [...obligation.availableBlocks],
 		energyEffect: obligation.energyEffect,
 		failureCount: 0,
+		successCount: 0,
 		attemptedToday: false,
 		succeededToday: false,
 		availableDay: obligationDay,

@@ -14,6 +14,7 @@ function makeTask(
 		baseRate: 0.5,
 		availableBlocks: ["morning"],
 		failureCount,
+		successCount: 0,
 		attemptedToday: false,
 		succeededToday: false,
 		...(hasEvolution && {

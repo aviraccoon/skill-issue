@@ -114,12 +114,14 @@ export function attemptTask(
 				attemptedToday: true,
 				succeededToday: succeeded,
 				failureCount: succeeded ? t.failureCount : t.failureCount + 1,
+				successCount: succeeded ? t.successCount + 1 : t.successCount,
 			};
 		}),
 	);
 
 	// Track run stats
 	const timeBlock = state.timeBlock;
+	const dayIndex = state.dayIndex;
 	store.update("runStats", (stats) => {
 		const blockStats = stats.byTimeBlock[timeBlock];
 		const newVariantsUsed =
@@ -128,6 +130,20 @@ export function attemptTask(
 			!stats.variantsUsed.includes(task.category)
 				? [...stats.variantsUsed, task.category]
 				: stats.variantsUsed;
+
+		// Update per-day stats (initialize if missing from old saves)
+		const byDay =
+			stats.byDay ??
+			Array.from({ length: 7 }, () => ({ attempted: 0, succeeded: 0 }));
+		const dayStats = byDay[dayIndex] ?? { attempted: 0, succeeded: 0 };
+		const newByDay = byDay.map((d, i) =>
+			i === dayIndex
+				? {
+						attempted: dayStats.attempted + 1,
+						succeeded: dayStats.succeeded + (succeeded ? 1 : 0),
+					}
+				: d,
+		);
 
 		return {
 			...stats,
@@ -142,6 +158,7 @@ export function attemptTask(
 					succeeded: blockStats.succeeded + (succeeded ? 1 : 0),
 				},
 			},
+			byDay: newByDay,
 			variantsUsed: newVariantsUsed,
 		};
 	});
