@@ -163,7 +163,7 @@ export function showNotification(
 	});
 
 	// Display duration scales with text length: 2s base + 50ms per character
-	const duration = Math.min(Math.max(2000 + text.length * 50, 2500), 8000);
+	const duration = Math.min(Math.max(2000 + text.length * 50, 2500), 15000);
 	notificationHideTimeout = setTimeout(() => {
 		notification.classList.remove(appStyles.notificationVisible);
 		notification.classList.remove(

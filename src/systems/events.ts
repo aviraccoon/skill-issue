@@ -175,11 +175,21 @@ export function activateEvent(
 			}
 		}
 
-		store.set("eventBanner", {
-			eventId,
-			text,
-			style: definition.deliveryStyle ?? "thought",
-		});
+		const existing = store.getState().eventBanner;
+		if (existing?.text) {
+			// Accumulate multiple minor events into one banner
+			store.set("eventBanner", {
+				eventId,
+				text: `${existing.text}\n\n${text}`,
+				style: existing.style,
+			});
+		} else {
+			store.set("eventBanner", {
+				eventId,
+				text,
+				style: definition.deliveryStyle ?? "thought",
+			});
+		}
 
 		// Mark as resolved immediately (no player interaction needed)
 		store.update("events", (events) =>

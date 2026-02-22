@@ -41,11 +41,8 @@ export function skipTimeBlock(store: Store<GameState>) {
 			store.update("phoneNotificationCount", (c) => c + 1);
 		}
 
-		// Check for blockStart events in the new block
-		const eventId = checkForEvent(store.getState(), "blockStart");
-		if (eventId && activateEvent(store, eventId) === "fullscreen") {
-			return; // Full-screen event shown; game loop handles dismissal
-		}
+		// Fire all matching blockStart events (minor stack, major halts)
+		if (fireAllMinorEvents(store, "blockStart")) return;
 	} else {
 		// End of day - show summary
 		showDaySummary(store);
@@ -159,12 +156,25 @@ export function continueToNextDay(store: Store<GameState>) {
 	store.set("selectedTaskId", null);
 	store.set("eventBlockedTasks", []);
 
-	// Check for dayStart events
-	const dayStartEventId = checkForEvent(store.getState(), "dayStart");
-	if (
-		dayStartEventId &&
-		activateEvent(store, dayStartEventId) === "fullscreen"
-	) {
-		return; // Full-screen event shown; game loop handles dismissal
+	// Fire all matching dayStart events (minor stack, major halts)
+	fireAllMinorEvents(store, "dayStart");
+}
+
+/**
+ * Fires all matching minor events for a phase. Stops and returns true
+ * if a major (fullscreen) event is encountered. Minor events resolve
+ * immediately, so each checkForEvent call finds the next pending match.
+ */
+function fireAllMinorEvents(
+	store: Store<GameState>,
+	phase: "dayStart" | "blockStart",
+): boolean {
+	let eventId = checkForEvent(store.getState(), phase);
+	while (eventId) {
+		if (activateEvent(store, eventId) === "fullscreen") {
+			return true;
+		}
+		eventId = checkForEvent(store.getState(), phase);
 	}
+	return false;
 }
