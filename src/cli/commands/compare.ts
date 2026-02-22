@@ -90,6 +90,12 @@ export function runCompare(args: CliArgs): void {
 				frustration: number;
 				engagement: number;
 				variantUnlocks: Record<string, number>;
+				quadrants: {
+					good: number;
+					tense: number;
+					boring: number;
+					miserable: number;
+				};
 			}
 		> = {};
 
@@ -104,6 +110,7 @@ export function runCompare(args: CliArgs): void {
 				frustration: 0,
 				engagement: 0,
 				variantUnlocks: {},
+				quadrants: { good: 0, tense: 0, boring: 0, miserable: 0 },
 			};
 		}
 
@@ -134,6 +141,12 @@ export function runCompare(args: CliArgs): void {
 					stats.events += result.events.filter(
 						(e) => e.status !== "pending",
 					).length;
+					const f = result.stats.scores.fun * 100;
+					const fr = result.stats.scores.frustration * 100;
+					if (f >= 50 && fr < 35) stats.quadrants.good++;
+					else if (f >= 50 && fr >= 35) stats.quadrants.tense++;
+					else if (f < 50 && fr < 35) stats.quadrants.boring++;
+					else stats.quadrants.miserable++;
 					for (const category of result.stats.variantsUnlocked) {
 						stats.variantUnlocks[category] =
 							(stats.variantUnlocks[category] ?? 0) + 1;
@@ -169,6 +182,28 @@ export function runCompare(args: CliArgs): void {
 
 				console.log(
 					`${name.padEnd(nameWidth)}  ${fun}    ${frust}  ${eng}   ${energy}    ${momentum}       ${allNighters}  ${phone}  ${events}`,
+				);
+			}
+		}
+
+		// Quadrant distribution
+		console.log("");
+		console.log("Quadrant distribution:");
+		console.log(
+			`${"Strategy".padEnd(nameWidth)}     Good    Tense   Boring  Miserable`,
+		);
+		console.log("-".repeat(nameWidth + 46));
+		for (const name of strategyNames) {
+			const stats = resultsByStrategy[name];
+			if (stats) {
+				const n = args.runs;
+				const q = stats.quadrants;
+				const good = formatPercent(q.good / n).padStart(7);
+				const tense = formatPercent(q.tense / n).padStart(7);
+				const boring = formatPercent(q.boring / n).padStart(7);
+				const mis = formatPercent(q.miserable / n).padStart(7);
+				console.log(
+					`${name.padEnd(nameWidth)}  ${good}  ${tense}  ${boring}  ${mis}`,
 				);
 			}
 		}
