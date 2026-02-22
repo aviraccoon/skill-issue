@@ -349,9 +349,18 @@ export function renderTaskPanel(
 		? screenInfo.weekendPointsRemaining <= 0
 		: screenInfo.slotsRemaining <= 0;
 
-	// Build continue button HTML if period is exhausted
+	// Check if any tasks can be attempted
+	const hasAttemptableTask = screenInfo.decisions.some(
+		(d) => d.type === "attempt",
+	);
+
+	// Show skip/continue button when period is exhausted OR when no tasks are left
+	const showSkipButton =
+		!isAttempting && (periodExhausted || !hasAttemptableTask);
+
+	// Build continue button HTML
 	let continueButtonHtml = "";
-	if (periodExhausted && !isAttempting) {
+	if (showSkipButton) {
 		const buttonText = screenInfo.isWeekend
 			? s.game.endDay
 			: screenInfo.nextTimeBlock
@@ -361,8 +370,12 @@ export function renderTaskPanel(
 	}
 
 	if (!selectedTask) {
+		// Show "nothing left" when tasks exist but none can be attempted
+		const emptyMessage = hasAttemptableTask
+			? s.game.selectTask
+			: s.game.noTasksAvailable;
 		panel.innerHTML = `
-			<p class="${panelStyles.empty}">${s.game.selectTask}</p>
+			<p class="${panelStyles.empty}">${emptyMessage}</p>
 			${continueButtonHtml}
 		`;
 		attachContinueHandler(panel, screenInfo, onDecision);

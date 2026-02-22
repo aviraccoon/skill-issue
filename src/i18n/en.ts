@@ -33,6 +33,7 @@ export const en = {
 	game: {
 		// Task panel
 		selectTask: "Select a task",
+		noTasksAvailable: "Nothing left to do right now",
 		attempt: "Attempt",
 		attempting: "Attempting...",
 		done: "Done",
