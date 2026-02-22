@@ -3,6 +3,29 @@
  * Ported from the art direction mockup.
  */
 
+const HEX6_RE = /^#[0-9a-f]{6}$/i;
+
+/** Scratch canvas context for normalizing CSS colors to hex. */
+let scratchCtx: CanvasRenderingContext2D | null | undefined;
+
+/**
+ * Normalizes any valid CSS color (named, rgb(), hex shorthand, etc.) to
+ * #rrggbb hex. The canvas 2D context always serializes fillStyle as hex.
+ * Returns `fallback` if the color is invalid.
+ */
+export function cssColorToHex(color: string, fallback: string): string {
+	if (HEX6_RE.test(color)) return color;
+	if (scratchCtx === undefined) {
+		scratchCtx = document.createElement("canvas").getContext("2d");
+	}
+	if (!scratchCtx) return fallback;
+	scratchCtx.fillStyle = "#000000";
+	scratchCtx.fillStyle = color;
+	const result = scratchCtx.fillStyle;
+	if (typeof result === "string" && HEX6_RE.test(result)) return result;
+	return fallback;
+}
+
 /** Parses a hex color to [r, g, b] tuple. */
 export function hexToRgb(hex: string): [number, number, number] {
 	return [

@@ -5,6 +5,7 @@
 
 import { ROOM_SCALE } from "../data/roomLayout";
 import { TIME_BLOCKS } from "../data/timeBlocks";
+import { cssColorToHex } from "../rendering/color";
 import { FURNITURE_DEFS, generateSingleRoomLayout } from "../rendering/layout";
 import { buildTimePalette } from "../rendering/palettes";
 import { ART_STYLES, getRenderer, pickArtStyle } from "../rendering/styles";
@@ -16,14 +17,15 @@ import type {
 	ThemeColors,
 } from "../rendering/types";
 import { getItemVariants, getSeedPalette } from "../rendering/variants";
-import { mulberry32 } from "../utils/random";
+import { mulberry32, type NonEmptyArray } from "../utils/random";
 import { renderGameArea } from "./GameArea";
+import { DEFAULT_THEME, THEMES, type Theme } from "./ThemeSwitcher";
 
 /** Time blocks plus extended night (not a real time block, but a rendering mode). */
 const PLAYGROUND_TIME_BLOCKS = [...TIME_BLOCKS, "extendedNight"] as const;
 
 /** All dog mood states. */
-const DOG_MOODS: DogMoodState[] = [
+const DOG_MOODS = [
 	"normal",
 	"excited",
 	"disappointed",
@@ -33,7 +35,7 @@ const DOG_MOODS: DogMoodState[] = [
 	"unimpressed",
 	"interested",
 	"restless",
-];
+] as const satisfies readonly DogMoodState[];
 
 /** Furniture names derived from layout definitions. */
 const FURNITURE_NAMES = Object.keys(FURNITURE_DEFS) as FurnitureName[];
@@ -41,9 +43,11 @@ const FURNITURE_NAMES = Object.keys(FURNITURE_DEFS) as FurnitureName[];
 /** Read theme colors from CSS variables (or use defaults). */
 function getThemeColors(): ThemeColors {
 	const style = getComputedStyle(document.documentElement);
+	const floor = style.getPropertyValue("--game-area-floor").trim();
+	const wall = style.getPropertyValue("--game-area-wall").trim();
 	return {
-		floor: style.getPropertyValue("--game-area-floor").trim() || "#e8e4d9",
-		wall: style.getPropertyValue("--game-area-wall").trim() || "#d4cfc4",
+		floor: cssColorToHex(floor, "#e8e4d9"),
+		wall: cssColorToHex(wall, "#d4cfc4"),
 		highlight:
 			style.getPropertyValue("--game-area-highlight").trim() ||
 			"rgba(94, 106, 210, 0.15)",
@@ -51,13 +55,56 @@ function getThemeColors(): ThemeColors {
 	};
 }
 
+type PlaygroundMode = "styles" | "themes";
+
 interface PlaygroundState {
 	seed: number;
+	mode: PlaygroundMode;
 	timeBlock: (typeof PLAYGROUND_TIME_BLOCKS)[number];
+	selectedTheme: Theme;
+	selectedStyle: ArtStyleId;
 	highlightFurniture: FurnitureName | "none";
 	dogMood: DogMoodState;
 	dogEnergy: number;
 	layout: RoomLayout;
+}
+
+/**
+ * Read theme colors, label color, and resolved page background for a specific
+ * theme + time block. Temporarily swaps `data-theme` and `data-time` so the
+ * actual CSS rules compute the values. Synchronous JS prevents browser repaint.
+ */
+function getThemeVarsFor(
+	theme: Theme,
+	timeBlock: string,
+): { colors: ThemeColors; muted: string; pageBg: string } {
+	const root = document.documentElement;
+	const app = document.getElementById("app");
+	const prevTheme = root.dataset.theme;
+	const prevTime = app?.dataset.time;
+
+	root.dataset.theme = theme;
+	if (app) app.dataset.time = timeBlock;
+
+	const colors = getThemeColors();
+	const rootStyle = getComputedStyle(root);
+	const muted = rootStyle.getPropertyValue("--muted").trim() || "#666";
+	const pageBg = getComputedStyle(document.body).backgroundColor;
+
+	if (prevTheme) {
+		root.dataset.theme = prevTheme;
+	} else {
+		delete root.dataset.theme;
+	}
+	if (app) {
+		if (prevTime) {
+			app.dataset.time = prevTime;
+		} else {
+			delete app.dataset.time;
+		}
+	}
+
+	return { colors, muted, pageBg };
 }
 
 /** Try to read the current run seed from localStorage. */
@@ -78,7 +125,11 @@ export function mountPlayground(container: HTMLElement): void {
 
 	const state: PlaygroundState = {
 		seed: initialSeed,
+		mode: "styles",
 		timeBlock: "afternoon",
+		selectedTheme:
+			(document.documentElement.dataset.theme as Theme) || DEFAULT_THEME,
+		selectedStyle: pickArtStyle(initialSeed),
 		highlightFurniture: "none",
 		dogMood: "normal",
 		dogEnergy: 0.6,
@@ -163,7 +214,7 @@ export function mountPlayground(container: HTMLElement): void {
 		if (!Number.isNaN(val) && val >= 0) {
 			state.seed = val;
 			regenerateLayout();
-			render();
+			scheduleRender();
 		}
 	});
 	const randomBtn = document.createElement("button");
@@ -174,7 +225,7 @@ export function mountPlayground(container: HTMLElement): void {
 		state.seed = Math.floor(Math.random() * 100000);
 		seedInput.value = String(state.seed);
 		regenerateLayout();
-		render();
+		scheduleRender();
 	});
 	seedRow.appendChild(seedInput);
 	seedRow.appendChild(randomBtn);
@@ -185,9 +236,52 @@ export function mountPlayground(container: HTMLElement): void {
 	timeSelect.addEventListener("change", () => {
 		state.timeBlock =
 			timeSelect.value as (typeof PLAYGROUND_TIME_BLOCKS)[number];
-		render();
+		scheduleRender();
 	});
 	sidebar.appendChild(createControl("Time Block", timeSelect));
+
+	// Mode toggle
+	const modeSelect = createSelect(["styles", "themes"], state.mode);
+	modeSelect.addEventListener("change", () => {
+		state.mode = modeSelect.value as PlaygroundMode;
+		updateModeVisibility();
+		rebuildCanvases();
+		scheduleRender();
+	});
+	sidebar.appendChild(createControl("Compare", modeSelect));
+
+	// Theme (visible in "styles" mode)
+	const themeSelect = createSelect(THEMES, state.selectedTheme);
+	themeSelect.addEventListener("change", () => {
+		state.selectedTheme = themeSelect.value as Theme;
+		applyTheme(state.selectedTheme);
+		scheduleRender();
+	});
+	const themeControl = createControl("Theme", themeSelect);
+	sidebar.appendChild(themeControl);
+
+	// Art style (visible in "themes" mode)
+	const styleSelect = createSelect(ART_STYLES, state.selectedStyle);
+	styleSelect.addEventListener("change", () => {
+		state.selectedStyle = styleSelect.value as ArtStyleId;
+		scheduleRender();
+	});
+	const styleControl = createControl("Art Style", styleSelect);
+	sidebar.appendChild(styleControl);
+
+	/** Show/hide controls based on current mode. */
+	function updateModeVisibility(): void {
+		themeControl.style.display = state.mode === "styles" ? "" : "none";
+		styleControl.style.display = state.mode === "themes" ? "" : "none";
+	}
+
+	/** Apply a theme to the document (for "styles" mode and page appearance). */
+	function applyTheme(theme: Theme): void {
+		document.documentElement.dataset.theme = theme;
+	}
+
+	updateModeVisibility();
+	applyTheme(state.selectedTheme);
 
 	// Highlight furniture
 	const furnitureSelect = createSelect(
@@ -196,7 +290,7 @@ export function mountPlayground(container: HTMLElement): void {
 	);
 	furnitureSelect.addEventListener("change", () => {
 		state.highlightFurniture = furnitureSelect.value as FurnitureName | "none";
-		render();
+		scheduleRender();
 	});
 	sidebar.appendChild(createControl("Highlight", furnitureSelect));
 
@@ -204,7 +298,7 @@ export function mountPlayground(container: HTMLElement): void {
 	const moodSelect = createSelect(DOG_MOODS, state.dogMood);
 	moodSelect.addEventListener("change", () => {
 		state.dogMood = moodSelect.value as DogMoodState;
-		render();
+		scheduleRender();
 	});
 	sidebar.appendChild(createControl("Dog Mood", moodSelect));
 
@@ -217,9 +311,39 @@ export function mountPlayground(container: HTMLElement): void {
 	energyInput.style.cssText = "width: 100%;";
 	energyInput.addEventListener("input", () => {
 		state.dogEnergy = Number.parseInt(energyInput.value, 10) / 100;
-		render();
+		scheduleRender();
 	});
 	sidebar.appendChild(createControl("Energy", energyInput));
+
+	// Randomize all
+	function pickRandom<T>(arr: NonEmptyArray<T>): T {
+		return arr[Math.floor(Math.random() * arr.length)] ?? arr[0];
+	}
+
+	const randomizeAllBtn = document.createElement("button");
+	randomizeAllBtn.textContent = "Randomize all";
+	randomizeAllBtn.style.cssText =
+		"width: 100%; padding: 0.35rem 0.5rem; border: 1px solid var(--border, #ccc); border-radius: 3px; font-size: 0.8rem; cursor: pointer; background: var(--bg, #fff); color: var(--fg, #222); margin-bottom: 0.5rem;";
+	randomizeAllBtn.addEventListener("click", () => {
+		state.timeBlock = pickRandom(PLAYGROUND_TIME_BLOCKS);
+		state.selectedTheme = pickRandom(THEMES);
+		state.selectedStyle = pickRandom(ART_STYLES);
+		state.highlightFurniture = pickRandom(["none", ...FURNITURE_NAMES]);
+		state.dogMood = pickRandom(DOG_MOODS);
+		state.dogEnergy = Math.random();
+
+		// Sync controls
+		timeSelect.value = state.timeBlock;
+		themeSelect.value = state.selectedTheme;
+		styleSelect.value = state.selectedStyle;
+		furnitureSelect.value = state.highlightFurniture;
+		moodSelect.value = state.dogMood;
+		energyInput.value = String(Math.round(state.dogEnergy * 100));
+
+		applyTheme(state.selectedTheme);
+		scheduleRender();
+	});
+	sidebar.appendChild(randomizeAllBtn);
 
 	// Seed info
 	const infoLine = document.createElement("div");
@@ -235,46 +359,80 @@ export function mountPlayground(container: HTMLElement): void {
 		"flex: 1; display: flex; flex-wrap: wrap; gap: 0.75rem; justify-content: center; align-items: start; min-width: 0;";
 	columns.appendChild(canvasGrid);
 
-	const canvases: Record<ArtStyleId, HTMLCanvasElement> = {} as Record<
-		ArtStyleId,
-		HTMLCanvasElement
-	>;
+	/** Active canvases and their wrappers, keyed by label (style name or theme name). */
+	let entries: Map<
+		string,
+		{ canvas: HTMLCanvasElement; wrapper: HTMLElement }
+	> = new Map();
 
-	for (const style of ART_STYLES) {
-		const div = document.createElement("div");
-		div.style.cssText = "text-align: center;";
+	/** Rebuild the canvas grid for the current mode. */
+	function rebuildCanvases(): void {
+		canvasGrid.replaceChildren();
+		entries = new Map();
 
-		const label = document.createElement("div");
-		label.textContent = style;
-		label.style.cssText =
-			"font-size: 0.75rem; font-weight: 600; margin-bottom: 0.25rem; text-transform: capitalize; color: var(--muted, #666);";
-		div.appendChild(label);
+		const keys =
+			state.mode === "styles"
+				? (ART_STYLES as readonly string[])
+				: (THEMES as readonly string[]);
 
-		const canvas = document.createElement("canvas");
-		canvas.width = state.layout.roomWidth * ROOM_SCALE;
-		canvas.height = state.layout.roomHeight * ROOM_SCALE;
-		canvas.style.cssText =
-			"border: 2px solid var(--border, #ccc); border-radius: 4px; image-rendering: pixelated;";
-		div.appendChild(canvas);
+		for (const key of keys) {
+			const wrapper = document.createElement("div");
+			wrapper.style.cssText =
+				state.mode === "themes"
+					? "text-align: center; padding: 12px; border-radius: 6px;"
+					: "text-align: center;";
 
-		canvases[style] = canvas;
-		canvasGrid.appendChild(div);
+			const label = document.createElement("div");
+			label.textContent = key;
+			label.style.cssText =
+				"font-size: 0.75rem; font-weight: 600; margin-bottom: 0.25rem; text-transform: capitalize;";
+			wrapper.appendChild(label);
+
+			const canvas = document.createElement("canvas");
+			canvas.width = state.layout.roomWidth * ROOM_SCALE;
+			canvas.height = state.layout.roomHeight * ROOM_SCALE;
+			canvas.style.cssText =
+				"border: 2px solid var(--border, #ccc); border-radius: 4px; image-rendering: pixelated;";
+			wrapper.appendChild(canvas);
+
+			entries.set(key, { canvas, wrapper });
+			canvasGrid.appendChild(wrapper);
+		}
 	}
 
 	function regenerateLayout(): void {
 		state.layout = generateSingleRoomLayout(mulberry32(state.seed));
-		for (const style of ART_STYLES) {
-			const canvas = canvases[style];
+		for (const { canvas } of entries.values()) {
 			canvas.width = state.layout.roomWidth * ROOM_SCALE;
 			canvas.height = state.layout.roomHeight * ROOM_SCALE;
 		}
 	}
 
-	function render(): void {
-		const seedPalette = getSeedPalette(mulberry32(state.seed + 1000));
-		const variants = getItemVariants(mulberry32(state.seed + 2000));
-		const themeColors = getThemeColors();
+	/** Shared render props (everything except renderer and theme-dependent palettes). */
+	function baseRenderProps() {
+		return {
+			animationState: null,
+			energy: state.dogEnergy,
+			selectedTaskId: null,
+			lastPhoneOutcome: null,
+			lastPhoneTime: 0,
+			lastTaskOutcome: null,
+			lastTaskTime: 0,
+			dogUrgency: "normal" as const,
+			layout: state.layout,
+			seedPalette: getSeedPalette(mulberry32(state.seed + 1000)),
+			variants: getItemVariants(mulberry32(state.seed + 2000)),
+			dogMoodOverride: state.dogMood,
+		};
+	}
 
+	/** Render a single canvas with the given renderer and theme colors. */
+	function renderCanvas(
+		canvas: HTMLCanvasElement,
+		renderer: ReturnType<typeof getRenderer>,
+		themeColors: ThemeColors,
+		props: ReturnType<typeof baseRenderProps>,
+	): void {
 		const isExtendedNight = state.timeBlock === "extendedNight";
 		const timeBlockName = isExtendedNight ? "night" : state.timeBlock;
 		const timePalette = buildTimePalette(
@@ -283,58 +441,86 @@ export function mountPlayground(container: HTMLElement): void {
 			themeColors,
 		);
 
+		renderGameArea(canvas, {
+			...props,
+			renderer,
+			timePalette,
+			themeColors,
+		});
+
+		// Draw furniture highlight on top if selected
 		const highlightRect =
 			state.highlightFurniture !== "none"
 				? state.layout.furniture[state.highlightFurniture]
 				: undefined;
 
+		if (highlightRect) {
+			const ctx = canvas.getContext("2d");
+			if (ctx) {
+				ctx.save();
+				const scale = canvas.width / state.layout.roomWidth;
+				ctx.scale(scale, scale);
+				renderer.highlightFurniture(
+					ctx,
+					highlightRect,
+					state.layout,
+					themeColors.highlight,
+					themeColors.highlightBorder,
+				);
+				ctx.restore();
+			}
+		}
+	}
+
+	function render(): void {
 		// Update info line
 		const detectedStyle = pickArtStyle(state.seed);
 		infoLine.textContent = `Seed ${state.seed} \u2192 "${detectedStyle}" in-game\n${state.layout.roomWidth}\u00d7${state.layout.roomHeight} | Door: ${state.layout.doorSide}\nDecor: ${state.layout.decor.length} floor, ${state.layout.wallDecor.length} wall`;
 		infoLine.style.whiteSpace = "pre-line";
 
-		// Render all 5 canvases
-		for (const style of ART_STYLES) {
-			const canvas = canvases[style];
-			const renderer = getRenderer(style);
+		const props = baseRenderProps();
 
-			renderGameArea(canvas, {
-				animationState: null,
-				energy: state.dogEnergy,
-				selectedTaskId: null,
-				lastPhoneOutcome: null,
-				lastPhoneTime: 0,
-				lastTaskOutcome: null,
-				lastTaskTime: 0,
-				dogUrgency: "normal",
-				layout: state.layout,
-				renderer,
-				timePalette,
-				seedPalette,
-				variants,
-				themeColors,
-				dogMoodOverride: state.dogMood,
-			});
+		if (state.mode === "styles") {
+			// One theme, all art styles
+			const themeColors = getThemeColors();
+			for (const style of ART_STYLES) {
+				const entry = entries.get(style);
+				if (entry) {
+					renderCanvas(entry.canvas, getRenderer(style), themeColors, props);
+				}
+			}
+		} else {
+			// One art style, all themes
+			const renderer = getRenderer(state.selectedStyle);
+			const timeBlockName =
+				state.timeBlock === "extendedNight" ? "night" : state.timeBlock;
 
-			// Draw furniture highlight on top if selected
-			if (highlightRect) {
-				const ctx = canvas.getContext("2d");
-				if (ctx) {
-					ctx.save();
-					const scale = canvas.width / state.layout.roomWidth;
-					ctx.scale(scale, scale);
-					renderer.highlightFurniture(
-						ctx,
-						highlightRect,
-						state.layout,
-						themeColors.highlight,
-						themeColors.highlightBorder,
+			for (const theme of THEMES) {
+				const entry = entries.get(theme);
+				if (entry) {
+					const { colors, muted, pageBg } = getThemeVarsFor(
+						theme,
+						timeBlockName,
 					);
-					ctx.restore();
+					entry.wrapper.style.backgroundColor = pageBg;
+					entry.wrapper.style.color = muted;
+					renderCanvas(entry.canvas, renderer, colors, props);
 				}
 			}
 		}
 	}
 
+	/**
+	 * Schedules a render on the next animation frame. Coalesces rapid calls
+	 * (e.g. spamming randomize) so the browser flushes style changes before
+	 * we read computed values.
+	 */
+	let rafId = 0;
+	function scheduleRender(): void {
+		cancelAnimationFrame(rafId);
+		rafId = requestAnimationFrame(render);
+	}
+
+	rebuildCanvases();
 	render();
 }

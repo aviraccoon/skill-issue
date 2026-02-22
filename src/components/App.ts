@@ -6,6 +6,7 @@ import {
 	type ScreenInfo,
 } from "../core/screenInfo";
 import { strings } from "../i18n";
+import { cssColorToHex } from "../rendering/color";
 import { generateSingleRoomLayout } from "../rendering/layout";
 import { buildTimePalette } from "../rendering/palettes";
 import { getRenderer, pickArtStyle } from "../rendering/styles/index";
@@ -180,8 +181,8 @@ function getThemeColors(): ThemeColors {
 		.trim();
 
 	cachedThemeColors = {
-		floor: floor || "#e8e4d9",
-		wall: wall || "#d4cfc4",
+		floor: cssColorToHex(floor, "#e8e4d9"),
+		wall: cssColorToHex(wall, "#d4cfc4"),
 		highlight: highlight || "rgba(94, 106, 210, 0.15)",
 		highlightBorder: highlightBorder || "rgba(94, 106, 210, 0.4)",
 	};

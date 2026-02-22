@@ -10,13 +10,13 @@ import { createPixelRenderer } from "./pixel";
 import { createSketchRenderer } from "./sketch";
 
 /** All available art style IDs. */
-export const ART_STYLES: ArtStyleId[] = [
+export const ART_STYLES = [
 	"pixel",
 	"minimal",
 	"sketch",
 	"isometric",
 	"flat",
-];
+] as const satisfies readonly ArtStyleId[];
 
 /** Pick an art style from a seed. */
 export function pickArtStyle(seed: number): ArtStyleId {

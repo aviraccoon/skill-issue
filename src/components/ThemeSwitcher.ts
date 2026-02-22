@@ -15,6 +15,9 @@ export const THEMES = [
 ] as const;
 export type Theme = (typeof THEMES)[number];
 
+/** Theme used when no saved preference exists. */
+export const DEFAULT_THEME: Theme = "vapor";
+
 /** Maps theme names to their CSS module class. */
 const themeClasses: Record<Theme, string> = {
 	hacker: styles.hacker,
@@ -34,14 +37,14 @@ const themeClasses: Record<Theme, string> = {
  */
 export function initTheme() {
 	const savedTheme = localStorage.getItem(THEME_STORAGE_KEY) as Theme | null;
-	applyTheme(savedTheme || "vapor");
+	applyTheme(savedTheme || DEFAULT_THEME);
 }
 
 /**
  * Returns the current theme.
  */
 export function getTheme(): Theme {
-	return (document.documentElement.dataset.theme as Theme) || "vapor";
+	return (document.documentElement.dataset.theme as Theme) || DEFAULT_THEME;
 }
 
 /**
