@@ -11,246 +11,100 @@ Vanilla TypeScript with a lightweight reactive pattern. No framework.
 
 ## Core Pattern
 
-### Reactive Store
+### Reactive Store (`store.ts`)
 
-A simple pub/sub store manages all game state:
+A ~70-line pub/sub store manages all game state. All subscribers receive the full state on every change -- there's no key-based filtering. Components decide what to re-render. The API is `get`, `set`, `update`, `getState`, `setState`, `subscribe`. See `store.ts` for the interface.
 
-```ts
-interface GameState {
-  day: number
-  timeBlock: 'morning' | 'afternoon' | 'evening' | 'night'
-  slotsRemaining: number
-  tasks: Task[]
-  energy: number      // hidden from player
-  momentum: number    // hidden from player
-  dogMood: number
-  // ...
-}
+### Shared Controller (`core/controller.ts`)
 
-const store = createStore<GameState>(initialState)
+Both browser and CLI use the same game controller. The `Decision` type is the union of all player actions (attempt task, skip, check phone, sleep, push through, accept/decline rescue, event choices). `getAvailableDecisions(state)` returns what's valid for the current screen. `executeDecision(store, decision, callbacks?)` processes it and returns an `ActionResult`.
 
-// Components subscribe to state slices
-store.subscribe('tasks', renderTaskList)
-store.subscribe('momentum', updateVisualMessiness)
-```
+Screen rendering data is computed by `getScreenInfo(state)` (in `core/screenInfo.ts`), which returns a discriminated union with one variant per screen type. Types live in `core/screenInfo.types.ts`. Components never read raw GameState -- they receive precomputed display data.
 
-The store is ~50 lines. State changes trigger targeted re-renders.
+### Components (`components/`)
 
-### Shared Controller
+Components are functions that receive ScreenInfo, render DOM, and call `onDecision(decision)` on user interaction. No framework lifecycle -- just functions that build elements and attach listeners. `App.ts` routes between screens and wraps `executeDecision` with animation callbacks.
 
-Both browser and CLI use a shared game controller (`core/controller.ts`):
+Each component has a co-located CSS module (`.module.css`) with auto-generated type declarations.
 
-```ts
-// Decision type covers all player actions
-type Decision =
-  | { type: 'attempt'; taskId: string }
-  | { type: 'skip' }
-  | { type: 'checkPhone' }
-  | { type: 'sleep' }
-  | { type: 'pushThrough' }
-  // ...
+### Actions (`actions/`)
 
-// Get available decisions for current screen
-const decisions = getAvailableDecisions(state)
+One file per action category (tasks, time, phone, friend, night). Each action function:
+1. Calculates success probability from hidden state
+2. Rolls using seeded random (deterministic via `rollCount`)
+3. Updates state through the store
+4. Store notification triggers UI re-render
 
-// Execute a decision
-const result = executeDecision(store, decision, callbacks?)
-```
+All randomness is seeded -- the same seed and sequence of decisions produces identical outcomes.
 
-Screen rendering data is computed by `getScreenInfo(state)`, which returns a discriminated union of info types for each screen (GameScreenInfo, NightChoiceInfo, etc.).
+## State
 
-### Components
+The full `GameState` type lives in `state.ts`. Key architectural points:
 
-Components are functions that:
-1. Receive ScreenInfo with all display data precomputed
-2. Render DOM based on that data
-3. Call `onDecision(decision)` when user interacts
+- **Visible to player**: Day, time block, tasks (names, failure counts, success status), action slots remaining
+- **Hidden from player**: Energy (0-1), momentum (0-1), personality (seed-determined time/social preferences). These affect success rates but are never exposed in UI
+- **Deterministic**: `runSeed` + `rollCount` make all randomness reproducible. Personality, task selection, event selection, and item variants are all seed-derived
+- **Screens as state**: `screen` field drives routing (splash, menu, intro, game, nightChoice, daySummary, weekComplete, friendRescue, narrativeEvent, patterns)
+- **Events**: `events[]` holds narrative event instances for the run, `eventFlags[]` tracks consequence chain state
+- **Stats**: `runStats` accumulates per-run data for the "Your Patterns" reveal
 
-```ts
-function renderNightChoice(
-  screenInfo: NightChoiceInfo,
-  container: HTMLElement,
-  onDecision: (decision: Decision) => void
-) {
-  container.innerHTML = `
-    <h2>${screenInfo.dayCapitalized} Night</h2>
-    <p>${screenInfo.description}</p>
-    <button class="sleep">Sleep</button>
-  `
-  container.querySelector('.sleep')?.addEventListener('click', () => {
-    onDecision({ type: 'sleep' })
-  })
-}
-```
+## Directory Structure
 
-The browser's `App.ts` creates a `handleDecision` callback that wraps `executeDecision` with animation callbacks.
-
-### Actions
-
-User interactions go through action functions that:
-1. Calculate success probability based on hidden state
-2. Roll the dice
-3. Update state accordingly
-4. State change triggers UI update via subscriptions
-
-```ts
-function attemptTask(taskId: string) {
-  const task = store.get('tasks').find(t => t.id === taskId)
-  const probability = calculateSuccessProbability(task, store.getState())
-
-  if (Math.random() < probability) {
-    // Success path
-    store.update('tasks', tasks => /* mark succeeded */)
-    store.update('momentum', m => Math.min(m + 0.05, 1))
-  } else {
-    // Failure path - the click just... doesn't work
-    playFailureAnimation(taskId)
-    store.update('tasks', tasks => /* increment failure count */)
-    store.update('momentum', m => Math.max(m - 0.03, 0))
-  }
-
-  store.update('slotsRemaining', s => s - 1)
-}
-```
+- **`core/`** -- Shared game logic. Controller (decision flow), screen info (display data computation), strategy helpers (for CLI simulation).
+- **`actions/`** -- State mutations triggered by player decisions. One file per action category.
+- **`components/`** -- DOM rendering. One component per screen, plus shared UI (theme switcher, settings, dev tools). Each has a CSS module. `GameArea.ts` bridges to the canvas rendering system.
+- **`rendering/`** -- Seed-based canvas rendering. Room layout generation, 5 art style renderers (pixel, minimal, sketch, isometric, flat) behind a `RoomRenderer` interface, time-of-day palettes, seed-derived item variants (furniture, character, dog appearance). See [Rendering System](#rendering-system).
+- **`systems/`** -- Game mechanics. Probability calculation, momentum/energy decay, task description evolution, dog mood, friend rescue triggers, all-nighter mechanics, sleep recovery, task pool selection, daily availability jitter, narrative event selection and resolution, save persistence and migrations.
+- **`data/`** -- Static content. Task definitions, time block config, day summary templates, scroll trap text/outcomes, friend rescue dialogue, narrative event definitions (tiers 0-2, arcs, choices), week story narrative, room furniture definitions.
+- **`i18n/`** -- Internationalization. English source of truth, Czech (deferred). `strings()` accessor with fallback.
+- **`styles/`** -- Global CSS. `base.css` (reset, variables, time theming, `@keyframes`) and `themes.css` (9 theme overrides via `[data-theme]`).
+- **`utils/`** -- Seeded random (mulberry32), math (clamp, lerp), string helpers, screen reader announcements, tooltip positioning.
+- **`cli/`** -- Headless simulation tool. Simulate runs, compare strategies, find seeds matching criteria, interactive play. See `src/cli/README.md`.
 
 ## State-Driven CSS
 
-Visual states are driven by data attributes, not JS:
+Visual states are driven by data attributes on the DOM, not JS style manipulation. `[data-time]` controls time-of-day theming, `[data-theme]` controls color scheme, `[data-momentum]` drives list messiness (jitter, drift), `[data-failures]` on task elements drives description evolution. CSS variables do the heavy lifting -- JS just sets the attributes.
 
-```css
-/* Task description evolution */
-.task[data-failures="0"] .evolved { display: none; }
-.task[data-failures="2"] .evolved::after { content: " - You know you should"; }
-.task[data-failures="4"] .name { display: none; }
-.task[data-failures="4"] .evolved { display: inline; }
-
-/* List messiness at low momentum */
-[data-momentum="low"] .task-list {
-  --spacing-jitter: 3px;
-  --alignment-drift: 2deg;
-}
-
-/* Time of day theming */
-[data-time="night"] { --bg: var(--night-warm); }
-[data-time="morning"] { --bg: var(--morning-light); }
-```
-
-## File Structure
-
-```
-src/
-  index.ts          # Browser entry point
-  server.ts         # Dev server (Bun.serve)
-  store.ts          # Reactive store implementation
-  state.ts          # GameState type, initial state, state helpers
-
-  core/
-    controller.ts   # Shared game controller (Decision, executeDecision)
-    screenInfo.ts   # Screen rendering data (ScreenInfo, getScreenInfo)
-
-  actions/
-    tasks.ts        # attemptTask, selectTask
-    time.ts         # advanceTimeBlock, skipToNext
-    phone.ts        # checkPhone (scroll trap)
-    friend.ts       # Friend rescue mechanics
-    night.ts        # Sleep/push through choices
-
-  components/
-    App.ts                      # Main game UI, screen routing
-    App.module.css              # Layout styles
-    App.module.css.d.ts         # Auto-generated types
-    NightChoice.ts              # Night choice screen
-    FriendRescue.ts             # Friend rescue screen
-    DaySummary.ts               # End-of-day summary screen
-    WeekComplete.ts             # Week complete screen
-    Task.module.css             # Task button styles
-    Panel.module.css            # Task panel styles
-    ThemeSwitcher.ts
-    DevTools.ts
-
-  systems/
-    probability.ts  # Success rate calculations
-    momentum.ts     # Momentum decay, modifiers
-    energy.ts       # Hidden energy state
-    evolution.ts    # Task description evolution
-    dog.ts          # Dog urgency system
-    friend.ts       # Friend rescue triggers
-    allnighter.ts   # All-nighter mechanics
-    personality.ts  # Seed-based personality
-
-  data/
-    tasks.ts        # Task definitions
-    daySummary.ts   # Day summary narrative text
-    scrollTrap.ts   # Phone check flavor text
-
-  i18n/
-    types.ts        # Strings type for translations
-    en.ts           # English strings (source of truth)
-    index.ts        # strings() accessor with fallback
-
-  styles/
-    base.css        # Reset, CSS variables, time theming
-    themes.css      # Theme variable overrides
-
-  utils/
-    random.ts       # Seeded random for reproducibility
-    math.ts         # Clamp, lerp utilities
-    string.ts       # capitalize, etc.
-
-  cli/              # CLI simulation tool (see src/cli/README.md)
-    index.ts        # Entry point
-    engine.ts       # Simulation loop, strategies
-    commands/       # Command implementations
-
-scripts/
-  gen-css-types.ts  # Generates .d.ts files for CSS modules
-
-index.html
-```
-
-## CSS
-
-CSS is split between global styles and CSS modules:
-
-**Global styles** (`src/styles/`):
-- `base.css` - Reset, CSS variables, `[data-time]` theming
-- `themes.css` - `[data-theme]` variable overrides
-
-**CSS modules** (`src/components/*.module.css`):
-- Component-specific styles with scoped class names
-- Co-located `.d.ts` files for type safety
-- Run `bun run gen:css-types` after changing CSS classes
-
-Import in TypeScript:
-```ts
-// Global CSS
-import './styles/base.css'
-
-// CSS modules
-import styles from './App.module.css'
-element.className = styles.header  // Type-checked
-```
-
-Features available:
-- **Nested CSS** - Native nesting without preprocessor
-- **CSS Variables** - Theme and time-block styling via custom properties
+Component styles use CSS modules with scoped class names. `@keyframes` go in `base.css` (not modules) due to a Bun bundler scoping bug.
 
 ## Hidden State Machine
 
-The player never sees energy or momentum directly. These affect success rates:
+The player never sees energy or momentum directly. Success probability is multiplicative:
 
-```
-Success Rate = baseRate
-  * timeModifier(timeBlock)      // 2am spike: +25%
-  * momentumModifier(momentum)   // -30% to +30%
-  * energyModifier(energy)       // -20% to +20%
-  * taskTypeModifier(task.type)  // aspirational: 0.5x, routine: 1.2x
-```
+`baseRate * timeModifier * momentumModifier * energyModifier * weekendWorkModifier`
 
-Visual hints exist but are subtle:
-- Dog's posture/energy reflects player energy
-- Task list gets "messy" at low momentum
-- Background warmth shifts with time
+- **baseRate**: Baked-in per task (aspirational tasks are harder, routine tasks easier)
+- **timeModifier**: Personality-aware. Night Owls get a bigger night bonus, Early Birds get a morning bonus, with seed-based variation in intensity
+- **momentumModifier**: 0.7x at 0 momentum, 1.3x at full
+- **energyModifier**: 0.8x at 0 energy, 1.2x at full
+- **weekendWorkModifier**: 0.75x for work tasks on weekends
+
+Visual hints are subtle: dog posture reflects energy, task list gets "messy" at low momentum, background warmth shifts with time, game area palette shifts by time of day.
+
+## Rendering System
+
+The game area (`src/rendering/`) is a canvas-based system that generates a seed-determined apartment scene.
+
+5 art style renderers (pixel, minimal, sketch, isometric, flat) implement `RoomRenderer` -- the seed picks one per run. Each draws room background/furniture, a character, and a dog in its visual style.
+
+Everything visual is seed-derived: room layout and furniture placement (`layout.ts`), item variants like bed style, desk setup, character build/hair/skin, dog breed traits (`variants.ts`), and a hue-shifted color palette. Time-of-day palettes (`palettes.ts`) shift wall/floor/sky colors. Base colors come from CSS theme variables via `getComputedStyle`, so rendering respects the active theme.
+
+When a task is selected, its associated furniture gets a highlight overlay. Dog mood (computed from energy, recent outcomes, phone checks) drives expressions and posture.
+
+A dev playground at `#playground` renders all 5 styles side by side with full controls.
+
+## Narrative Events
+
+Events are seed-selected at run start (`selectEventsForRun`) and scheduled to specific days.
+
+**Tiers**:
+- **Tier 0** (Flavor): Ambient observations as inline banners. No choices.
+- **Tier 1** (Standalone + Arcs): Minor disruptions with choices. Some form multi-event arcs (leak, delivery, construction, neighbor, power outage).
+- **Tier 2** (Obligations + Opportunities): Inject temporary tasks with deadlines, offer optional activities, contextual task modifications. Includes the dog emergency arc.
+
+At time block transitions, pending events fire if conditions are met. Major events pause gameplay on a dedicated screen. Minor events show as inline banners. `resolveEvent()` applies effects (energy/momentum changes, task injection, flag setting).
+
+Event choices set flags in `eventFlags[]`. Later events check flags to branch -- ignoring a leak leads to a worse outcome, helping a neighbor opens an invitation.
 
 ## Unreliable Input Handling
 
@@ -267,10 +121,9 @@ The non-response is intentional. It looks like it should have worked.
 
 ## Persistence
 
-localStorage for:
-- Current run state (auto-save after each time block)
-- Completed runs history
-- Unlocked "Your Patterns" mode
+localStorage with versioned save format. Auto-saves on every state change (the store subscriber calls `saveGame` on each notification). Separate save slots for "main" and "seeded" game modes. Completed runs history and lifetime stats for "Your Patterns" mode.
+
+**Migrations** (`systems/migrations/`): When the save format changes incompatibly, a migration function transforms old data. Old types are preserved in `migrations/types.ts`. The dispatcher runs migrations sequentially from saved version to current.
 
 No cross-device sync. Accept this limitation.
 
@@ -286,109 +139,24 @@ Production build is static files, deployable anywhere.
 
 ## Internationalization (i18n)
 
-Simple homegrown i18n without external dependencies.
+Simple homegrown i18n without external dependencies. English is the source of truth (`en.ts`), additional locales use `satisfies Strings` for type safety. `strings()` accessor falls back to English for missing keys and logs warnings.
 
-### Structure
+**UI strings** (`src/i18n/`): Button labels, status text, accessibility labels. Template functions for parameterized text (`s.game.slots(2)`).
 
-```
-src/i18n/
-  types.ts    # Strings type derived from English
-  en.ts       # English strings (source of truth)
-  {locale}.ts # Additional translations
-  index.ts    # strings() accessor with fallback
-```
-
-### Usage
-
-```ts
-import { strings } from '../i18n'
-
-const s = strings()
-button.textContent = s.game.attempt
-slotsEl.textContent = s.game.slots(2)  // "2 slots remaining"
-liveRegion.textContent = s.a11y.taskSucceeded('Shower')
-```
-
-### Adding a Language
-
-1. Create `src/i18n/cs.ts` (or other locale)
-2. Use `satisfies Strings` to ensure all keys are present:
-   ```ts
-   import type { Strings } from './types'
-   export const cs = { ... } satisfies Strings
-   ```
-3. Add to `locales` object in `index.ts`
-4. TypeScript enforces matching structure and function signatures
-
-### Fallback Behavior
-
-If a translation is missing, the system:
-1. Falls back to English
-2. Logs a warning: `[i18n] Missing translation for "game.attempt" in locale "cs"`
-
-This allows incremental translation without breaking the game.
-
-### What Lives Where
-
-- **UI strings** (`src/i18n/`): Button labels, status text, accessibility labels
-- **Content/narrative** (`src/data/`): Task definitions, day summaries, scroll trap text, friend dialogue
-
-Content files may eventually need i18n, but are separate because they have their own structure (arrays of variants, weighted selection, etc.).
+**Content/narrative** (`src/data/`): Task definitions, day summaries, scroll trap text, friend dialogue, events. Separate because they have their own structure (arrays of variants, weighted selection, tiered outcomes).
 
 ## Accessibility
 
 Screen reader and keyboard support without compromising the core mechanic.
 
-### Design Principle
+The unreliable click mechanic works the same for all users. Sighted users see the button depress and return with no success indicator. Screen reader users hear the slot count change with no success announcement. Both learn that absence of feedback means failure. We announce successes, not failures.
 
-The unreliable click mechanic must work the same for all users:
-- **Sighted**: Click task, see button depress/return, no success indicator = failure
-- **Screen reader**: Activate button, hear slot count change, no success announcement = failure
-
-Both learn that absence of success feedback means failure. We announce successes, not failures.
-
-### Implementation
-
-**Live region** (`#announcer` in index.html):
-- `aria-live="polite"` announces successes and screen transitions
-- Uses `requestAnimationFrame` + delay for reliable screen reader pickup
-- Clear-then-set pattern ensures re-announcements work
-
-**Focus management**:
-- Screen transitions focus primary action (buttons, not headings)
-- Task selection can move focus to panel via Enter/Arrow Right
-- `tabindex="-1"` on elements that need programmatic focus
-
-**Keyboard navigation**:
-- Arrow keys navigate task list
-- Enter/Arrow Right selects task and focuses panel action
-- Escape/Arrow Left deselects and returns to task list
-- All screens fully keyboard-accessible
-
-**ARIA attributes**:
-- `aria-pressed` on task buttons for selection state
-- `aria-describedby` on panel buttons pointing to hidden context
-- `aria-controls` linking tasks to panel
-
-**CSS**:
-- `.sr-only` utility for screen-reader-only content
-- `:focus-visible` for keyboard focus indicators
-- `prefers-reduced-motion` disables all animations
-
-### Strings
-
-Accessibility text lives in `src/i18n/` under `a11y` namespace. Screen announcements are template functions that include full context.
-
-### Testing
-
-Manual testing checklist: keyboard-only navigation, VoiceOver, 200% browser zoom, Lighthouse accessibility audit.
+- **Live region** (`#announcer`): `aria-live="polite"` with clear-then-set pattern for reliable re-announcements
+- **Focus management**: Screen transitions focus primary actions, task selection moves focus to panel
+- **Keyboard**: Arrow keys navigate task list, Enter/Right selects and focuses panel, Escape/Left deselects
+- **ARIA**: `aria-pressed` on task buttons, `aria-describedby` linking panel actions to context
+- **CSS**: `.sr-only`, `:focus-visible`, `prefers-reduced-motion`
 
 ## Future: Single-File Executable
 
-For Steam/desktop distribution, Bun can compile to a single executable:
-
-```sh
-bun build --compile src/server.ts --outfile skill-issue
-```
-
-This bundles the game + server into one binary. Useful for distribution without requiring Bun installed.
+For Steam/desktop distribution, Bun can compile to a single executable (`bun build --compile src/server.ts --outfile skill-issue`). Bundles game + server into one binary.

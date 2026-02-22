@@ -2,8 +2,10 @@
 
 ## Key References
 
-- @ARCHITECTURE.md for technical approach
 - @README.md for project overview
+- @ARCHITECTURE.md for technical approach
+
+**Keep ARCHITECTURE.md current.** If your changes add new systems, change core patterns, or alter how things connect, update it. The doc should contain design decisions, relationships between parts, and non-obvious constraints -- not type definitions, function signatures, or file lists that duplicate source code.
 
 ## Communication Style
 
