@@ -70,6 +70,8 @@ Component styles use CSS modules (`.module.css` files). Type declarations are co
 
 After adding/removing/renaming CSS classes, run `bun run gen:css-types` to update the type declarations. This keeps TypeScript happy with `noUncheckedIndexedAccess` enabled.
 
+**`@keyframes` must go in `src/styles/base.css`**, not in CSS modules. Bun's CSS bundler scopes keyframe names inside modules, making them unreachable from `animation` properties that reference them (Bun bug [#18921](https://github.com/oven-sh/bun/issues/18921)). Define the animation class in the module, define the `@keyframes` in `base.css`.
+
 ## Save Persistence
 
 Save data lives in localStorage under a versioned structure. The migration system in `src/systems/migrations/` handles version bumps.

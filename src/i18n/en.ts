@@ -105,8 +105,20 @@ export const en = {
 
 	intro: {
 		title: "Skill Issue",
-		description: "Manage your week. Click tasks to do them. Good luck.",
+		hook: "A task management game where the controls don't work reliably.",
+		description: [
+			"A week of tasks. Four time blocks per day, three attempts each.",
+			"Click tasks to do them. The room is just for show.",
+			"The game saves after each action. Good luck.",
+		],
 		start: "Start",
+	},
+
+	onboarding: {
+		firstTask: "Click a task in the list to see its details.",
+		firstAttempt: "Press Attempt to try. It won't always work.",
+		firstWeekend: "No time blocks today. Spend your 8 points however you want.",
+		dismiss: "Got it",
 	},
 
 	splash: {

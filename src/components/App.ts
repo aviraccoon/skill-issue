@@ -26,6 +26,7 @@ import {
 	pickFailureTiming,
 } from "../systems/animation";
 import { getDogUrgency } from "../systems/dog";
+import { hasHintBeenShown, markHintShown } from "../systems/persistence";
 import { announce } from "../utils/announce";
 import { mulberry32 } from "../utils/random";
 import { initTooltips } from "../utils/tooltip";
@@ -111,6 +112,9 @@ let preAttemptEvolvedName: string | null = null;
 
 /** Current store reference for animation rendering. */
 let currentStore: Store<GameState> | null = null;
+
+/** Previous selected task ID, for detecting first selection (hint trigger). */
+let prevSelectedTaskId: string | null = null;
 
 /** Cached rendering state (generated once per run from seed). */
 let cachedLayout: RoomLayout | null = null;
@@ -552,6 +556,79 @@ export function renderApp(store: Store<GameState>) {
 	}
 }
 
+/** Shows a one-time hint dialog, optionally highlighting a target element. */
+function showHintDialog(text: string, highlightEl?: Element | null): void {
+	const s = strings();
+	const dialog = document.createElement("dialog");
+	dialog.className = appStyles.hintDialog;
+
+	const p = document.createElement("p");
+	p.textContent = text;
+	dialog.appendChild(p);
+
+	const btn = document.createElement("button");
+	btn.className = `btn btn-secondary ${appStyles.hintDismiss}`;
+	btn.textContent = s.onboarding.dismiss;
+	dialog.appendChild(btn);
+
+	// Glow the target element while dialog is open
+	highlightEl?.classList.add(appStyles.hintHighlight);
+
+	btn.addEventListener("click", () => dialog.close());
+	dialog.addEventListener("close", () => {
+		highlightEl?.classList.remove(appStyles.hintHighlight);
+		dialog.remove();
+	});
+
+	document.body.appendChild(dialog);
+	dialog.showModal();
+}
+
+/** Shows a one-time contextual hint if conditions are met. */
+function showContextualHint(
+	screenInfo: GameScreenInfo,
+	isFirstRender: boolean,
+): void {
+	const s = strings();
+
+	// First game screen: nudge toward clicking a task
+	if (isFirstRender && !screenInfo.isWeekend) {
+		if (!hasHintBeenShown("firstTask")) {
+			markHintShown("firstTask");
+			setTimeout(() => {
+				const taskList = document.querySelector(`.${appStyles.taskList}`);
+				showHintDialog(s.onboarding.firstTask, taskList);
+			}, 800);
+			return;
+		}
+	}
+
+	// First task selection: point at the Attempt button
+	if (
+		screenInfo.selectedTask &&
+		prevSelectedTaskId === null &&
+		screenInfo.selectedTask.canAttempt
+	) {
+		if (!hasHintBeenShown("firstAttempt")) {
+			markHintShown("firstAttempt");
+			setTimeout(() => {
+				const attemptBtn = document.querySelector(`.${panelStyles.attemptBtn}`);
+				showHintDialog(s.onboarding.firstAttempt, attemptBtn);
+			}, 300);
+			return;
+		}
+	}
+
+	// First weekend: explain the structural shift (no element to highlight)
+	if (isFirstRender && screenInfo.isWeekend) {
+		if (!hasHintBeenShown("firstWeekend")) {
+			markHintShown("firstWeekend");
+			setTimeout(() => showHintDialog(s.onboarding.firstWeekend), 800);
+			return;
+		}
+	}
+}
+
 /** Renders the main game screen. */
 function renderGameScreen(
 	store: Store<GameState>,
@@ -743,4 +820,8 @@ function renderGameScreen(
 			taskBtns[0]?.focus();
 		}
 	}
+
+	// Contextual hints (one-time, shown via notification area)
+	showContextualHint(screenInfo, isFirstRender);
+	prevSelectedTaskId = screenInfo.selectedTask?.id ?? null;
 }

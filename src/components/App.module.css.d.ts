@@ -4,6 +4,9 @@ declare const styles: {
 	readonly gameArea: string;
 	readonly gameAreaColumn: string;
 	readonly header: string;
+	readonly hintDialog: string;
+	readonly hintDismiss: string;
+	readonly hintHighlight: string;
 	readonly lateNight: string;
 	readonly main: string;
 	readonly menuBtn: string;

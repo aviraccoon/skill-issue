@@ -11,10 +11,15 @@ import styles from "./Intro.module.css";
 export function renderIntro(container: HTMLElement, store: Store<GameState>) {
 	const s = strings();
 
+	const descriptionHtml = s.intro.description
+		.map((line: string) => `<p class="${styles.description}">${line}</p>`)
+		.join("\n\t\t\t");
+
 	container.innerHTML = `
 		<div class="${styles.intro}">
 			<h1 class="${styles.title}">${s.intro.title}</h1>
-			<p class="${styles.description}">${s.intro.description}</p>
+			<p class="${styles.hook}">${s.intro.hook}</p>
+			${descriptionHtml}
 			<button class="btn btn-primary ${styles.startBtn}">${s.intro.start}</button>
 		</div>
 	`;

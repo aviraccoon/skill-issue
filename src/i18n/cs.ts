@@ -141,7 +141,12 @@ export const cs = {
 
 	intro: {
 		title: "Skill Issue",
-		description: "Zvládni týden. Klikej na úkoly. Hodně štěstí.",
+		hook: "Hra na správu úkolů, kde ovládání nefunguje spolehlivě.",
+		description: [
+			"Týden úkolů. Čtyři bloky denně, tři pokusy v každém.",
+			"Klikej na úkoly. Pokoj je jen kulisa.",
+			"Hra se ukládá průběžně. Hodně štěstí.",
+		],
 		start: "Začít",
 	},
 

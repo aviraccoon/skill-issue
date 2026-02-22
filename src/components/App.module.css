@@ -220,3 +220,33 @@
 .menuBtn:hover {
 	color: var(--fg);
 }
+
+/* Onboarding hint dialog */
+.hintDialog {
+	margin: auto; /* restore centering killed by global * { margin: 0 } */
+	border: 1px solid var(--border);
+	border-radius: var(--panel-radius, 0.5rem);
+	background: var(--bg);
+	color: var(--fg);
+	padding: 1.5rem;
+	max-width: 20rem;
+	text-align: center;
+}
+
+.hintDialog::backdrop {
+	background: rgba(0, 0, 0, 0.3);
+}
+
+.hintDialog p {
+	margin: 0 0 1rem;
+	line-height: 1.5;
+}
+
+.hintDismiss {
+	padding: 0.5rem 1.5rem;
+}
+
+/* Glow highlight on the element a hint is pointing at (keyframes in base.css) */
+.hintHighlight {
+	animation: hintGlow 1.5s ease-in-out infinite;
+}

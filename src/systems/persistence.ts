@@ -95,6 +95,7 @@ export interface PatternsData {
 	history: CompletedRun[];
 	hasSeenIntro?: boolean;
 	hasEverAttempted?: boolean;
+	hintsShown?: string[];
 }
 
 /** Save slots for different game modes. */
@@ -536,6 +537,30 @@ export function markFirstAttempt(): void {
 		patterns: {
 			...existing.patterns,
 			hasEverAttempted: true,
+		},
+		savedAt: Date.now(),
+	};
+	writeSaveData(data);
+}
+
+/** Contextual hint IDs shown once during gameplay. */
+export type HintId = "firstTask" | "firstAttempt" | "firstWeekend";
+
+/** Checks whether a contextual hint has been shown. */
+export function hasHintBeenShown(hintId: HintId): boolean {
+	return loadSaveData().patterns.hintsShown?.includes(hintId) ?? false;
+}
+
+/** Marks a contextual hint as shown. */
+export function markHintShown(hintId: HintId): void {
+	const existing = loadSaveData();
+	const shown = existing.patterns.hintsShown ?? [];
+	if (shown.includes(hintId)) return;
+	const data: SaveDataV4 = {
+		...existing,
+		patterns: {
+			...existing.patterns,
+			hintsShown: [...shown, hintId],
 		},
 		savedAt: Date.now(),
 	};

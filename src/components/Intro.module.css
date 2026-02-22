@@ -19,11 +19,23 @@
 	background-clip: text;
 }
 
+.hook {
+	font-size: 1rem;
+	font-style: italic;
+	color: var(--muted);
+	max-width: 26rem;
+}
+
 .description {
 	font-size: 1.125rem;
-	max-width: 320px;
+	max-width: 26rem;
 	line-height: 1.6;
 	color: var(--text-muted, #666);
+}
+
+/* Collapse gap between consecutive description lines */
+.description + .description {
+	margin-top: -1.5rem;
 }
 
 .startBtn {

@@ -252,7 +252,13 @@ body:has(#app[data-time="night"]) {
 	display: none;
 }
 
-/* Phone notification dot animations (in base.css due to Bun bug #18921) */
+/*
+ * All @keyframes must go here -- Bun's CSS bundler scopes keyframe names in
+ * CSS modules, making them unreachable from the animation properties that
+ * reference them (Bun bug #18921).
+ */
+
+/* Phone notification dot */
 @keyframes phoneDotAppear {
 	0% {
 		opacity: 0;
@@ -288,5 +294,16 @@ body:has(#app[data-time="night"]) {
 	50% {
 		transform: scale(1.25);
 		background: var(--error);
+	}
+}
+
+/* Onboarding hint highlight */
+@keyframes hintGlow {
+	0%,
+	100% {
+		box-shadow: 0 0 4px var(--accent);
+	}
+	50% {
+		box-shadow: 0 0 12px var(--accent);
 	}
 }
