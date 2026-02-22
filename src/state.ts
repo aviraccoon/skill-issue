@@ -104,7 +104,11 @@ export type EventId =
 	| "azor-recovered"
 	| "azor-worse"
 	// Tier 2: Contextual task variant
-	| "friend-visits";
+	| "friend-visits"
+	// Tier 1: Prosperity-gated (fire when doing well)
+	| "hyperfocus-trap"
+	| "overcommit-morning"
+	| "productivity-guilt";
 
 /** Runtime state of an event instance during a run. */
 export interface EventInstance {

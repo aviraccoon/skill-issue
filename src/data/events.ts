@@ -50,6 +50,18 @@ export interface EventTiming {
 export interface EventEffects {
 	energy?: number;
 	momentum?: number;
+	/**
+	 * Proportional energy drain: multiply current energy by (1 + energyScale).
+	 * Use negative values to drain. -0.30 = lose 30% of current energy.
+	 * Hits harder when energy is high, barely registers when low.
+	 * Applied after additive `energy` effect (if both present).
+	 */
+	energyScale?: number;
+	/**
+	 * Proportional momentum drain: multiply current momentum by (1 + momentumScale).
+	 * Use negative values to drain. -0.30 = lose 30% of current momentum.
+	 */
+	momentumScale?: number;
 	/** Set a flag in event state (for consequence chains). */
 	setFlag?: string;
 	/** Mark a task as succeeded (used by obligation consequence "do it now" choices). */
@@ -117,6 +129,13 @@ export interface EventDefinition {
 	friendAvailability?: number;
 	/** Narrative category for week story grouping. Omit for flavor events with no story role. */
 	storyCategory?: StoryCategory;
+	/**
+	 * Always included in every run, bypassing tier-based selection.
+	 * Condition-gated at runtime so they only fire when state matches.
+	 * Used for events that model high-energy failure modes (overcommitment,
+	 * hyperfocus misdirection, productivity guilt).
+	 */
+	alwaysSelected?: boolean;
 }
 
 /** Gets event content from i18n by event ID. */
@@ -1155,6 +1174,55 @@ export const eventPool: readonly EventDefinition[] = [
 		modifyTask: { taskId: "cook", baseRate: 0.13 },
 		friendAvailability: 0.5,
 		storyCategory: "social",
+	},
+
+	// =====================
+	// Tier 1: Prosperity-gated (fire when doing well)
+	// =====================
+
+	{
+		id: "hyperfocus-trap",
+		tier: 1,
+		type: "minor",
+		timing: {
+			day: ["tuesday", "wednesday", "thursday", "friday"],
+			timeBlock: ["afternoon", "evening"],
+			phase: "blockStart",
+		},
+		condition: (state) => state.momentum > 0.6,
+		effects: { energyScale: -0.3, skipCurrentBlock: true },
+		storyCategory: "survival",
+		alwaysSelected: true,
+	},
+
+	{
+		id: "overcommit-morning",
+		tier: 1,
+		type: "minor",
+		timing: {
+			day: ["monday", "tuesday", "wednesday", "thursday"],
+			timeBlock: "afternoon",
+			phase: "blockStart",
+		},
+		condition: (state) => state.energy > 0.55,
+		effects: { energyScale: -0.25, momentumScale: -0.2 },
+		storyCategory: "survival",
+		alwaysSelected: true,
+	},
+
+	{
+		id: "productivity-guilt",
+		tier: 1,
+		type: "minor",
+		timing: {
+			day: ["tuesday", "wednesday", "thursday", "friday"],
+			timeBlock: ["morning", "afternoon"],
+			phase: "blockStart",
+		},
+		condition: (state) => state.energy > 0.5 && state.momentum > 0.5,
+		effects: { momentumScale: -0.3 },
+		storyCategory: "survival",
+		alwaysSelected: true,
 	},
 ];
 

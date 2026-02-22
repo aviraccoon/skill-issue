@@ -2567,6 +2567,46 @@ export const en = {
 				],
 			},
 		},
+
+		// =====================
+		// Tier 1: Prosperity-gated
+		// =====================
+
+		"hyperfocus-trap": {
+			notification: [
+				"You started on one thing and ended up three rabbit holes deep. Two hours gone. The original task is still open in another tab.",
+				"You sat down to do something specific. Four tangents later, you've reorganized your bookmarks, read half an article about fermentation, and accomplished nothing you intended.",
+				"Hyperfocus kicked in. Unfortunately it picked its own target. You surface two hours later having deeply researched something you'll never think about again.",
+			],
+			recap: [
+				"The hyperfocus hit at least once. Not on anything useful, obviously. It never picks the right thing.",
+				"You lost a chunk of the week to a rabbit hole. The momentum was there. The direction wasn't.",
+			],
+		},
+
+		"overcommit-morning": {
+			notification: [
+				"You woke up feeling good. Made a list. A real list, with structure and everything. By noon the list is mocking you.",
+				"Morning energy hit different today. You planned an ambitious day. The plans didn't consult your afternoon self.",
+				"Feeling energetic. Made plans. Too many plans. The planning itself was exhausting, which is the joke the universe keeps telling.",
+			],
+			recap: [
+				"There was a morning you woke up with plans. Real plans. The gap between the planning and the doing swallowed the whole day.",
+				"One morning you overcommitted before breakfast. The rest of the day was paying for it.",
+			],
+		},
+
+		"productivity-guilt": {
+			notification: [
+				"Things are going okay. So naturally your brain asks: shouldn't you be doing more? You're not even behind. The guilt doesn't care.",
+				"You're on track. Weirdly, that makes it worse. The voice that says 'this isn't enough' gets louder when there's nothing actually wrong.",
+				"Everything's fine. Fine. You should be doing more. More what? Doesn't matter. More. The momentum stalls while you argue with yourself about whether you deserve it.",
+			],
+			recap: [
+				"Midweek, things were going well. Which meant the guilt showed up. 'Shouldn't you be doing more?' It never has a good answer for what 'more' means.",
+				"The productivity guilt hit when things were fine. Not great, not terrible. Fine. That's apparently the trigger.",
+			],
+		},
 	},
 
 	weekStory: {

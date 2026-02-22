@@ -11,7 +11,7 @@ import {
 	eventPool,
 	MAX_EVENT_TIER,
 } from "../data/events";
-import { DAYS, type EventInstance } from "../state";
+import { DAYS, type EventId, type EventInstance } from "../state";
 import { seededRandom, seededShuffle } from "../utils/random";
 import type { PatternsData } from "./persistence";
 
@@ -151,6 +151,16 @@ export function selectEventsForSeed(
 	// Select events per tier using arc-aware units
 	const selected: EventInstance[] = [];
 
+	// Always-selected events bypass tier selection (condition-gated at runtime).
+	// Added after tier selection, then deduped. Pool is unchanged to preserve
+	// seeded shuffle determinism for existing events.
+	const alwaysSelectedIds = new Set<EventId>();
+	for (const event of available) {
+		if (event.alwaysSelected) {
+			alwaysSelectedIds.add(event.id);
+		}
+	}
+
 	for (const [tier, events] of byTier) {
 		const spec = UNITS_PER_TIER[tier];
 		const units = groupIntoSelectionUnits(events);
@@ -173,6 +183,13 @@ export function selectEventsForSeed(
 					selected.push({ id: event.id, status: "pending" });
 				}
 			}
+		}
+	}
+
+	// Add always-selected events that weren't already picked by tier selection
+	for (const id of alwaysSelectedIds) {
+		if (!selected.some((e) => e.id === id)) {
+			selected.push({ id, status: "pending" });
 		}
 	}
 

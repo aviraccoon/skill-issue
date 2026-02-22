@@ -320,8 +320,10 @@ function applyEventEffects(
 	store: Store<GameState>,
 	effects: EventEffects,
 ): void {
-	const { energy, momentum, setFlag } = effects;
+	const { energy, momentum, energyScale, momentumScale, setFlag } = effects;
 	const seed = store.getState().runSeed;
+
+	// Additive effects (existing)
 	if (energy) {
 		const variance = Math.abs(energy) * EVENT_EFFECT_VARIANCE;
 		const varied = seededVariation(seed, energy, variance, SALT_EVENT_ENERGY);
@@ -336,6 +338,21 @@ function applyEventEffects(
 			SALT_EVENT_MOMENTUM,
 		);
 		store.update("momentum", (m) => clamp(m + varied, 0, 1));
+	}
+
+	// Proportional effects (applied after additive)
+	if (energyScale) {
+		const variance = Math.abs(energyScale) * EVENT_EFFECT_VARIANCE;
+		const scale =
+			1 + seededVariation(seed, energyScale, variance, SALT_EVENT_ENERGY + 50);
+		store.update("energy", (e) => clamp(e * scale, 0, 1));
+	}
+	if (momentumScale) {
+		const variance = Math.abs(momentumScale) * EVENT_EFFECT_VARIANCE;
+		const scale =
+			1 +
+			seededVariation(seed, momentumScale, variance, SALT_EVENT_MOMENTUM + 50);
+		store.update("momentum", (m) => clamp(m * scale, 0, 1));
 	}
 	if (setFlag) {
 		store.update("eventFlags", (flags) =>
