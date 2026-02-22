@@ -315,6 +315,208 @@ describe("hints", () => {
 	});
 });
 
+describe("obligation task reconstruction on load", () => {
+	/**
+	 * Seed 1 in seeded mode selects vet-reminder (scheduledDay: 0, obligationDay: 1)
+	 * which injects a "vet-visit" obligation task at runtime. The task is NOT in the
+	 * seed-based task pool -- loadGame must reconstruct it from the event definition.
+	 */
+	test("reconstructs obligation task from resolved event", () => {
+		const state = createTestState({
+			runSeed: 1,
+			gameMode: "seeded",
+			events: [
+				{ id: "wind", status: "resolved", scheduledDay: 2 },
+				{ id: "sunset", status: "resolved", scheduledDay: 0 },
+				{ id: "fridge-empty", status: "resolved", scheduledDay: 1 },
+				{
+					id: "vet-reminder",
+					status: "resolved",
+					scheduledDay: 0,
+					obligationDay: 1,
+				},
+				{ id: "vet-missed", status: "pending", scheduledDay: 1 },
+			],
+		});
+		// Add the obligation task to state (as it would be at runtime)
+		state.tasks.push({
+			id: "vet-visit",
+			name: "Vet Visit",
+			category: "dog",
+			baseRate: 0.55,
+			availableBlocks: ["morning"],
+			failureCount: 2,
+			successCount: 0,
+			attemptedToday: true,
+			succeededToday: false,
+			availableDay: 1,
+			sourceEvent: "vet-reminder",
+			isObligation: true,
+		});
+
+		saveGame(state, "seeded");
+		const loaded = loadGame("seeded");
+
+		// The obligation task should be reconstructed
+		const vetVisit = loaded?.tasks.find((t) => t.id === "vet-visit");
+		expect(vetVisit).toBeDefined();
+		expect(vetVisit?.isObligation).toBe(true);
+		expect(vetVisit?.sourceEvent).toBe("vet-reminder");
+		expect(vetVisit?.category).toBe("dog");
+		expect(vetVisit?.baseRate).toBe(0.55);
+		expect(vetVisit?.availableBlocks).toEqual(["morning"]);
+	});
+
+	test("restores saved runtime state on reconstructed obligation task", () => {
+		const state = createTestState({
+			runSeed: 1,
+			gameMode: "seeded",
+			events: [
+				{
+					id: "vet-reminder",
+					status: "resolved",
+					scheduledDay: 0,
+					obligationDay: 1,
+				},
+			],
+		});
+		state.tasks.push({
+			id: "vet-visit",
+			name: "Vet Visit",
+			category: "dog",
+			baseRate: 0.55,
+			availableBlocks: ["morning"],
+			failureCount: 3,
+			successCount: 1,
+			attemptedToday: true,
+			succeededToday: true,
+			isObligation: true,
+			sourceEvent: "vet-reminder",
+		});
+
+		saveGame(state, "seeded");
+		const loaded = loadGame("seeded");
+		const vetVisit = loaded?.tasks.find((t) => t.id === "vet-visit");
+
+		expect(vetVisit?.failureCount).toBe(3);
+		expect(vetVisit?.successCount).toBe(1);
+		expect(vetVisit?.attemptedToday).toBe(true);
+		expect(vetVisit?.succeededToday).toBe(true);
+	});
+
+	test("does not reconstruct obligation from non-resolved event", () => {
+		const state = createTestState({
+			runSeed: 1,
+			gameMode: "seeded",
+			events: [
+				{
+					id: "vet-reminder",
+					status: "pending",
+					scheduledDay: 0,
+					obligationDay: 1,
+				},
+			],
+		});
+		saveGame(state, "seeded");
+		const loaded = loadGame("seeded");
+		const vetVisit = loaded?.tasks.find((t) => t.id === "vet-visit");
+		expect(vetVisit).toBeUndefined();
+	});
+
+	test("does not reconstruct obligation for event without obligation definition", () => {
+		// wind is a flavor event (tier 0), no obligation definition
+		const state = createTestState({
+			runSeed: 1,
+			gameMode: "seeded",
+			events: [{ id: "wind", status: "resolved", scheduledDay: 2 }],
+		});
+		saveGame(state, "seeded");
+		const loaded = loadGame("seeded");
+		// No obligation task should be created for a non-obligation event
+		const obligationTasks = loaded?.tasks.filter((t) => t.isObligation) ?? [];
+		expect(obligationTasks.length).toBe(0);
+	});
+
+	test("merges saved event status with fresh event list", () => {
+		const state = createTestState({
+			runSeed: 1,
+			gameMode: "seeded",
+			events: [
+				{
+					id: "vet-reminder",
+					status: "resolved",
+					scheduledDay: 0,
+					obligationDay: 1,
+				},
+				// wind was resolved by the player
+				{ id: "wind", status: "resolved", scheduledDay: 2 },
+				// sunset still pending
+				{ id: "sunset", status: "pending", scheduledDay: 0 },
+			],
+		});
+		saveGame(state, "seeded");
+		const loaded = loadGame("seeded");
+
+		const vet = loaded?.events.find((e) => e.id === "vet-reminder");
+		expect(vet?.status).toBe("resolved");
+
+		const wind = loaded?.events.find((e) => e.id === "wind");
+		expect(wind?.status).toBe("resolved");
+
+		const sunset = loaded?.events.find((e) => e.id === "sunset");
+		expect(sunset?.status).toBe("pending");
+	});
+});
+
+describe("V3 migration through loadGame", () => {
+	test("loads migrated V3 data", () => {
+		const v3Data = {
+			version: 3,
+			currentRun: {
+				day: "wednesday",
+				dayIndex: 2,
+				timeBlock: "evening",
+				slotsRemaining: 1,
+				weekendPointsRemaining: 0,
+				tasks: [],
+				selectedTaskId: null,
+				screen: "game",
+				energy: 0.5,
+				momentum: 0.5,
+				runSeed: 42,
+				personality: { time: "neutral", social: "neutral" },
+				dogFailedYesterday: false,
+				pushedThroughLastNight: false,
+				inExtendedNight: false,
+				consecutiveFailures: 0,
+				friendRescueUsedToday: false,
+				rollCount: 0,
+				variantsUnlocked: [],
+				runStats: {
+					tasks: { attempted: 0, succeeded: 0 },
+					byTimeBlock: {
+						morning: { attempted: 0, succeeded: 0 },
+						afternoon: { attempted: 0, succeeded: 0 },
+						evening: { attempted: 0, succeeded: 0 },
+						night: { attempted: 0, succeeded: 0 },
+					},
+					phoneChecks: 0,
+					allNighters: 0,
+					friendRescues: { triggered: 0, accepted: 0 },
+					variantsUsed: [],
+				},
+			},
+			patterns: { unlocked: false, history: [] },
+			savedAt: Date.now(),
+		};
+		localStorage.setItem("skill-issue-save", JSON.stringify(v3Data));
+		const loaded = loadGame("main");
+		expect(loaded).not.toBeNull();
+		expect(loaded?.day).toBe("wednesday");
+		expect(loaded?.timeBlock).toBe("evening");
+	});
+});
+
 describe("clearAllData", () => {
 	test("removes all save data", () => {
 		saveGame(createTestState(), "main");

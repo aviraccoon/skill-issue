@@ -133,5 +133,13 @@ export function getLocale(): Locale {
 	return currentLocale;
 }
 
+/**
+ * Resets locale to its initial value (from localStorage/browser).
+ * Used by test infrastructure to prevent cross-file state pollution.
+ */
+export function resetLocale(): void {
+	currentLocale = getInitialLocale();
+}
+
 // Re-export types for convenience
 export type { Strings };

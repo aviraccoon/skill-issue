@@ -517,4 +517,215 @@ describe("attemptTask", () => {
 			expect(store.get("rollCount")).toBeGreaterThanOrEqual(2);
 		});
 	});
+
+	describe("contextModifiedBy reversion on success", () => {
+		test("records taskModificationResult on event when succeeding", () => {
+			const task = makeTask({
+				id: "cook",
+				name: "Cook for Neighbor",
+				category: "food",
+				contextModifiedBy: "neighbor-hello",
+				baseRate: 0.5,
+			});
+			const store = createTestStore({
+				tasks: [task],
+				firstAttemptAvailable: true,
+				slotsRemaining: 3,
+				events: [{ id: "neighbor-hello", status: "resolved" }],
+			});
+			attemptTask(store, "cook");
+
+			const event = store.get("events").find((e) => e.id === "neighbor-hello");
+			expect(event?.taskModificationResult).toBe("succeeded");
+		});
+
+		test("records succeeded-variant when using variant", () => {
+			const task = makeTask({
+				id: "cook",
+				name: "Cook for Neighbor",
+				category: "food",
+				contextModifiedBy: "neighbor-hello",
+				baseRate: 0.5,
+				minimalVariant: {
+					name: "Quick Snack for Neighbor",
+					baseRate: 1.0,
+					unlockHints: [],
+				},
+			});
+			const store = createTestStore({
+				tasks: [task],
+				firstAttemptAvailable: true,
+				slotsRemaining: 3,
+				events: [{ id: "neighbor-hello", status: "resolved" }],
+			});
+			attemptTask(store, "cook", undefined, true);
+
+			const event = store.get("events").find((e) => e.id === "neighbor-hello");
+			expect(event?.taskModificationResult).toBe("succeeded-variant");
+		});
+
+		test("reverts task name and clears contextModifiedBy on success", () => {
+			const task = makeTask({
+				id: "cook",
+				name: "Cook for Neighbor",
+				category: "food",
+				contextModifiedBy: "neighbor-hello",
+				baseRate: 0.8,
+			});
+			const store = createTestStore({
+				tasks: [task],
+				firstAttemptAvailable: true,
+				slotsRemaining: 3,
+				events: [{ id: "neighbor-hello", status: "resolved" }],
+			});
+			attemptTask(store, "cook");
+
+			const updated = store.get("tasks").find((t) => t.id === "cook");
+			// After reversion, contextModifiedBy should be cleared
+			expect(updated?.contextModifiedBy).toBeUndefined();
+			// Name should revert to original from i18n
+			expect(updated?.name).not.toBe("Cook for Neighbor");
+		});
+	});
+
+	describe("phone notification on consecutive failures", () => {
+		test("may trigger phone notification after failure", () => {
+			// Use many seeds to verify notification can trigger
+			let notificationTriggered = false;
+			for (let seed = 0; seed < 50; seed++) {
+				const store = createTestStore({
+					tasks: [makeTask({ baseRate: 0 })],
+					slotsRemaining: 3,
+					consecutiveFailures: 2, // Will become 3 after this failure
+					rollCount: seed * 10,
+					runSeed: seed,
+				});
+				const before = store.get("phoneNotificationCount");
+				attemptTask(store, "dishes");
+				if (store.get("phoneNotificationCount") > before) {
+					notificationTriggered = true;
+					break;
+				}
+			}
+			expect(notificationTriggered).toBe(true);
+		});
+
+		test("phone chance increases with consecutive failures", () => {
+			// At 1 consecutive failure: 25% base chance
+			// At 3 consecutive failures: 25% + 15%*2 = 55%
+			// Run many trials at low vs high failures and compare rates
+			let lowFailureNotifications = 0;
+			let highFailureNotifications = 0;
+			const trials = 100;
+
+			for (let seed = 0; seed < trials; seed++) {
+				// Low consecutive failures (0 -> 1)
+				const lowStore = createTestStore({
+					tasks: [makeTask({ baseRate: 0 })],
+					slotsRemaining: 3,
+					consecutiveFailures: 0,
+					rollCount: seed * 100,
+					runSeed: seed,
+				});
+				const lowBefore = lowStore.get("phoneNotificationCount");
+				attemptTask(lowStore, "dishes");
+				if (lowStore.get("phoneNotificationCount") > lowBefore)
+					lowFailureNotifications++;
+
+				// High consecutive failures (3 -> 4)
+				const highStore = createTestStore({
+					tasks: [makeTask({ baseRate: 0 })],
+					slotsRemaining: 3,
+					consecutiveFailures: 3,
+					rollCount: seed * 100 + 50,
+					runSeed: seed + 1000,
+				});
+				const highBefore = highStore.get("phoneNotificationCount");
+				attemptTask(highStore, "dishes");
+				if (highStore.get("phoneNotificationCount") > highBefore)
+					highFailureNotifications++;
+			}
+
+			// High failures should produce more notifications than low
+			expect(highFailureNotifications).toBeGreaterThan(lowFailureNotifications);
+		});
+	});
+
+	describe("friend rescue trigger", () => {
+		test("triggers friend rescue after enough consecutive failures", () => {
+			// Need: consecutiveFailures >= 3 (after increment), !friendRescueUsedToday,
+			// canAffordRescue (slotsRemaining >= 1), and the rescue roll succeeds.
+			// Try many seeds to find one where rescue triggers.
+			let rescueTriggered = false;
+			for (let seed = 0; seed < 200; seed++) {
+				const store = createTestStore({
+					tasks: [makeTask({ baseRate: 0 })],
+					slotsRemaining: 3,
+					consecutiveFailures: 3, // Already at threshold
+					friendRescueUsedToday: false,
+					friendRescueChanceBonus: 0.5, // Boost chance to make it likely
+					rollCount: seed * 10,
+					runSeed: seed,
+				});
+				const result = attemptTask(store, "dishes");
+				if (result?.friendRescueTriggered) {
+					rescueTriggered = true;
+
+					// Verify screen changed
+					expect(store.get("screen")).toBe("friendRescue");
+
+					// Verify stats updated
+					expect(store.get("runStats").friendRescues.triggered).toBe(1);
+					break;
+				}
+			}
+			expect(rescueTriggered).toBe(true);
+		});
+
+		test("does not trigger rescue when already used today", () => {
+			for (let seed = 0; seed < 50; seed++) {
+				const store = createTestStore({
+					tasks: [makeTask({ baseRate: 0 })],
+					slotsRemaining: 3,
+					consecutiveFailures: 5,
+					friendRescueUsedToday: true,
+					friendRescueChanceBonus: 1.0,
+					rollCount: seed * 10,
+					runSeed: seed,
+				});
+				const result = attemptTask(store, "dishes");
+				expect(result?.friendRescueTriggered).toBe(false);
+			}
+		});
+
+		test("does not trigger rescue below failure threshold", () => {
+			for (let seed = 0; seed < 50; seed++) {
+				const store = createTestStore({
+					tasks: [makeTask({ baseRate: 0 })],
+					slotsRemaining: 3,
+					consecutiveFailures: 0, // Will become 1, below threshold of 3
+					friendRescueChanceBonus: 1.0,
+					rollCount: seed * 10,
+					runSeed: seed,
+				});
+				const result = attemptTask(store, "dishes");
+				expect(result?.friendRescueTriggered).toBe(false);
+			}
+		});
+
+		test("does not trigger rescue when cannot afford it", () => {
+			for (let seed = 0; seed < 50; seed++) {
+				const store = createTestStore({
+					tasks: [makeTask({ baseRate: 0 })],
+					slotsRemaining: 1, // Will be consumed by attempt, leaving 0
+					consecutiveFailures: 5,
+					friendRescueChanceBonus: 1.0,
+					rollCount: seed * 10,
+					runSeed: seed,
+				});
+				const result = attemptTask(store, "dishes");
+				expect(result?.friendRescueTriggered).toBe(false);
+			}
+		});
+	});
 });
