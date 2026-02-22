@@ -713,7 +713,7 @@ function drawWallExtensionsPixel(
 // ---- Wall decor ----
 
 /** Pixel-style wall decor. Exported for reuse by isometric renderer. */
-export function drawWallDecorPixel(
+function drawWallDecorPixel(
 	ctx: Ctx,
 	wallDecor: WallDecorItem[],
 	seedPal: SeedPalette,

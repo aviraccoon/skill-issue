@@ -1,7 +1,7 @@
 /**
- * Isometric pixel art style renderer (Style 4).
- * 3D boxes with parallelogram top faces. Diamond floor tiles.
- * Coordinate transforms map layout positions to isometric screen positions.
+ * Isometric style renderer.
+ * 3D boxes with parallelogram top faces, diamond floor tiles.
+ * Closure-based coordinate transforms shared across draw methods.
  */
 
 import type { AnimationState } from "../../systems/animation";
@@ -17,38 +17,58 @@ import type {
 	RoomDrawOptions,
 	RoomLayout,
 	RoomRenderer,
+	SeedPalette,
 	TimePalette,
+	WallDecorItem,
 } from "../types";
-import { drawWallDecorPixel } from "./pixel";
 
 type Ctx = CanvasRenderingContext2D;
 
-/** Creates an isometric pixel art renderer. */
+/** Iso furniture scale factors (layout -> iso screen). */
+const ISO_W = 0.8;
+const ISO_H = 0.6;
+
+/** Creates an isometric renderer with shared coordinate transform state. */
 export function createIsometricRenderer(): RoomRenderer {
+	let isoFloor = 0;
+	let floorTop = 0;
+	let roomHeight = 160;
+
+	/** Remap layout Y to iso screen Y. */
+	function toIsoY(ly: number): number {
+		return (
+			isoFloor +
+			(ly - floorTop) * ((roomHeight - isoFloor) / (roomHeight - floorTop))
+		);
+	}
+
 	return {
 		drawRoom(ctx: Ctx, layout: RoomLayout, options: RoomDrawOptions): void {
-			drawIsoRoom(ctx, layout, options);
+			isoFloor = layout.wallY > 0 ? 48 : 0;
+			floorTop = layout.floorTop;
+			roomHeight = layout.roomHeight;
+			drawIsoRoom(ctx, layout, options, isoFloor, toIsoY);
 		},
 		drawCharacter(
 			ctx: Ctx,
 			x: number,
 			y: number,
 			variants: CharacterVariant,
-			_timePalette: TimePalette,
+			timePalette: TimePalette,
 			_animState: AnimationState | null,
 		): void {
-			drawIsoChar(ctx, x, y, variants);
+			drawIsoChar(ctx, x, toIsoY(y), variants, timePalette);
 		},
 		drawDog(
 			ctx: Ctx,
 			x: number,
 			y: number,
 			variants: DogVariant,
-			_timePalette: TimePalette,
+			timePalette: TimePalette,
 			mood: DogMoodState,
 			energy: number,
 		): void {
-			drawIsoDog(ctx, x, y, variants, mood, energy);
+			drawIsoDog(ctx, x, toIsoY(y), variants, timePalette, mood, energy);
 		},
 		highlightFurniture(
 			ctx: Ctx,
@@ -73,35 +93,26 @@ function drawIsoHighlight(
 	strokeColor = "rgba(94, 106, 210, 0.5)",
 ): void {
 	const { roomHeight, wallY, floorTop } = layout;
-	const isoFloor = wallY > 0 ? 48 : 0;
+	const iF = wallY > 0 ? 48 : 0;
 	const iy =
-		isoFloor +
-		(rect.y - floorTop) * ((roomHeight - isoFloor) / (roomHeight - floorTop));
+		iF + (rect.y - floorTop) * ((roomHeight - iF) / (roomHeight - floorTop));
 	const ix = rect.x;
-	const iw = rect.w * 0.7;
-	const ih = rect.h * 0.5;
+	const iw = rect.w * ISO_W;
+	const ih = rect.h * ISO_H;
 	const depth = 8;
 	const pad = 3;
 
-	// Outline the iso box shape (front + top + right faces)
 	ctx.fillStyle = fillColor;
 	ctx.strokeStyle = strokeColor;
 	ctx.lineWidth = 1.5;
 
 	ctx.beginPath();
-	// Bottom-left of front face
 	ctx.moveTo(ix - pad, iy + depth + pad);
-	// Bottom-right of front face
 	ctx.lineTo(ix + iw + pad, iy + depth + pad);
-	// Right-bottom of right face
 	ctx.lineTo(ix + iw + pad + ih * 0.4, iy + depth + pad - ih * 0.3);
-	// Right-top of right face (top-right of top face)
 	ctx.lineTo(ix + iw + pad + ih * 0.4, iy - pad - ih * 0.3);
-	// Top-right of top face
 	ctx.lineTo(ix + iw + ih * 0.4, iy - pad - ih * 0.3);
-	// Top-left of top face
 	ctx.lineTo(ix - pad + ih * 0.4, iy - pad - ih * 0.3);
-	// Back to front top-left
 	ctx.lineTo(ix - pad, iy - pad);
 	ctx.closePath();
 	ctx.fill();
@@ -211,29 +222,33 @@ function isoBoxOnTop(
 	isoBox(ctx, p.x, p.y - depth, bw, bhFrac * baseH, depth, color);
 }
 
+/** Draw a diamond (rhombus) matching iso floor tile perspective. */
+function isoDiamond(
+	ctx: Ctx,
+	cx: number,
+	cy: number,
+	hw: number,
+	hh: number,
+): void {
+	ctx.beginPath();
+	ctx.moveTo(cx - hw, cy);
+	ctx.lineTo(cx, cy - hh);
+	ctx.lineTo(cx + hw, cy);
+	ctx.lineTo(cx, cy + hh);
+	ctx.closePath();
+}
+
 // ---- Main room draw ----
 
 function drawIsoRoom(
 	ctx: Ctx,
 	layout: RoomLayout,
 	options: RoomDrawOptions,
+	isoFloor: number,
+	isoY: (ly: number) => number,
 ): void {
 	const { timePalette, seedPalette, variants } = options;
 	const { roomWidth, roomHeight, wallY, floorTop } = layout;
-
-	const isoFloor = wallY > 0 ? 48 : 0;
-
-	/** Identity X mapping. */
-	function isoX(lx: number): number {
-		return lx;
-	}
-	/** Remap Y: floorTop -> isoFloor, roomHeight -> roomHeight. */
-	function isoY(ly: number): number {
-		return (
-			isoFloor +
-			(ly - floorTop) * ((roomHeight - isoFloor) / (roomHeight - floorTop))
-		);
-	}
 
 	// Floor base
 	ctx.fillStyle = timePalette.floor;
@@ -249,32 +264,34 @@ function drawIsoRoom(
 			if (oy + tileH < isoFloor) continue;
 			ctx.fillStyle = darken(
 				timePalette.floor,
-				(col + row) % 2 === 0 ? 0 : 0.03,
+				(col + row) % 2 === 0 ? 0 : 0.05,
 			);
-			ctx.beginPath();
-			ctx.moveTo(ox, oy + tileH / 2);
-			ctx.lineTo(ox + tileW / 2, oy);
-			ctx.lineTo(ox + tileW, oy + tileH / 2);
-			ctx.lineTo(ox + tileW / 2, oy + tileH);
-			ctx.closePath();
+			isoDiamond(ctx, ox + tileW / 2, oy + tileH / 2, tileW / 2, tileH / 2);
 			ctx.fill();
-			ctx.strokeStyle = darken(timePalette.floor, 0.08);
-			ctx.lineWidth = 0.3;
+			ctx.strokeStyle = darken(timePalette.floor, 0.1);
+			ctx.lineWidth = 0.4;
 			ctx.stroke();
 		}
 	}
 
-	// Wall (skip in top-down mode)
+	// Wall
 	if (wallY > 0) {
-		ctx.fillStyle = timePalette.wall;
+		// Slight gradient for depth
+		const wallGrad = ctx.createLinearGradient(0, 0, 0, isoFloor);
+		wallGrad.addColorStop(0, lighten(timePalette.wall, 0.03));
+		wallGrad.addColorStop(1, timePalette.wall);
+		ctx.fillStyle = wallGrad;
 		ctx.fillRect(0, 0, roomWidth, isoFloor);
-		ctx.fillStyle = darken(timePalette.wall, 0.15);
-		ctx.fillRect(0, isoFloor - 3, roomWidth, 3);
+		// Baseboard
+		ctx.fillStyle = darken(timePalette.wall, 0.2);
+		ctx.fillRect(0, isoFloor - 4, roomWidth, 4);
+		ctx.fillStyle = darken(timePalette.wall, 0.1);
+		ctx.fillRect(0, isoFloor - 5, roomWidth, 1);
 	}
 
-	// Wall decor -- reuse pixel style
+	// Wall decor (remap Y to fit compressed iso wall)
 	if (wallY > 0) {
-		drawWallDecorPixel(ctx, layout.wallDecor, seedPalette);
+		drawIsoWallDecor(ctx, layout.wallDecor, seedPalette, isoFloor, wallY);
 	}
 
 	const hue = seedPalette.hueShiftDeg;
@@ -297,10 +314,10 @@ function drawIsoRoom(
 	for (const name of sorted) {
 		const f = layout.furniture[name];
 		if (!f) continue;
-		const ix = isoX(f.x);
+		const ix = f.x;
 		const iy = isoY(f.y);
-		const iw = f.w * 0.7;
-		const ih = f.h * 0.5;
+		const iw = f.w * ISO_W;
+		const ih = f.h * ISO_H;
 		const c = seedPalette.colors[name] ?? "#888";
 
 		switch (name) {
@@ -355,7 +372,7 @@ function drawIsoRoom(
 	}
 
 	// Floor decor as iso items
-	drawIsoDecor(ctx, layout.decor, isoX, isoY, hue);
+	drawIsoDecor(ctx, layout.decor, isoY, hue);
 
 	applyTimeOverlay(ctx, timePalette, roomWidth, roomHeight);
 
@@ -363,14 +380,236 @@ function drawIsoRoom(
 	if (isNightPalette(timePalette)) {
 		const desk = layout.furniture.desk;
 		if (desk) {
-			const gx = isoX(desk.x) + 20;
+			const gx = desk.x + 20;
 			const gy = isoY(desk.y);
-			const grd = ctx.createRadialGradient(gx, gy, 2, gx, gy, 35);
-			grd.addColorStop(0, "rgba(255,240,180,0.2)");
+			const grd = ctx.createRadialGradient(gx, gy, 2, gx, gy, 40);
+			grd.addColorStop(0, "rgba(255,240,180,0.25)");
 			grd.addColorStop(1, "rgba(255,240,180,0)");
 			ctx.fillStyle = grd;
 			ctx.fillRect(0, 0, roomWidth, roomHeight);
 		}
+	}
+}
+
+// ---- Wall decor (iso-native) ----
+
+/** Draw wall-mounted decor items with iso-consistent depth shadows. */
+function drawIsoWallDecor(
+	ctx: Ctx,
+	wallDecor: WallDecorItem[],
+	seedPal: SeedPalette,
+	isoFloor: number,
+	wallY: number,
+): void {
+	const hue = seedPal.hueShiftDeg;
+	// Wall decor coords target [0, wallY] but iso wall only extends to isoFloor
+	const wallScale = wallY > 0 ? isoFloor / wallY : 1;
+	for (const d of wallDecor) {
+		ctx.save();
+		const remappedY = d.y * wallScale;
+		ctx.translate(d.x + d.w / 2, remappedY + d.h / 2);
+		ctx.rotate(d.rot);
+		const hw = d.w / 2;
+		const hh = d.h / 2;
+
+		// Shadow offset for wall-mounted depth
+		const sx = 1.5;
+		const sy = 1.5;
+
+		switch (d.type) {
+			case "poster": {
+				const posterColor = hueShift("#cc5544", hue);
+				// Shadow
+				ctx.fillStyle = "rgba(0,0,0,0.12)";
+				ctx.fillRect(-hw + sx, -hh + sy, d.w, d.h);
+				// Background
+				ctx.fillStyle = posterColor;
+				ctx.fillRect(-hw, -hh, d.w, d.h);
+				ctx.strokeStyle = darken(posterColor, 0.3);
+				ctx.lineWidth = 0.8;
+				ctx.strokeRect(-hw, -hh, d.w, d.h);
+				// Header stripe
+				ctx.fillStyle = lighten(posterColor, 0.3);
+				ctx.fillRect(-hw + 2, -hh + 2, d.w - 4, d.h * 0.3);
+				// Text lines
+				ctx.fillStyle = darken(posterColor, 0.1);
+				for (let ly = -hh + d.h * 0.45; ly < hh - 3; ly += 3) {
+					ctx.fillRect(-hw + 3, ly, d.w * 0.7, 1.5);
+				}
+				break;
+			}
+			case "shelf": {
+				const shelfColor = hueShift("#8b7355", hue);
+				// Shelf as small iso box
+				ctx.fillStyle = "rgba(0,0,0,0.1)";
+				ctx.fillRect(-hw + sx, -hh + sy, d.w, d.h);
+				ctx.fillStyle = shelfColor;
+				ctx.fillRect(-hw, -hh, d.w, d.h);
+				// Top face (parallelogram to match iso)
+				ctx.fillStyle = lighten(shelfColor, 0.1);
+				ctx.beginPath();
+				ctx.moveTo(-hw, -hh);
+				ctx.lineTo(-hw + 3, -hh - 2);
+				ctx.lineTo(hw + 3, -hh - 2);
+				ctx.lineTo(hw, -hh);
+				ctx.closePath();
+				ctx.fill();
+				ctx.strokeStyle = darken(shelfColor, 0.3);
+				ctx.lineWidth = 0.8;
+				ctx.strokeRect(-hw, -hh, d.w, d.h);
+				// Items on shelf
+				ctx.fillStyle = hueShift("#44aa88", hue);
+				ctx.fillRect(-hw + 2, -hh - 5, 4, 5);
+				ctx.fillStyle = hueShift("#aa4488", hue);
+				ctx.fillRect(-hw + 8, -hh - 7, 5, 7);
+				ctx.fillStyle = "#ddd";
+				ctx.fillRect(-hw + 15, -hh - 4, 3, 4);
+				// Brackets
+				ctx.fillStyle = darken(shelfColor, 0.2);
+				ctx.fillRect(-hw + 3, 0, 2, 6);
+				ctx.fillRect(hw - 5, 0, 2, 6);
+				break;
+			}
+			case "clock": {
+				// Shadow
+				ctx.fillStyle = "rgba(0,0,0,0.1)";
+				ctx.beginPath();
+				ctx.arc(sx, sy, hw, 0, Math.PI * 2);
+				ctx.fill();
+				// Face
+				ctx.fillStyle = "#ddd";
+				ctx.beginPath();
+				ctx.arc(0, 0, hw, 0, Math.PI * 2);
+				ctx.fill();
+				ctx.strokeStyle = "#777";
+				ctx.lineWidth = 1;
+				ctx.beginPath();
+				ctx.arc(0, 0, hw, 0, Math.PI * 2);
+				ctx.stroke();
+				// Hands
+				ctx.strokeStyle = "#333";
+				ctx.lineWidth = 1;
+				ctx.beginPath();
+				ctx.moveTo(0, 0);
+				ctx.lineTo(0, -hw * 0.6);
+				ctx.stroke();
+				ctx.beginPath();
+				ctx.moveTo(0, 0);
+				ctx.lineTo(hw * 0.4, 0);
+				ctx.stroke();
+				// Center dot
+				ctx.fillStyle = "#333";
+				ctx.beginPath();
+				ctx.arc(0, 0, 1, 0, Math.PI * 2);
+				ctx.fill();
+				break;
+			}
+			case "mirror": {
+				// Shadow
+				ctx.fillStyle = "rgba(0,0,0,0.1)";
+				ctx.fillRect(-hw + sx, -hh + sy, d.w, d.h);
+				// Glass
+				ctx.fillStyle = "#b8c8d8";
+				ctx.fillRect(-hw, -hh, d.w, d.h);
+				// Frame
+				ctx.strokeStyle = "#888";
+				ctx.lineWidth = 1.2;
+				ctx.strokeRect(-hw, -hh, d.w, d.h);
+				// Highlight
+				ctx.fillStyle = "rgba(255,255,255,0.3)";
+				ctx.fillRect(-hw + 2, -hh + 2, 3, d.h - 4);
+				break;
+			}
+			case "photo": {
+				const frameColor = hueShift("#6b4423", hue);
+				// Shadow
+				ctx.fillStyle = "rgba(0,0,0,0.1)";
+				ctx.fillRect(-hw + sx, -hh + sy, d.w, d.h);
+				// Frame
+				ctx.fillStyle = frameColor;
+				ctx.fillRect(-hw, -hh, d.w, d.h);
+				// Matte
+				ctx.fillStyle = "#ddd";
+				ctx.fillRect(-hw + 2, -hh + 2, d.w - 4, d.h - 4);
+				// Sky area
+				ctx.fillStyle = hueShift("#88bbdd", hue);
+				ctx.fillRect(-hw + 3, -hh + 3, d.w - 6, (d.h - 6) * 0.6);
+				// Ground area
+				ctx.fillStyle = hueShift("#66aa66", hue);
+				ctx.fillRect(
+					-hw + 3,
+					-hh + 3 + (d.h - 6) * 0.6,
+					d.w - 6,
+					(d.h - 6) * 0.4,
+				);
+				break;
+			}
+			case "coathook": {
+				// Rail shadow
+				ctx.fillStyle = "rgba(0,0,0,0.08)";
+				ctx.fillRect(-hw + sx, -hh + sy, d.w, 3);
+				// Rail
+				ctx.fillStyle = darken("#8b7355", 0.1);
+				ctx.fillRect(-hw, -hh, d.w, 3);
+				// Hooks
+				for (let hx = -hw + 3; hx < hw - 2; hx += 6) {
+					ctx.fillStyle = "#999";
+					ctx.fillRect(hx, -hh + 3, 2, 4);
+					ctx.fillRect(hx - 1, -hh + 6, 4, 2);
+				}
+				break;
+			}
+			case "calendar": {
+				// Shadow
+				ctx.fillStyle = "rgba(0,0,0,0.1)";
+				ctx.fillRect(-hw + sx, -hh + sy, d.w, d.h);
+				// Background
+				ctx.fillStyle = "#eee";
+				ctx.fillRect(-hw, -hh, d.w, d.h);
+				// Red header
+				ctx.fillStyle = hueShift("#cc3333", hue);
+				ctx.fillRect(-hw, -hh, d.w, 4);
+				ctx.strokeStyle = "#999";
+				ctx.lineWidth = 0.8;
+				ctx.strokeRect(-hw, -hh, d.w, d.h);
+				// Day grid
+				ctx.fillStyle = "#888";
+				for (let gx = -hw + 2; gx < hw - 1; gx += 3)
+					for (let gy = -hh + 6; gy < hh - 1; gy += 3)
+						ctx.fillRect(gx, gy, 1.5, 1.5);
+				break;
+			}
+			case "plant_hanging": {
+				const potColor = hueShift("#aa6644", hue);
+				// String
+				ctx.strokeStyle = "#888";
+				ctx.lineWidth = 0.5;
+				ctx.beginPath();
+				ctx.moveTo(0, -hh);
+				ctx.lineTo(0, -hh + 4);
+				ctx.stroke();
+				// Pot shadow
+				ctx.fillStyle = "rgba(0,0,0,0.08)";
+				ctx.fillRect(-4 + sx, -hh + 4 + sy, 8, 6);
+				// Pot
+				ctx.fillStyle = potColor;
+				ctx.fillRect(-4, -hh + 4, 8, 6);
+				// Trailing leaves
+				ctx.fillStyle = hueShift("#44aa44", hue);
+				ctx.beginPath();
+				ctx.moveTo(-3, -hh + 10);
+				ctx.quadraticCurveTo(-6, -hh + d.h * 0.5, -4, hh);
+				ctx.quadraticCurveTo(-2, -hh + d.h * 0.6, 0, -hh + 10);
+				ctx.fill();
+				ctx.beginPath();
+				ctx.moveTo(3, -hh + 10);
+				ctx.quadraticCurveTo(6, -hh + d.h * 0.6, 5, hh - 2);
+				ctx.quadraticCurveTo(4, -hh + d.h * 0.5, 0, -hh + 10);
+				ctx.fill();
+				break;
+			}
+		}
+		ctx.restore();
 	}
 }
 
@@ -464,9 +703,9 @@ function drawIsoCouch(
 	v: { style: string; cushions: number },
 ): void {
 	if (v.style === "beanbag") {
+		// Diamond shadow
 		ctx.fillStyle = "rgba(0,0,0,0.08)";
-		ctx.beginPath();
-		ctx.ellipse(ix + iw / 2, iy + 4, iw / 2 + 2, 4, 0, 0, Math.PI * 2);
+		isoDiamond(ctx, ix + iw / 2, iy + 4, iw / 2 + 2, 4);
 		ctx.fill();
 		ctx.fillStyle = c;
 		ctx.beginPath();
@@ -634,10 +873,13 @@ function drawIsoBathroom(
 	if (f.y < floorTop + 10 && v.hasMirror) {
 		const mirX = ix + iw * 0.6;
 		const mirY = iy - ih * 0.3 - 18;
+		// Shadow
+		ctx.fillStyle = "rgba(0,0,0,0.1)";
+		ctx.fillRect(mirX + 1.5, mirY + 1.5, 12, 14);
 		ctx.fillStyle = "#c8d8e8";
 		ctx.fillRect(mirX, mirY, 12, 14);
 		ctx.strokeStyle = "#999";
-		ctx.lineWidth = 0.5;
+		ctx.lineWidth = 0.8;
 		ctx.strokeRect(mirX, mirY, 12, 14);
 		ctx.fillStyle = "rgba(255,255,255,0.25)";
 		ctx.fillRect(mirX + 2, mirY + 2, 3, 10);
@@ -675,13 +917,12 @@ function drawIsoDoor(
 function drawIsoDecor(
 	ctx: Ctx,
 	decor: FloorDecorItem[],
-	isoX: (lx: number) => number,
 	isoY: (ly: number) => number,
 	hue: number,
 ): void {
 	for (const d of decor) {
 		const s = d.size;
-		const sx = isoX(d.x);
+		const sx = d.x;
 		const sy = isoY(d.y);
 
 		switch (d.type) {
@@ -799,149 +1040,230 @@ function drawIsoDecor(
 
 // ---- Character ----
 
+/** Draw character as a 3/4 overhead iso figure. */
 function drawIsoChar(
 	ctx: Ctx,
 	x: number,
 	y: number,
 	cv: CharacterVariant,
+	palette: TimePalette,
 ): void {
-	// The caller passes layout positions. For iso, we apply a vertical offset.
-	const cy = y - 5;
-	const hw = Math.floor(cv.buildW * 0.35);
+	const night = isNightPalette(palette);
+	const skin = night ? darken(cv.skin, 0.15) : cv.skin;
+	const topC = night ? darken(cv.topColor, 0.3) : cv.topColor;
+	const pantsC = night ? darken(cv.pantsColor, 0.2) : cv.pantsColor;
+	const shoeC = night ? darken(cv.shoeColor, 0.15) : cv.shoeColor;
+	const hw = Math.floor(cv.buildW * 0.45);
+	const bh = Math.floor(cv.height * 1.2);
+	const legH = Math.floor(bh * 0.3);
+	const torsoDepth = Math.floor(bh * 0.45);
+	const headR = 5;
 
-	// Shadow
+	// Diamond shadow (2:1 ratio matching floor tiles)
 	ctx.fillStyle = "rgba(0,0,0,0.1)";
-	ctx.beginPath();
-	ctx.ellipse(x, cy + 2, hw + 2, 3, 0, 0, Math.PI * 2);
+	isoDiamond(ctx, x, y + 2, hw + 4, Math.floor((hw + 4) / 2));
 	ctx.fill();
 
-	// Pants box
-	isoBox(
-		ctx,
-		x - hw,
-		cy - Math.floor(cv.height * 0.35),
-		hw * 2,
-		3,
-		Math.floor(cv.height * 0.35),
-		cv.pantsColor,
-	);
-	// Top box
-	isoBox(
-		ctx,
-		x - hw,
-		cy - cv.height,
-		hw * 2,
-		3,
-		Math.ceil(cv.height * 0.65),
-		cv.topColor,
-	);
-	// Head
-	ctx.fillStyle = cv.skin;
+	// Shoes
+	ctx.fillStyle = shoeC;
+	ctx.fillRect(x - hw, y - 2, hw - 1, 2);
+	ctx.fillRect(x + 2, y - 2, hw - 1, 2);
+
+	// Legs (two columns, slight iso spread)
+	ctx.fillStyle = pantsC;
+	const legW = Math.max(2, hw - 1);
+	ctx.fillRect(x - hw, y - legH, legW, legH - 2);
+	ctx.fillRect(x + 2, y - legH, legW, legH - 2);
+
+	// Torso (manual faces so front face uses the actual shirt color)
+	const torsoY = y - legH;
+	const torsoX = x - hw;
+	const torsoW = hw * 2;
+	const isoDepth = Math.floor(hw * 0.8);
+	// Front face -- the dominant visible area at this scale
+	ctx.fillStyle = topC;
+	ctx.fillRect(torsoX, torsoY - torsoDepth, torsoW, torsoDepth);
+	// Top face (parallelogram)
+	ctx.fillStyle = lighten(topC, 0.1);
 	ctx.beginPath();
-	ctx.arc(x, cy - cv.height - 4, 4, 0, Math.PI * 2);
+	ctx.moveTo(torsoX, torsoY - torsoDepth);
+	ctx.lineTo(torsoX + isoDepth * 0.4, torsoY - torsoDepth - isoDepth * 0.3);
+	ctx.lineTo(
+		torsoX + torsoW + isoDepth * 0.4,
+		torsoY - torsoDepth - isoDepth * 0.3,
+	);
+	ctx.lineTo(torsoX + torsoW, torsoY - torsoDepth);
+	ctx.closePath();
 	ctx.fill();
+	// Right face
+	ctx.fillStyle = darken(topC, 0.15);
+	ctx.beginPath();
+	ctx.moveTo(torsoX + torsoW, torsoY - torsoDepth);
+	ctx.lineTo(
+		torsoX + torsoW + isoDepth * 0.4,
+		torsoY - torsoDepth - isoDepth * 0.3,
+	);
+	ctx.lineTo(torsoX + torsoW + isoDepth * 0.4, torsoY - isoDepth * 0.3);
+	ctx.lineTo(torsoX + torsoW, torsoY);
+	ctx.closePath();
+	ctx.fill();
+
+	// Arms
+	const armW = cv.build === "stocky" ? 3 : 2;
+	const armLen = Math.floor(torsoDepth * 0.65);
+	ctx.fillStyle = topC;
+	ctx.fillRect(x - hw - armW, torsoY - torsoDepth + 2, armW, armLen);
+	ctx.fillRect(x + hw, torsoY - torsoDepth + 2, armW, armLen);
+	// Hands
+	ctx.fillStyle = skin;
+	ctx.fillRect(x - hw - armW, torsoY - torsoDepth + 2 + armLen, armW, 2);
+	ctx.fillRect(x + hw, torsoY - torsoDepth + 2 + armLen, armW, 2);
+
+	// Head
+	const headY = torsoY - torsoDepth - headR - 1;
+	ctx.fillStyle = skin;
+	ctx.beginPath();
+	ctx.arc(x, headY, headR, 0, Math.PI * 2);
+	ctx.fill();
+
+	// Eyes
+	ctx.fillStyle = "#333";
+	ctx.fillRect(x - 2, headY - 1, 1, 1);
+	ctx.fillRect(x + 1, headY - 1, 1, 1);
+
 	// Hair
-	ctx.fillStyle = cv.hairColor;
+	const hairC = night ? darken(cv.hairColor, 0.2) : cv.hairColor;
+	ctx.fillStyle = hairC;
 	switch (cv.hairStyle) {
 		case "curly":
 			ctx.beginPath();
-			ctx.arc(x, cy - cv.height - 5, 5.5, 0, Math.PI * 2);
+			ctx.arc(x, headY - 1, headR + 1.5, 0, Math.PI * 2);
 			ctx.fill();
-			ctx.fillStyle = cv.skin;
+			ctx.fillStyle = skin;
 			ctx.beginPath();
-			ctx.arc(x, cy - cv.height - 3, 3.5, 0, Math.PI);
+			ctx.arc(x, headY + 1, headR - 0.5, 0, Math.PI);
 			ctx.fill();
 			break;
 		case "bun":
 			ctx.beginPath();
-			ctx.arc(x, cy - cv.height - 6, 4, Math.PI, Math.PI * 2);
+			ctx.arc(x, headY - 2, headR, Math.PI, Math.PI * 2);
 			ctx.fill();
 			ctx.beginPath();
-			ctx.arc(x, cy - cv.height - 9, 2.5, 0, Math.PI * 2);
+			ctx.arc(x, headY - headR - 2, 2.5, 0, Math.PI * 2);
 			ctx.fill();
 			break;
 		case "long":
 			ctx.beginPath();
-			ctx.arc(x, cy - cv.height - 5, 4.5, Math.PI, Math.PI * 2);
+			ctx.arc(x, headY - 1, headR + 0.5, Math.PI, Math.PI * 2);
 			ctx.fill();
-			ctx.fillRect(x - 5, cy - cv.height - 4, 2, 8);
-			ctx.fillRect(x + 3, cy - cv.height - 4, 2, 8);
+			ctx.fillRect(x - headR - 1, headY, 2, 8);
+			ctx.fillRect(x + headR - 1, headY, 2, 8);
 			break;
 		case "ponytail":
 			ctx.beginPath();
-			ctx.arc(x, cy - cv.height - 5, 4, Math.PI, Math.PI * 2);
+			ctx.arc(x, headY - 1, headR, Math.PI, Math.PI * 2);
 			ctx.fill();
-			ctx.fillRect(x + 3, cy - cv.height - 3, 2, 2);
-			ctx.fillRect(x + 4, cy - cv.height - 1, 2, 4);
+			ctx.fillRect(x + headR - 1, headY + 1, 2, 2);
+			ctx.fillRect(x + headR, headY + 3, 2, 4);
 			break;
 		case "shaved":
+			ctx.fillStyle = darken(skin, 0.08);
+			ctx.beginPath();
+			ctx.arc(x, headY - 1, headR - 0.5, Math.PI, Math.PI * 2);
+			ctx.fill();
+			break;
+		case "buzz":
+			ctx.beginPath();
+			ctx.arc(x, headY - 1, headR, Math.PI, Math.PI * 2);
+			ctx.fill();
 			break;
 		default:
-			// short, buzz
+			// short
 			ctx.beginPath();
-			ctx.arc(x, cy - cv.height - 5, 4, Math.PI, Math.PI * 2);
+			ctx.arc(x, headY - 1, headR, Math.PI, Math.PI * 2);
 			ctx.fill();
+			ctx.fillRect(x - headR, headY - 1, 2, 3);
 			break;
 	}
 }
 
 // ---- Dog ----
 
+/** Draw dog as an iso figure with legs and mood-reactive features. */
 function drawIsoDog(
 	ctx: Ctx,
 	x: number,
 	y: number,
 	dv: DogVariant,
+	palette: TimePalette,
 	mood: DogMoodState,
 	energy: number,
 ): void {
-	const dy = y - 5;
-	const bw = Math.floor(dv.bodyW * 0.7);
-	const bh = Math.floor(dv.bodyH * 0.5);
+	const night = isNightPalette(palette);
+	const bw = Math.floor(dv.bodyW * 0.85);
+	const bh = Math.floor(dv.bodyH * 0.65);
+	const legH = Math.max(3, Math.floor(bh * 0.35));
 
-	let bodyC = dv.bodyColor;
+	let bodyC = night ? darken(dv.bodyColor, 0.2) : dv.bodyColor;
+	const earC = night ? darken(dv.earColor, 0.2) : dv.earColor;
 	if (mood === "disappointed") {
 		bodyC = darken(bodyC, 0.15);
 	} else if (mood === "normal" && energy < 0.3) {
 		bodyC = darken(bodyC, 0.08);
 	}
 
-	// Shadow
-	ctx.fillStyle = "rgba(0,0,0,0.07)";
-	ctx.beginPath();
-	ctx.ellipse(x + bw / 2, dy + 2, bw / 2 + 2, 3, 0, 0, Math.PI * 2);
+	// Diamond shadow
+	ctx.fillStyle = "rgba(0,0,0,0.08)";
+	isoDiamond(ctx, x + bw / 2, y + 2, bw / 2 + 3, Math.floor(bw / 4) + 2);
 	ctx.fill();
 
-	// Body box
-	isoBox(ctx, x, dy - bh, bw, bh * 0.6, bh, bodyC);
+	// Legs (4 columns below body)
+	ctx.fillStyle = darken(bodyC, 0.1);
+	const lw = Math.max(2, Math.floor(bw * 0.13));
+	// Back legs
+	ctx.fillRect(x + 1, y - legH, lw, legH);
+	ctx.fillRect(x + lw + 2, y - legH, lw, legH);
+	// Front legs
+	ctx.fillRect(x + bw - lw * 2 - 2, y - legH, lw, legH);
+	ctx.fillRect(x + bw - lw - 1, y - legH, lw, legH);
+
+	// Body box (raised above legs)
+	const bodyY = y - legH;
+	isoBox(ctx, x, bodyY - bh, bw, bh * 0.6, bh, bodyC);
+
+	// Spots
+	if (dv.hasSpots) {
+		ctx.fillStyle = night ? darken(dv.spotColor, 0.2) : dv.spotColor;
+		ctx.fillRect(x + Math.floor(bw * 0.3), bodyY - bh + 2, 2, 2);
+		ctx.fillRect(x + Math.floor(bw * 0.6), bodyY - bh + 3, 2, 1);
+	}
 
 	// Head box
 	const headX = x - Math.floor(bw * 0.3);
 	const headW = Math.floor(bw * 0.45);
 	const headH = bh * 0.4;
 	const headDepth = Math.floor(bh * 0.8);
-	isoBox(ctx, headX, dy - bh - 1, headW, headH, headDepth, darken(bodyC, 0.05));
-
-	// Spots
-	if (dv.hasSpots) {
-		ctx.fillStyle = dv.spotColor;
-		ctx.fillRect(x + Math.floor(bw * 0.3), dy - bh + 2, 2, 2);
-		ctx.fillRect(x + Math.floor(bw * 0.6), dy - bh + 3, 2, 1);
-	}
+	isoBox(
+		ctx,
+		headX,
+		bodyY - bh - 1,
+		headW,
+		headH,
+		headDepth,
+		darken(bodyC, 0.05),
+	);
 
 	// Ears -- mood-reactive
-	ctx.fillStyle = dv.earColor;
-	drawIsoDogEars(ctx, headX, headW, dy, bh, dv, mood, energy);
+	ctx.fillStyle = earC;
+	drawIsoDogEars(ctx, headX, headW, bodyY, bh, dv, mood, energy);
 
 	// Eyes -- mood-reactive
 	ctx.fillStyle = "#333";
-	const eyeY = dy - bh + 1;
+	const eyeY = bodyY - bh + 1;
 	if (mood === "disappointed") {
-		// Sad -- narrow lines
 		ctx.fillRect(headX + 2, eyeY + 1, 1.5, 0.5);
 		ctx.fillRect(headX + Math.floor(bw * 0.3), eyeY + 1, 1.5, 0.5);
 	} else if (mood === "normal" && energy < 0.25) {
-		// Tired -- half-closed
 		ctx.fillRect(headX + 2, eyeY + 1, 1, 0.5);
 		ctx.fillRect(headX + Math.floor(bw * 0.3), eyeY + 1, 1, 0.5);
 	} else {
@@ -951,10 +1273,10 @@ function drawIsoDog(
 
 	// Nose
 	ctx.fillStyle = dv.noseColor;
-	ctx.fillRect(headX + Math.floor(bw * 0.18), dy - bh + 3, 1.5, 1.5);
+	ctx.fillRect(headX + Math.floor(bw * 0.18), bodyY - bh + 3, 1.5, 1.5);
 
 	// Tail -- mood-reactive
-	drawIsoDogTail(ctx, x, dy, bw, bh, dv, bodyC, mood, energy);
+	drawIsoDogTail(ctx, x, bodyY, bw, bh, dv, bodyC, mood, energy);
 }
 
 // ---- Dog ears (iso) ----
@@ -963,7 +1285,7 @@ function drawIsoDogEars(
 	ctx: Ctx,
 	headX: number,
 	headW: number,
-	dy: number,
+	bodyY: number,
 	bh: number,
 	dv: DogVariant,
 	mood: DogMoodState,
@@ -972,13 +1294,12 @@ function drawIsoDogEars(
 	const earW = 2;
 
 	if (mood === "disappointed") {
-		// Droopy -- lower, shorter
 		if (dv.earStyle === "pointed") {
-			ctx.fillRect(headX, dy - bh, earW, 2);
-			ctx.fillRect(headX + Math.floor(headW * 0.8), dy - bh, earW, 2);
+			ctx.fillRect(headX, bodyY - bh, earW, 2);
+			ctx.fillRect(headX + Math.floor(headW * 0.8), bodyY - bh, earW, 2);
 		} else {
-			ctx.fillRect(headX - 1, dy - bh + 1, earW, 3);
-			ctx.fillRect(headX + Math.floor(headW * 0.85), dy - bh + 1, earW, 3);
+			ctx.fillRect(headX - 1, bodyY - bh + 1, earW, 3);
+			ctx.fillRect(headX + Math.floor(headW * 0.85), bodyY - bh + 1, earW, 3);
 		}
 	} else if (
 		mood === "excited" ||
@@ -986,53 +1307,59 @@ function drawIsoDogEars(
 		mood === "hopeful" ||
 		mood === "interested"
 	) {
-		// Perky -- higher
 		const h = mood === "excited" ? 5 : 4;
 		if (dv.earStyle === "pointed") {
-			ctx.fillRect(headX, dy - bh - h, earW, h);
-			ctx.fillRect(headX + Math.floor(headW * 0.8), dy - bh - h, earW, h);
+			ctx.fillRect(headX, bodyY - bh - h, earW, h);
+			ctx.fillRect(headX + Math.floor(headW * 0.8), bodyY - bh - h, earW, h);
 		} else {
-			ctx.fillRect(headX - 1, dy - bh - 2, earW, 5);
-			ctx.fillRect(headX + Math.floor(headW * 0.85), dy - bh - 2, earW, 5);
+			ctx.fillRect(headX - 1, bodyY - bh - 2, earW, 5);
+			ctx.fillRect(headX + Math.floor(headW * 0.85), bodyY - bh - 2, earW, 5);
 		}
 	} else if (mood === "unimpressed" || mood === "sympathetic") {
-		// Flat -- horizontal
 		if (dv.earStyle === "pointed") {
-			ctx.fillRect(headX, dy - bh - 2, earW, 2);
-			ctx.fillRect(headX + Math.floor(headW * 0.8), dy - bh - 2, earW, 2);
+			ctx.fillRect(headX, bodyY - bh - 2, earW, 2);
+			ctx.fillRect(headX + Math.floor(headW * 0.8), bodyY - bh - 2, earW, 2);
 		} else {
-			ctx.fillRect(headX - 1, dy - bh, earW, 3);
-			ctx.fillRect(headX + Math.floor(headW * 0.85), dy - bh, earW, 3);
+			ctx.fillRect(headX - 1, bodyY - bh, earW, 3);
+			ctx.fillRect(headX + Math.floor(headW * 0.85), bodyY - bh, earW, 3);
 		}
 	} else if (mood === "restless") {
-		// Twitchy -- alternating height
 		const offset = Math.sin(performance.now() / 150) * 1.5;
 		if (dv.earStyle === "pointed") {
-			ctx.fillRect(headX, dy - bh - 3 + offset, earW, 3);
+			ctx.fillRect(headX, bodyY - bh - 3 + offset, earW, 3);
 			ctx.fillRect(
 				headX + Math.floor(headW * 0.8),
-				dy - bh - 3 - offset,
+				bodyY - bh - 3 - offset,
 				earW,
 				3,
 			);
 		} else {
-			ctx.fillRect(headX - 1, dy - bh - 1 + offset, earW, 4);
+			ctx.fillRect(headX - 1, bodyY - bh - 1 + offset, earW, 4);
 			ctx.fillRect(
 				headX + Math.floor(headW * 0.85),
-				dy - bh - 1 - offset,
+				bodyY - bh - 1 - offset,
 				earW,
 				4,
 			);
 		}
 	} else {
-		// Normal -- energy-based
 		const earH = energy > 0.6 ? 4 : energy < 0.3 ? 2 : 3;
 		if (dv.earStyle === "pointed") {
-			ctx.fillRect(headX, dy - bh - earH, earW, earH);
-			ctx.fillRect(headX + Math.floor(headW * 0.8), dy - bh - earH, earW, earH);
+			ctx.fillRect(headX, bodyY - bh - earH, earW, earH);
+			ctx.fillRect(
+				headX + Math.floor(headW * 0.8),
+				bodyY - bh - earH,
+				earW,
+				earH,
+			);
 		} else {
-			ctx.fillRect(headX - 1, dy - bh, earW, earH + 1);
-			ctx.fillRect(headX + Math.floor(headW * 0.85), dy - bh, earW, earH + 1);
+			ctx.fillRect(headX - 1, bodyY - bh, earW, earH + 1);
+			ctx.fillRect(
+				headX + Math.floor(headW * 0.85),
+				bodyY - bh,
+				earW,
+				earH + 1,
+			);
 		}
 	}
 }
@@ -1042,7 +1369,7 @@ function drawIsoDogEars(
 function drawIsoDogTail(
 	ctx: Ctx,
 	x: number,
-	dy: number,
+	bodyY: number,
 	bw: number,
 	bh: number,
 	dv: DogVariant,
@@ -1053,7 +1380,7 @@ function drawIsoDogTail(
 	ctx.strokeStyle = bodyC;
 	ctx.lineWidth = 1.5;
 	const tailX = x + bw;
-	const tailBaseY = dy - Math.floor(bh * 0.5);
+	const tailBaseY = bodyY - Math.floor(bh * 0.5);
 	ctx.beginPath();
 	ctx.moveTo(tailX, tailBaseY);
 
