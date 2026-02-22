@@ -1268,6 +1268,56 @@ export const eventPool: readonly EventDefinition[] = [
 		storyCategory: "survival",
 		alwaysSelected: true,
 	},
+
+	{
+		id: "coffee-machine-broke",
+		tier: 1,
+		type: "minor",
+		timing: {
+			day: ["wednesday", "friday", "saturday"],
+			phase: "dayStart",
+		},
+		condition: (state) => state.momentum > 0.65,
+		effects: { blockTasks: ["make-coffee"] },
+		storyCategory: "survival",
+		alwaysSelected: true,
+	},
+
+	{
+		id: "bad-weather",
+		tier: 1,
+		type: "minor",
+		timing: {
+			day: [
+				"monday",
+				"tuesday",
+				"wednesday",
+				"thursday",
+				"friday",
+				"saturday",
+				"sunday",
+			],
+			phase: "dayStart",
+		},
+		condition: (state) => state.energy > 0.6,
+		effects: { blockTasks: ["go-outside", "exercise", "shopping"] },
+		storyCategory: "survival",
+		alwaysSelected: true,
+	},
+
+	{
+		id: "internet-down",
+		tier: 1,
+		type: "minor",
+		timing: {
+			day: ["monday", "tuesday", "wednesday", "thursday"],
+			phase: "dayStart",
+		},
+		condition: (state) => state.energy > 0.5 && state.momentum > 0.5,
+		effects: { blockTasks: ["work"] },
+		storyCategory: "survival",
+		alwaysSelected: true,
+	},
 ];
 
 /** Gets an event definition by ID. */

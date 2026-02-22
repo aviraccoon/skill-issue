@@ -111,7 +111,10 @@ export type EventId =
 	| "productivity-guilt"
 	// Tier 1: Task disruption (prosperity-gated)
 	| "groomer-day"
-	| "app-outage";
+	| "app-outage"
+	| "coffee-machine-broke"
+	| "bad-weather"
+	| "internet-down";
 
 /** Runtime state of an event instance during a run. */
 export interface EventInstance {

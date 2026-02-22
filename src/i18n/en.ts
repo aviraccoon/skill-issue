@@ -2631,6 +2631,42 @@ export const en = {
 				"A delivery outage meant cooking or going out. The microwave had never looked so intimidating.",
 			],
 		},
+
+		"coffee-machine-broke": {
+			notification: [
+				"The coffee machine made a sound it's never made before and then stopped making any sounds at all. The power light blinks once, mockingly, then goes dark.",
+				"Coffee machine is dead. Truly dead. You've tried unplugging it, plugging it back in, and staring at it with increasing desperation. Nothing.",
+				"The coffee maker has chosen today to enter retirement. No warning. No two-week notice. Just a sad gurgle and silence. You'll have to find caffeine elsewhere.",
+			],
+			recap: [
+				"The coffee machine broke. You stood in the kitchen holding an empty mug like a prop in a play about loss.",
+				"No coffee machine for a day. You learned that your entire morning routine was built on a foundation of one appliance.",
+			],
+		},
+
+		"bad-weather": {
+			notification: [
+				"Heavy rain since before dawn. The kind that makes the window look like it's melting. Going outside feels like a personal challenge from the sky.",
+				"It's pouring. Not the gentle kind. The kind where you open the door, stand there for two seconds, and close it again. Inside day.",
+				"Weather app says rain all day. Thunder optional. The street outside looks abandoned. Even the pigeons are hiding.",
+			],
+			recap: [
+				"It rained all day. The aggressive kind. You watched it from inside and rearranged your plans around not getting drenched.",
+				"A full day of heavy rain meant no outdoor anything. The apartment felt smaller than usual.",
+			],
+		},
+
+		"internet-down": {
+			notification: [
+				"The internet is out. The router lights are doing their confused blinking pattern. Your phone hotspot has two bars of solidarity. Work from home just became stare at home.",
+				"ISP outage. The whole neighborhood, apparently. You've already reset the router twice. The third time will not be the charm.",
+				"No internet. The little disconnected icon sits in your taskbar like a tiny monument to modern dependency. Remote work is just... remote.",
+			],
+			recap: [
+				"The internet went down for the day. You rediscovered that without WiFi, a laptop is just an expensive paperweight.",
+				"An ISP outage meant no remote work. You spent the time doing other things, or at least trying to.",
+			],
+		},
 	},
 
 	weekStory: {
