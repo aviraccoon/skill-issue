@@ -40,7 +40,7 @@ describe("calculateSleepQuality", () => {
 		expect(result.momentum).toBeGreaterThan(0);
 	});
 
-	test("not eating gives energy penalty", () => {
+	test("not eating hits the recovery floor instead of going negative", () => {
 		const tasks = [
 			makeTask({ id: "cook", category: "food", succeededToday: false }),
 		];
@@ -48,7 +48,9 @@ describe("calculateSleepQuality", () => {
 
 		const result = calculateSleepQuality(state);
 
-		expect(result.energy).toBeLessThan(0);
+		// Without floor this would be -0.1. Floor clamps to seed-varied minimum.
+		expect(result.energy).toBeGreaterThanOrEqual(0);
+		expect(result.energy).toBeLessThan(0.1);
 	});
 
 	test("walking dog gives boost", () => {
@@ -67,8 +69,8 @@ describe("calculateSleepQuality", () => {
 		expect(result.momentum).toBeGreaterThan(0);
 	});
 
-	test("failing dog walk gives momentum penalty", () => {
-		const tasks = [
+	test("failing dog walk gives less momentum than succeeding", () => {
+		const failedWalk = [
 			makeTask({
 				id: "walk-dog",
 				category: "dog",
@@ -76,11 +78,22 @@ describe("calculateSleepQuality", () => {
 				succeededToday: false,
 			}),
 		];
-		const state = makeState(tasks);
+		const failState = makeState(failedWalk);
+		const failResult = calculateSleepQuality(failState);
 
-		const result = calculateSleepQuality(state);
+		const succeededWalk = [
+			makeTask({
+				id: "walk-dog",
+				category: "dog",
+				attemptedToday: true,
+				succeededToday: true,
+			}),
+		];
+		const successState = makeState(succeededWalk);
+		const successResult = calculateSleepQuality(successState);
 
-		expect(result.momentum).toBeLessThan(0);
+		// Failed walk should give less momentum than succeeded walk
+		expect(failResult.momentum).toBeLessThan(successResult.momentum);
 	});
 
 	test("multiple successes give momentum boost", () => {
@@ -96,13 +109,16 @@ describe("calculateSleepQuality", () => {
 		expect(result.momentum).toBeGreaterThan(0);
 	});
 
-	test("low momentum day gives penalties", () => {
+	test("low momentum day hits floors for both energy and momentum", () => {
 		const tasks: Task[] = [];
 		const state = makeState(tasks, 0.2); // low momentum
 
 		const result = calculateSleepQuality(state);
 
-		expect(result.energy).toBeLessThan(0);
-		expect(result.momentum).toBeLessThan(0);
+		// Both would be deeply negative without floors, clamped to seed-varied minimums
+		expect(result.energy).toBeGreaterThanOrEqual(0);
+		expect(result.energy).toBeLessThan(0.1);
+		expect(result.momentum).toBeGreaterThanOrEqual(0);
+		expect(result.momentum).toBeLessThan(0.05);
 	});
 });

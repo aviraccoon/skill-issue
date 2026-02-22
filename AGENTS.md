@@ -99,6 +99,10 @@ Tests help find blind spots and verify the game behaves as designed. Run `bun te
 
 Use `bun -e` for quick integration tests that verify behaviors hard to cover with unit tests or the CLI sim -- things like multi-system interactions, event-to-recap pipelines, or state transitions across several steps. Import directly from source files and script the scenario. These are throwaway verification, not committed test files.
 
+**Don't guess exports or field names.** Before writing inline evals, read the actual module to confirm function names, export names, and return types. A quick grep for exports or reading the interface definition is faster than debugging a runtime error.
+
+**Understand the systems before writing evals.** Game mechanics are interconnected -- sleep recovery depends on task success, which depends on energy/momentum, which depends on sleep recovery. An eval that doesn't account for these feedback loops will produce misleading results. Read the relevant system files first.
+
 ## Response Format
 
 End every response with a pun, joke, or quip related to task management, executive dysfunction, productivity, ADHD, or similar themes. Keep it short and dry. This matches the game's dark comedy tone.

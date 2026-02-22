@@ -217,17 +217,20 @@ describe("continueToNextDay", () => {
 	});
 
 	test("applies sleep quality modifier to energy", () => {
-		// With no food eaten and no successes, sleep quality subtracts energy
+		// Bad day: no food, no successes. Floor prevents negative energy mod,
+		// but energy still gains less than a good day.
 		const badDayStore = createTestStore({
 			dayIndex: 0,
 			energy: 0.5,
 			inExtendedNight: false,
 		});
 		continueToNextDay(badDayStore);
-		// No food = -0.1 energy mod. 0.5 + (-0.1) = 0.4
-		expect(badDayStore.get("energy")).toBeLessThan(0.5);
+		// Floor gives small positive (1-5%), so energy stays near 0.5
+		const badEnergy = badDayStore.get("energy");
+		expect(badEnergy).toBeGreaterThanOrEqual(0.5);
+		expect(badEnergy).toBeLessThan(0.56);
 
-		// With food eaten and dog walked, sleep quality adds energy
+		// Good day: food eaten and dog walked gives much more energy
 		const succeeded = {
 			successCount: 1,
 			attemptedToday: true,
@@ -246,6 +249,8 @@ describe("continueToNextDay", () => {
 		continueToNextDay(goodDayStore);
 		// Food +0.1, dog walk +0.05 = +0.15. 0.3 + 0.15 = 0.45
 		expect(goodDayStore.get("energy")).toBeGreaterThan(0.3);
+		// Good day should recover more than bad day
+		expect(goodDayStore.get("energy") - 0.3).toBeGreaterThan(badEnergy - 0.5);
 	});
 
 	test("applies all-nighter penalty to energy", () => {
