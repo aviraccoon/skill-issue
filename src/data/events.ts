@@ -68,6 +68,8 @@ export interface EventEffects {
 	succeedTask?: TaskId;
 	/** Consume the current time block (weekday: slots = 0, weekend: deduct points). */
 	skipCurrentBlock?: boolean;
+	/** Block tasks from appearing in available list for the rest of this day. */
+	blockTasks?: TaskId[];
 }
 
 /** Definition for in-place modification of an existing task by an event. */
@@ -1221,6 +1223,48 @@ export const eventPool: readonly EventDefinition[] = [
 		},
 		condition: (state) => state.energy > 0.5 && state.momentum > 0.5,
 		effects: { momentumScale: -0.3 },
+		storyCategory: "survival",
+		alwaysSelected: true,
+	},
+	// =====================
+	// Tier 1: Task disruption (prosperity-gated)
+	// =====================
+
+	{
+		id: "groomer-day",
+		tier: 1,
+		type: "minor",
+		timing: {
+			day: ["tuesday", "wednesday", "thursday", "saturday"],
+			phase: "dayStart",
+		},
+		condition: (state) => state.energy > 0.5,
+		effects: {
+			succeedTask: "walk-dog",
+			blockTasks: ["feed-dog", "play-with-dog", "chill-with-dog"],
+		},
+		storyCategory: "dog",
+		alwaysSelected: true,
+	},
+
+	{
+		id: "app-outage",
+		tier: 1,
+		type: "minor",
+		timing: {
+			day: [
+				"monday",
+				"tuesday",
+				"wednesday",
+				"thursday",
+				"friday",
+				"saturday",
+				"sunday",
+			],
+			phase: "dayStart",
+		},
+		condition: (state) => state.momentum > 0.5,
+		effects: { blockTasks: ["delivery"] },
 		storyCategory: "survival",
 		alwaysSelected: true,
 	},

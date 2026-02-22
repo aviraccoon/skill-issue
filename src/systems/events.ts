@@ -365,6 +365,16 @@ function applyEventEffects(
 			tasks.map((t) => (t.id === taskId ? { ...t, succeededToday: true } : t)),
 		);
 	}
+	if (effects.blockTasks) {
+		const toBlock = effects.blockTasks;
+		store.update("eventBlockedTasks", (current) => {
+			const combined = [...current];
+			for (const id of toBlock) {
+				if (!combined.includes(id)) combined.push(id);
+			}
+			return combined;
+		});
+	}
 	if (effects.skipCurrentBlock) {
 		if (isWeekend(store.getState())) {
 			store.update("weekendPointsRemaining", (p) =>

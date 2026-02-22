@@ -2607,6 +2607,30 @@ export const en = {
 				"The productivity guilt hit when things were fine. Not great, not terrible. Fine. That's apparently the trigger.",
 			],
 		},
+
+		"groomer-day": {
+			notification: [
+				"Azor's grooming appointment is today. He'll be there all day. The apartment is weirdly quiet without the collar jingling.",
+				"Dropped Azor off at the groomer this morning. The place smells like lavender and wet fur. He didn't look back. You have the whole day without dog obligations.",
+				"Azor's at the groomer. You keep looking at the empty spot by the couch where he usually sits. At least he'll come back fluffy.",
+			],
+			recap: [
+				"One day, Azor was at the groomer. The apartment felt emptier than expected. You kept reaching for a leash that wasn't there.",
+				"Azor had a grooming day. He came back looking like a different dog. You missed him more than you'd admit.",
+			],
+		},
+
+		"app-outage": {
+			notification: [
+				"The delivery app is down. Server error. The backup app is also down. Apparently the whole thing runs on the same infrastructure. Time to figure out food the old-fashioned way.",
+				"Delivery app: 'We're experiencing technical difficulties.' You refresh. Still down. You refresh again. The definition of insanity, but for takeout.",
+				"Every delivery app is showing the same spinning wheel. Social media confirms: major outage. People are acting like it's the apocalypse. They're not entirely wrong.",
+			],
+			recap: [
+				"The delivery apps went down for a day. You were forced to actually think about food preparation. It was exactly as bad as you'd expect.",
+				"A delivery outage meant cooking or going out. The microwave had never looked so intimidating.",
+			],
+		},
 	},
 
 	weekStory: {

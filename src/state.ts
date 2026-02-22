@@ -108,7 +108,10 @@ export type EventId =
 	// Tier 1: Prosperity-gated (fire when doing well)
 	| "hyperfocus-trap"
 	| "overcommit-morning"
-	| "productivity-guilt";
+	| "productivity-guilt"
+	// Tier 1: Task disruption (prosperity-gated)
+	| "groomer-day"
+	| "app-outage";
 
 /** Runtime state of an event instance during a run. */
 export interface EventInstance {
@@ -270,6 +273,9 @@ export interface GameState {
 
 	// Inline event banner (minor events, transient, not persisted)
 	eventBanner: EventBanner | null;
+
+	// Tasks blocked by events for current day (transient, cleared at day transition)
+	eventBlockedTasks: TaskId[];
 }
 
 /** Returns true if the current day is Saturday or Sunday. */
@@ -327,6 +333,7 @@ export function createInitialState(
 		eventFlags: [],
 		activeEventId: null,
 		eventBanner: null,
+		eventBlockedTasks: [],
 	};
 }
 

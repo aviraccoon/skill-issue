@@ -517,6 +517,7 @@ function fromSavedState(saved: SavedState): GameState {
 		eventFlags: saved.eventFlags ?? [],
 		activeEventId,
 		eventBanner: null, // Transient, not persisted
+		eventBlockedTasks: [], // Transient, not persisted
 	};
 }
 

@@ -436,6 +436,11 @@ function assignScheduledDays(events: EventInstance[], seed: number): void {
 		const definition = eventPool.find((e) => e.id === instance.id);
 		if (!definition || definition.arcId) continue;
 
+		// Always-selected events fire on the first day their condition is met,
+		// not on a pre-assigned day. Pre-assigning would cause them to miss
+		// their window if the condition isn't true on the scheduled day.
+		if (definition.alwaysSelected) continue;
+
 		// Build allowed day indices from definition
 		let allowedDays: number[];
 		if (definition.timing.day) {
