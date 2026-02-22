@@ -143,12 +143,15 @@ export const en = {
 	menu: {
 		continue: "Continue",
 		continueSubtext: (day: string, time: string) => `${day}, ${time}`,
+		startNewWeek: "Start New Week",
+		viewSummary: "View Summary",
 		newGame: "New Game",
 		seedLabel: "Seed",
 		seedPlaceholder: "Enter seed (optional)",
 		startSeeded: "Start with Seed",
 		seededRunNotice: (day: string, seed: number) =>
 			`Seeded run in progress: ${day} (seed ${seed})`,
+		seededRunComplete: (seed: number) => `Seeded run complete (seed ${seed})`,
 		settings: "Settings",
 	},
 
@@ -205,6 +208,8 @@ export const en = {
 		// Task states
 		selected: "selected",
 		completedToday: "completed today",
+		notEnoughPoints: (cost: number, remaining: number) =>
+			`needs ${pl(cost, "point")}, ${remaining} remaining`,
 
 		// Panel focus announcement
 		panelAnnounce: (
@@ -2644,9 +2649,9 @@ export const en = {
 				"Dog walks: success. Turns out having someone stare at you expectantly is excellent for task completion.",
 			],
 			dogMixed: [
-				"Azor got walked most of the time. Some days it was barely a walk\u2014more like standing outside briefly. But he got out.",
-				"The dog walks were... mostly successful. A few were more 'quick trip outside' than 'actual walk.' He didn't complain.",
-				"Azor got what he needed, more or less. Some proper walks, some minimal versions. He's patient like that.",
+				"Azor's care was hit and miss. Some days you showed up for him fully. Other days, not so much. He didn't hold it against you.",
+				"The dog stuff was... inconsistent. Some tasks done properly, some barely. He's patient like that.",
+				"Azor got what he needed, more or less. Not every day, not every task. But enough.",
 			],
 			dogAfterRecovery: [
 				"The walks after the vet were quieter. Slower. You both needed that.",

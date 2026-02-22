@@ -127,9 +127,18 @@ export interface SplashInfo {
 export interface MenuScreenInfo {
 	type: "menu";
 	/** Summary of main run if exists, null if no save. */
-	mainRunSummary: { day: string; timeBlock: string } | null;
+	mainRunSummary: {
+		day: string;
+		timeBlock: string;
+		completed: boolean;
+	} | null;
 	/** Summary of seeded run if exists, null if no save. */
-	seededRunSummary: { day: string; timeBlock: string; seed: number } | null;
+	seededRunSummary: {
+		day: string;
+		timeBlock: string;
+		seed: number;
+		completed: boolean;
+	} | null;
 	/** Whether patterns have been unlocked (at least one completion). */
 	patternsUnlocked: boolean;
 }

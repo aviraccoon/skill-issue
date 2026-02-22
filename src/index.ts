@@ -5,7 +5,7 @@ import { initDevTools, simulateDay } from "./components/DevTools";
 import { initTheme } from "./components/ThemeSwitcher";
 import { createInitialState, type GameState } from "./state";
 import { createStore } from "./store";
-import { clearSave, saveGame } from "./systems/persistence";
+import { resetRun, saveGame } from "./systems/persistence";
 
 // Locale initialized by i18n module (from localStorage, then browser preference)
 
@@ -39,11 +39,12 @@ document.addEventListener("keydown", (e) => {
 		e.preventDefault();
 		simulateDay(store);
 	}
-	// Ctrl+Alt+C: Clear save (with confirmation)
+	// Ctrl+Alt+C: Clear current mode's save (with confirmation)
 	if (e.ctrlKey && e.altKey && e.code === "KeyC") {
 		e.preventDefault();
-		if (confirm("Clear save and reload? This cannot be undone.")) {
-			clearSave();
+		const mode = store.getState().gameMode;
+		if (confirm(`Clear ${mode} save and reload? This cannot be undone.`)) {
+			resetRun(mode);
 			window.location.reload();
 		}
 	}

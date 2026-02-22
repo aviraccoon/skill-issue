@@ -37,28 +37,50 @@ export function renderMainMenu(
 		dialogsCreated = true;
 	}
 
-	// Build continue button if main run exists
-	let continueHtml = "";
-	if (screenInfo.mainRunSummary) {
-		const subtext = s.menu.continueSubtext(
-			screenInfo.mainRunSummary.day,
-			screenInfo.mainRunSummary.timeBlock,
-		);
-		continueHtml = `
+	// Build main run buttons based on state
+	// All string content comes from i18n (trusted source), not user input
+	const mainRun = screenInfo.mainRunSummary;
+	let mainRunHtml = "";
+	if (mainRun?.completed) {
+		// Completed week: "Start New Week" (primary) + "View Summary" (secondary)
+		mainRunHtml = `
+			<button class="btn btn-primary ${styles.startNewWeekBtn}">${s.menu.startNewWeek}</button>
+			<button class="btn btn-secondary ${styles.viewSummaryBtn}">${s.menu.viewSummary}</button>
+		`;
+	} else if (mainRun) {
+		// In-progress: "Continue" (primary) + "New Game" (secondary)
+		const subtext = s.menu.continueSubtext(mainRun.day, mainRun.timeBlock);
+		mainRunHtml = `
 			<button class="btn btn-primary ${styles.continueBtn}">
 				<span class="${styles.btnLabel}">${s.menu.continue}</span>
 				<span class="${styles.btnSubtext}">${subtext}</span>
 			</button>
+			<button class="btn btn-secondary ${styles.newGameBtn}">${s.menu.newGame}</button>
+		`;
+	} else {
+		// No save: "New Game" only
+		mainRunHtml = `
+			<button class="btn btn-primary ${styles.newGameBtn}">${s.menu.newGame}</button>
 		`;
 	}
 
 	// Build seeded run notice if exists
+	// All string content comes from i18n (trusted source), not user input
 	let seededNoticeHtml = "";
 	if (screenInfo.seededRunSummary) {
+		const seededText = screenInfo.seededRunSummary.completed
+			? s.menu.seededRunComplete(screenInfo.seededRunSummary.seed)
+			: s.menu.seededRunNotice(
+					screenInfo.seededRunSummary.day,
+					screenInfo.seededRunSummary.seed,
+				);
+		const seededBtnLabel = screenInfo.seededRunSummary.completed
+			? s.menu.viewSummary
+			: s.menu.continue;
 		seededNoticeHtml = `
 			<p class="${styles.seededNotice}">
-				${s.menu.seededRunNotice(screenInfo.seededRunSummary.day, screenInfo.seededRunSummary.seed)}
-				<button class="btn btn-secondary ${styles.seededContinueBtn}">${s.menu.continue}</button>
+				${seededText}
+				<button class="btn btn-secondary ${styles.seededContinueBtn}">${seededBtnLabel}</button>
 			</p>
 		`;
 	}
@@ -68,8 +90,7 @@ export function renderMainMenu(
 			<h1 class="${styles.title}">${s.intro.title}</h1>
 
 			<div class="${styles.actions}">
-				${continueHtml}
-				<button class="btn btn-secondary ${styles.newGameBtn}">${s.menu.newGame}</button>
+				${mainRunHtml}
 			</div>
 
 			<div class="${styles.seedSection}">
@@ -96,7 +117,13 @@ export function renderMainMenu(
 		</div>
 	`;
 
-	// Focus Continue if exists, otherwise New Game
+	// Wire up main run buttons
+	const startNewWeekBtn = container.querySelector<HTMLElement>(
+		`.${styles.startNewWeekBtn}`,
+	);
+	const viewSummaryBtn = container.querySelector<HTMLElement>(
+		`.${styles.viewSummaryBtn}`,
+	);
 	const continueBtn = container.querySelector<HTMLElement>(
 		`.${styles.continueBtn}`,
 	);
@@ -104,19 +131,39 @@ export function renderMainMenu(
 		`.${styles.newGameBtn}`,
 	);
 
-	if (continueBtn) {
+	// Focus the primary action
+	if (startNewWeekBtn) {
+		startNewWeekBtn.focus();
+	} else if (continueBtn) {
 		continueBtn.focus();
-		continueBtn.addEventListener("click", () => {
-			const savedGame = loadGame("main");
-			if (savedGame) {
-				store.setState(savedGame);
-			}
-		});
 	} else {
 		newGameBtn?.focus();
 	}
 
-	// New Game button
+	// Start New Week (completed run: clear save and start fresh)
+	startNewWeekBtn?.addEventListener("click", () => {
+		resetRun("main");
+		const newState = createNewGame(undefined, "main");
+		store.setState(newState);
+	});
+
+	// View Summary (completed run: load the weekComplete screen)
+	viewSummaryBtn?.addEventListener("click", () => {
+		const savedGame = loadGame("main");
+		if (savedGame) {
+			store.setState(savedGame);
+		}
+	});
+
+	// Continue (in-progress run)
+	continueBtn?.addEventListener("click", () => {
+		const savedGame = loadGame("main");
+		if (savedGame) {
+			store.setState(savedGame);
+		}
+	});
+
+	// New Game (abandon in-progress run)
 	newGameBtn?.addEventListener("click", () => {
 		const newState = createNewGame(undefined, "main");
 		store.setState(newState);

@@ -33,6 +33,11 @@
 	text-decoration: line-through;
 }
 
+.unaffordable {
+	opacity: 0.4;
+	cursor: default;
+}
+
 .failing {
 	animation: almost 0.3s ease-out;
 }

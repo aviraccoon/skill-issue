@@ -7,7 +7,6 @@ import {
 import { getEventDefinition } from "../data/events";
 import { SLOTS_PER_BLOCK } from "../data/timeBlocks";
 import type { GameState } from "../state";
-import { createInitialState } from "../state";
 import type { Store } from "../store";
 import {
 	calculateExtendedNightSlots,
@@ -27,8 +26,9 @@ import {
 } from "../systems/momentum";
 import {
 	clearAllData,
+	createNewGame,
 	getPatterns,
-	resetCurrentRun,
+	resetRun,
 } from "../systems/persistence";
 import {
 	calculateSuccessProbability,
@@ -167,7 +167,7 @@ export function initDevTools(store: Store<GameState>) {
 				break;
 			}
 			case "reset": {
-				const fresh = createInitialState();
+				const fresh = createNewGame();
 				for (const key of Object.keys(fresh)) {
 					store.set(key as keyof GameState, fresh[key as keyof GameState]);
 				}
@@ -189,7 +189,7 @@ export function initDevTools(store: Store<GameState>) {
 				simulateDay(store);
 				break;
 			case "clear-run":
-				resetCurrentRun();
+				resetRun(store.getState().gameMode);
 				window.location.reload();
 				break;
 			case "clear-all":

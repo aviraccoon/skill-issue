@@ -15,8 +15,8 @@ describe("persistence", () => {
 		expect(true).toBe(true);
 	});
 
-	test.skip("clearSave removes saved state", () => {
-		// Would test: clearSave() removes the localStorage entry
+	test.skip("resetRun removes saved state for mode", () => {
+		// Would test: resetRun("main") removes the localStorage entry for main
 		expect(true).toBe(true);
 	});
 

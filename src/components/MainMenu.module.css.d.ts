@@ -15,6 +15,8 @@ declare const styles: {
 	readonly seededContinueBtn: string;
 	readonly seededNotice: string;
 	readonly settingsBtn: string;
+	readonly startNewWeekBtn: string;
 	readonly title: string;
+	readonly viewSummaryBtn: string;
 };
 export default styles;

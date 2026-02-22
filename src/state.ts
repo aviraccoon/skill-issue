@@ -1,7 +1,12 @@
 import type { TimeBlock } from "./data/timeBlocks";
+import { WEEKEND_TOTAL_POINTS } from "./data/timeBlocks";
 import type { NonEmptyArray } from "./utils/random";
 
-export { TIME_BLOCKS, type TimeBlock } from "./data/timeBlocks";
+export {
+	TIME_BLOCKS,
+	type TimeBlock,
+	WEEKEND_TOTAL_POINTS,
+} from "./data/timeBlocks";
 export type Day =
 	| "monday"
 	| "tuesday"
@@ -290,7 +295,7 @@ export function createInitialState(
 		dayIndex: 0,
 		timeBlock: "morning",
 		slotsRemaining: SLOTS_PER_BLOCK,
-		weekendPointsRemaining: 8,
+		weekendPointsRemaining: WEEKEND_TOTAL_POINTS,
 		tasks: createInitialTasks(taskIds, personality.time, runSeed),
 		selectedTaskId: null,
 		screen: "game",

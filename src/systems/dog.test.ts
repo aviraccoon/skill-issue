@@ -97,9 +97,26 @@ describe("getDogUrgency", () => {
 		expect(getDogUrgency(state)).toBe("normal");
 	});
 
-	test("returns waiting on weekends (default urgency level)", () => {
-		const state = createTestState({ dayIndex: 5, dogFailedYesterday: false }); // Saturday
-		expect(getDogUrgency(state)).toBe("waiting");
+	test("returns normal on weekends with full points", () => {
+		const state = createTestState({
+			dayIndex: 5,
+			weekendPointsRemaining: 8,
+			dogFailedYesterday: false,
+		});
+		expect(getDogUrgency(state)).toBe("normal");
+	});
+
+	test("escalates urgency on weekends as points deplete", () => {
+		const make = (pts: number) =>
+			createTestState({
+				dayIndex: 5,
+				weekendPointsRemaining: pts,
+				dogFailedYesterday: false,
+			});
+		expect(getDogUrgency(make(6))).toBe("normal"); // 75% remaining
+		expect(getDogUrgency(make(4))).toBe("waiting"); // 50% remaining
+		expect(getDogUrgency(make(2))).toBe("urgent"); // 25% remaining
+		expect(getDogUrgency(make(1))).toBe("critical"); // 12.5% remaining
 	});
 });
 

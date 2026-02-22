@@ -247,10 +247,19 @@ export function renderTaskList(
 		const isSelected = screenInfo.selectedTask?.id === task.id;
 
 		// Set accessible name with state info
+		const unaffordable =
+			screenInfo.isWeekend &&
+			!task.succeededToday &&
+			task.weekendCost > screenInfo.weekendPointsRemaining;
 		if (task.succeededToday) {
 			button.setAttribute(
 				"aria-label",
 				`${displayName}, ${s.a11y.completedToday}`,
+			);
+		} else if (unaffordable) {
+			button.setAttribute(
+				"aria-label",
+				`${displayName}, ${s.a11y.notEnoughPoints(task.weekendCost, screenInfo.weekendPointsRemaining)}`,
 			);
 		}
 		button.textContent = displayName;
@@ -265,6 +274,9 @@ export function renderTaskList(
 		}
 		if (task.succeededToday) {
 			button.classList.add(taskStyles.succeeded);
+		}
+		if (unaffordable) {
+			button.classList.add(taskStyles.unaffordable);
 		}
 
 		button.addEventListener("click", (e) => {

@@ -339,12 +339,18 @@ export function hasSavedGame(mode: GameMode): boolean {
  * Gets summary info about saved games for the menu.
  */
 export function getSavedGameSummaries(): {
-	main: { day: Day; dayIndex: number; timeBlock: TimeBlock } | null;
+	main: {
+		day: Day;
+		dayIndex: number;
+		timeBlock: TimeBlock;
+		completed: boolean;
+	} | null;
 	seeded: {
 		day: Day;
 		dayIndex: number;
 		timeBlock: TimeBlock;
 		seed: number;
+		completed: boolean;
 	} | null;
 } {
 	const data = loadSaveData();
@@ -354,6 +360,7 @@ export function getSavedGameSummaries(): {
 					day: data.runs.main.day,
 					dayIndex: data.runs.main.dayIndex,
 					timeBlock: data.runs.main.timeBlock,
+					completed: data.runs.main.screen === "weekComplete",
 				}
 			: null,
 		seeded: data.runs.seeded
@@ -362,6 +369,7 @@ export function getSavedGameSummaries(): {
 					dayIndex: data.runs.seeded.dayIndex,
 					timeBlock: data.runs.seeded.timeBlock,
 					seed: data.runs.seeded.runSeed,
+					completed: data.runs.seeded.screen === "weekComplete",
 				}
 			: null,
 	};
@@ -540,7 +548,3 @@ export function markFirstAttempt(): void {
 export function clearAllData(): void {
 	localStorage.removeItem(STORAGE_KEY);
 }
-
-// Legacy exports for compatibility during transition
-export const resetCurrentRun = () => resetRun("main");
-export const clearSave = resetCurrentRun;

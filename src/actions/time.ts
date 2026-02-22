@@ -1,4 +1,4 @@
-import { SLOTS_PER_BLOCK } from "../data/timeBlocks";
+import { SLOTS_PER_BLOCK, WEEKEND_TOTAL_POINTS } from "../data/timeBlocks";
 import { DAYS, type GameState, TIME_BLOCKS } from "../state";
 import type { Store } from "../store";
 import { canPushThrough, getAllNighterPenalty } from "../systems/allnighter";
@@ -130,8 +130,8 @@ export function continueToNextDay(store: Store<GameState>) {
 	// Reset based on day type
 	const weekend = nextDayIndex >= 5;
 	if (weekend) {
-		// Weekend - 8 action points, no time blocks
-		store.set("weekendPointsRemaining", 8);
+		// Weekend - action points, no time blocks
+		store.set("weekendPointsRemaining", WEEKEND_TOTAL_POINTS);
 	} else if (pulledAllNighter) {
 		// Weekday after all-nighter - skip morning, start at afternoon
 		store.set("timeBlock", "afternoon");

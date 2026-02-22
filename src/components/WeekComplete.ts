@@ -1,8 +1,12 @@
 import type { WeekCompleteInfo } from "../core/screenInfo";
 import { strings } from "../i18n";
-import { createInitialState, type GameState } from "../state";
+import type { GameState } from "../state";
 import type { Store } from "../store";
-import { resetCurrentRun, saveCompletedRun } from "../systems/persistence";
+import {
+	createNewGame,
+	resetRun,
+	saveCompletedRun,
+} from "../systems/persistence";
 import styles from "./WeekComplete.module.css";
 
 /** Track if we've saved this completion (avoid duplicate saves on re-render). */
@@ -120,23 +124,29 @@ export function renderWeekComplete(
 			<div class="${styles.story}">${narrativeParagraphs}</div>
 			${patternsHtml}
 			<div class="${styles.actions}">
-				<button class="btn btn-primary ${styles.restartBtn}">${s.game.startNewWeek}</button>
-				<button class="btn btn-secondary ${styles.menuBtn}">${s.game.menu}</button>
+				${state.gameMode === "main" ? `<button class="btn btn-primary ${styles.restartBtn}">${s.game.startNewWeek}</button>` : ""}
+				<button class="btn ${state.gameMode === "main" ? `btn-secondary ${styles.menuBtn}` : `btn-primary ${styles.menuBtn}`}">${s.game.menu}</button>
 			</div>
 		</div>
 	`;
 
-	// Focus restart button for keyboard users (announcement handles context)
+	// Focus primary action for keyboard users
 	const restartBtn = container.querySelector<HTMLElement>(
 		`.${styles.restartBtn}`,
 	);
-	restartBtn?.focus();
+	const menuBtn = container.querySelector<HTMLElement>(`.${styles.menuBtn}`);
+	if (restartBtn) {
+		restartBtn.focus();
+	} else {
+		menuBtn?.focus();
+	}
 
 	container
 		.querySelector(`.${styles.restartBtn}`)
 		?.addEventListener("click", () => {
-			resetCurrentRun();
-			const fresh = createInitialState();
+			const mode = store.getState().gameMode;
+			resetRun(mode);
+			const fresh = createNewGame(undefined, mode);
 			// Set savedRunSeed to new seed BEFORE state update to prevent
 			// intermediate re-renders from saving the old run again
 			savedRunSeed = fresh.runSeed;

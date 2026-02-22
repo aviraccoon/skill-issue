@@ -1,3 +1,4 @@
+import { WEEKEND_TOTAL_POINTS } from "../data/timeBlocks";
 import { strings } from "../i18n";
 import type { GameState, TimeBlock } from "../state";
 import { pickVariant } from "../utils/random";
@@ -29,9 +30,18 @@ export function getDogUrgency(state: GameState): DogUrgency {
 		return "normal";
 	}
 
-	// Base urgency from time block (weekends don't have time blocks, use afternoon as default)
-	const baseUrgency =
-		state.dayIndex >= 5 ? 1 : TIME_BLOCK_URGENCY[state.timeBlock];
+	// Base urgency from time block, or from remaining points on weekends
+	let baseUrgency: number;
+	if (state.dayIndex >= 5) {
+		// Weekend: escalate as points deplete
+		const ratio = state.weekendPointsRemaining / WEEKEND_TOTAL_POINTS;
+		if (ratio > 0.6) baseUrgency = 0;
+		else if (ratio > 0.35) baseUrgency = 1;
+		else if (ratio > 0.15) baseUrgency = 2;
+		else baseUrgency = 3;
+	} else {
+		baseUrgency = TIME_BLOCK_URGENCY[state.timeBlock];
+	}
 
 	// If dog wasn't walked yesterday, floor urgency at 1
 	const urgencyFloor = state.dogFailedYesterday ? 1 : 0;

@@ -98,6 +98,7 @@ function getMenuScreenInfo(): MenuScreenInfo {
 			? {
 					day: s.days[summaries.main.day],
 					timeBlock: s.timeBlocks[summaries.main.timeBlock],
+					completed: summaries.main.completed,
 				}
 			: null,
 		seededRunSummary: summaries.seeded
@@ -105,6 +106,7 @@ function getMenuScreenInfo(): MenuScreenInfo {
 					day: s.days[summaries.seeded.day],
 					timeBlock: s.timeBlocks[summaries.seeded.timeBlock],
 					seed: summaries.seeded.seed,
+					completed: summaries.seeded.completed,
 				}
 			: null,
 		patternsUnlocked: patterns.unlocked,
