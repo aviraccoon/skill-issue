@@ -30,7 +30,11 @@ import { getDayBlocks } from "../systems/dailyJitter";
 import { getDogUrgency, getUrgencyDisplay } from "../systems/dog";
 import { getEvolvedDescription } from "../systems/evolution";
 import { getRescueCost } from "../systems/friend";
-import { getPatterns, getSavedGameSummaries } from "../systems/persistence";
+import {
+	getMillisUntilNextDaily,
+	getPatterns,
+	getSavedGameSummaries,
+} from "../systems/persistence";
 import { pickVariant, seededShuffle } from "../utils/random";
 import { type Decision, getAvailableDecisions } from "./controller";
 import type {
@@ -92,6 +96,15 @@ function getMenuScreenInfo(): MenuScreenInfo {
 	const summaries = getSavedGameSummaries();
 	const patterns = getPatterns();
 
+	// Compute daily date label and time remaining
+	const now = new Date();
+	const dailyDateLabel = s.dates.shortDate(now.getUTCMonth(), now.getUTCDate());
+	const millisLeft = getMillisUntilNextDaily(now);
+	const hoursLeft = Math.floor(millisLeft / 3600000);
+	const minutesLeft = Math.floor((millisLeft % 3600000) / 60000);
+	const dailyTimeRemaining = s.menu.dailyTimeRemaining(hoursLeft, minutesLeft);
+
+	const dailySummary = summaries.daily;
 	return {
 		type: "menu",
 		mainRunSummary: summaries.main
@@ -109,6 +122,24 @@ function getMenuScreenInfo(): MenuScreenInfo {
 					completed: summaries.seeded.completed,
 				}
 			: null,
+		dailyRunSummary: dailySummary
+			? {
+					day: s.days[dailySummary.day],
+					timeBlock: s.timeBlocks[dailySummary.timeBlock],
+					seed: dailySummary.seed,
+					completed: dailySummary.completed,
+					newDailyAvailable: dailySummary.newDailyAvailable,
+					dateLabel: dailySummary.dailyDate
+						? s.dates.shortDate(
+								dailySummary.dailyDate.month,
+								dailySummary.dailyDate.day,
+							)
+						: dailyDateLabel,
+				}
+			: null,
+		dailyAvailable: !dailySummary || dailySummary.newDailyAvailable,
+		dailyDateLabel,
+		dailyTimeRemaining,
 		patternsUnlocked: patterns.unlocked,
 	};
 }

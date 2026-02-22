@@ -4,6 +4,7 @@ import type { GameState } from "../state";
 import type { Store } from "../store";
 import {
 	createNewGame,
+	getDailySeed,
 	getPatterns,
 	loadGame,
 	resetRun,
@@ -15,9 +16,12 @@ import { createSettingsDialog, openSettingsDialog } from "./SettingsDialog";
 /** Tracks whether we've created the dialogs. */
 let dialogsCreated = false;
 
+/** Interval for refreshing the daily timer. */
+let timerInterval: ReturnType<typeof setInterval> | null = null;
+
 /**
  * Renders the main menu screen.
- * Shows Continue (if save exists), New Game, and seed input.
+ * Shows Continue (if save exists), New Game, daily seed, and custom seed input.
  */
 export function renderMainMenu(
 	screenInfo: MenuScreenInfo,
@@ -26,6 +30,12 @@ export function renderMainMenu(
 ) {
 	const s = strings();
 	const patterns = getPatterns();
+
+	// Clear any previous timer refresh interval
+	if (timerInterval !== null) {
+		clearInterval(timerInterval);
+		timerInterval = null;
+	}
 
 	// Create dialogs once
 	if (!dialogsCreated) {
@@ -64,6 +74,55 @@ export function renderMainMenu(
 		`;
 	}
 
+	// Build daily section
+	// All string content comes from i18n (trusted source), not user input
+	const daily = screenInfo.dailyRunSummary;
+	const dailyTitle = s.menu.todaysDaily(screenInfo.dailyDateLabel);
+	const dailyTimer = `<span class="${styles.dailyTimer}">${screenInfo.dailyTimeRemaining}</span>`;
+	let dailyHtml = "";
+	if (daily && !daily.completed && !daily.newDailyAvailable) {
+		// In-progress daily for today: show continue button + timer
+		const subtext = s.menu.dailySubtext(daily.day, daily.timeBlock);
+		dailyHtml = `
+			<button class="btn btn-secondary ${styles.dailyContinueBtn}">
+				<span class="${styles.btnLabel}">${s.menu.continueDaily}</span>
+				<span class="${styles.btnSubtext}">${subtext}</span>
+			</button>
+			${dailyTimer}
+		`;
+	} else if (daily?.completed && !daily.newDailyAvailable) {
+		// Completed today's daily: show view summary + timer
+		dailyHtml = `
+			<p class="${styles.dailyNotice}">
+				${s.menu.dailyRunComplete(daily.dateLabel, daily.seed)}
+				<button class="btn btn-secondary ${styles.dailyViewBtn}">${s.menu.viewSummary}</button>
+			</p>
+			${dailyTimer}
+		`;
+	} else if (daily?.newDailyAvailable) {
+		// Old daily exists but new one available: show both
+		const oldLabel = daily.completed
+			? s.menu.dailyRunComplete(daily.dateLabel, daily.seed)
+			: s.menu.dailyRunNotice(daily.dateLabel, daily.day, daily.seed);
+		const oldBtnLabel = daily.completed
+			? s.menu.viewSummary
+			: s.menu.continueDaily;
+		dailyHtml = `
+			<button class="btn btn-primary ${styles.dailyStartBtn}">${dailyTitle}</button>
+			${dailyTimer}
+			<p class="${styles.dailyNotice}">
+				${oldLabel}
+				<button class="btn btn-secondary ${styles.dailyOldBtn}">${oldBtnLabel}</button>
+			</p>
+		`;
+	} else {
+		// No daily save: show start button + timer
+		dailyHtml = `
+			<button class="btn btn-primary ${styles.dailyStartBtn}">${dailyTitle}</button>
+			${dailyTimer}
+		`;
+	}
+
 	// Build seeded run notice if exists
 	// All string content comes from i18n (trusted source), not user input
 	let seededNoticeHtml = "";
@@ -91,6 +150,10 @@ export function renderMainMenu(
 
 			<div class="${styles.actions}">
 				${mainRunHtml}
+			</div>
+
+			<div class="${styles.dailySection}">
+				${dailyHtml}
 			</div>
 
 			<div class="${styles.seedSection}">
@@ -169,6 +232,45 @@ export function renderMainMenu(
 		store.setState(newState);
 	});
 
+	// Wire up daily buttons
+	const dailyStartBtn = container.querySelector<HTMLElement>(
+		`.${styles.dailyStartBtn}`,
+	);
+	const dailyContinueBtn = container.querySelector<HTMLElement>(
+		`.${styles.dailyContinueBtn}`,
+	);
+	const dailyViewBtn = container.querySelector<HTMLElement>(
+		`.${styles.dailyViewBtn}`,
+	);
+	const dailyOldBtn = container.querySelector<HTMLElement>(
+		`.${styles.dailyOldBtn}`,
+	);
+
+	dailyStartBtn?.addEventListener("click", () => {
+		startDailyGame(store, patterns.hasSeenIntro);
+	});
+
+	dailyContinueBtn?.addEventListener("click", () => {
+		const savedGame = loadGame("daily");
+		if (savedGame) {
+			store.setState(savedGame);
+		}
+	});
+
+	dailyViewBtn?.addEventListener("click", () => {
+		const savedGame = loadGame("daily");
+		if (savedGame) {
+			store.setState(savedGame);
+		}
+	});
+
+	dailyOldBtn?.addEventListener("click", () => {
+		const savedGame = loadGame("daily");
+		if (savedGame) {
+			store.setState(savedGame);
+		}
+	});
+
 	// Seed input and button
 	const seedInput = container.querySelector<HTMLInputElement>(
 		`.${styles.seedInput}`,
@@ -211,6 +313,32 @@ export function renderMainMenu(
 	settingsBtn?.addEventListener("click", () => {
 		openSettingsDialog();
 	});
+
+	// Refresh the daily timer every minute while on the menu screen.
+	// Cleared at the top of renderMainMenu on next render, or self-clears
+	// if the user navigated away.
+	const interval = setInterval(() => {
+		if (store.getState().screen !== "menu") {
+			clearInterval(interval);
+			timerInterval = null;
+			return;
+		}
+		store.setState(store.getState());
+	}, 60_000);
+	timerInterval = interval;
+}
+
+/**
+ * Starts a new daily seed game.
+ */
+function startDailyGame(store: Store<GameState>, hasSeenIntro?: boolean) {
+	const seed = getDailySeed();
+	resetRun("daily");
+	const newState = createNewGame(seed, "daily");
+	if (hasSeenIntro && newState.screen === "intro") {
+		newState.screen = "game";
+	}
+	store.setState(newState);
 }
 
 /**

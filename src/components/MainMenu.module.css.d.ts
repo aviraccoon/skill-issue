@@ -3,6 +3,13 @@ declare const styles: {
 	readonly btnLabel: string;
 	readonly btnSubtext: string;
 	readonly continueBtn: string;
+	readonly dailyContinueBtn: string;
+	readonly dailyNotice: string;
+	readonly dailyOldBtn: string;
+	readonly dailySection: string;
+	readonly dailyStartBtn: string;
+	readonly dailyTimer: string;
+	readonly dailyViewBtn: string;
 	readonly menu: string;
 	readonly newGameBtn: string;
 	readonly patternsBtn: string;

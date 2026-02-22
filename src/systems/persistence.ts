@@ -22,6 +22,7 @@ import {
 	type Task,
 	type TimeBlock,
 } from "../state";
+import { mulberry32 } from "../utils/random";
 import { selectEventsForSeed } from "./eventSelection";
 import { createObligationTask } from "./events";
 import { CURRENT_SAVE_VERSION, runMigrations } from "./migrations";
@@ -30,6 +31,31 @@ import { getPersonalityFromSeed } from "./personality";
 import { selectTasksForSeed } from "./taskSelection";
 
 const STORAGE_KEY = "skill-issue-save";
+
+/**
+ * Generates a deterministic seed from a UTC date.
+ * Same UTC date always produces the same seed worldwide.
+ * Uses mulberry32 to hash the YYYYMMDD integer into a well-distributed seed value.
+ */
+export function getDailySeed(date?: Date): number {
+	const d = date ?? new Date();
+	const dateNum =
+		d.getUTCFullYear() * 10000 + (d.getUTCMonth() + 1) * 100 + d.getUTCDate();
+	// Hash through mulberry32 to get a well-distributed seed
+	const rng = mulberry32(dateNum);
+	return (rng() * 2147483647) | 0;
+}
+
+/**
+ * Gets milliseconds until next UTC midnight (when the daily seed changes).
+ */
+export function getMillisUntilNextDaily(now?: Date): number {
+	const d = now ?? new Date();
+	const nextMidnight = new Date(
+		Date.UTC(d.getUTCFullYear(), d.getUTCMonth(), d.getUTCDate() + 1),
+	);
+	return nextMidnight.getTime() - d.getTime();
+}
 
 /** Runtime state for a task - the only thing we persist. */
 interface SavedTask {
@@ -77,6 +103,8 @@ export interface SavedState {
 	firstAttemptAvailable?: boolean;
 	events?: SavedEventInstance[];
 	eventFlags?: string[];
+	/** UTC month (0-indexed) and day when this daily was started. Only set for daily mode. */
+	dailyDate?: { month: number; day: number };
 }
 
 /** A completed run stored in patterns history. */
@@ -102,6 +130,7 @@ export interface PatternsData {
 export interface SaveRuns {
 	main: SavedState | null;
 	seeded: SavedState | null;
+	daily?: SavedState | null;
 }
 
 /** Top-level save structure (version 4). */
@@ -127,6 +156,7 @@ function createEmptySaveData(): SaveDataV4 {
 		runs: {
 			main: null,
 			seeded: null,
+			daily: null,
 		},
 		patterns: createEmptyPatterns(),
 		savedAt: Date.now(),
@@ -227,11 +257,21 @@ function writeSaveData(data: SaveDataV4): void {
  */
 export function saveGame(state: GameState, mode: GameMode): void {
 	const existing = loadSaveData();
+	const saved = toSavedState(state);
+	// For daily saves, preserve the original start date or capture it now
+	if (mode === "daily") {
+		const existingDaily = existing.runs.daily;
+		const now = new Date();
+		saved.dailyDate = existingDaily?.dailyDate ?? {
+			month: now.getUTCMonth(),
+			day: now.getUTCDate(),
+		};
+	}
 	const data: SaveDataV4 = {
 		version: 4,
 		runs: {
 			...existing.runs,
-			[mode]: toSavedState(state),
+			[mode]: saved,
 		},
 		patterns: existing.patterns,
 		savedAt: Date.now(),
@@ -251,7 +291,7 @@ export function loadGame(mode: GameMode): GameState | null {
 	}
 	const state = fromSavedState(saved);
 	// Merge saved event state with seed-selected canonical list
-	const bypassProgression = (saved.gameMode ?? "main") === "seeded";
+	const bypassProgression = (saved.gameMode ?? "main") !== "main";
 	const freshEvents = selectEventsForSeed(
 		state.runSeed,
 		data.patterns,
@@ -319,7 +359,7 @@ export function createNewGame(
 		state.firstAttemptAvailable = true;
 	}
 	// Select narrative events for this run
-	const bypassProgression = mode === "seeded";
+	const bypassProgression = mode !== "main";
 	state.events = selectEventsForSeed(
 		state.runSeed,
 		data.patterns,
@@ -336,25 +376,37 @@ export function hasSavedGame(mode: GameMode): boolean {
 	return data.runs[mode] !== null;
 }
 
+/** Summary of a saved run for menu display. */
+export interface SavedRunSummary {
+	day: Day;
+	dayIndex: number;
+	timeBlock: TimeBlock;
+	completed: boolean;
+}
+
+/** Summary of a seeded run (includes seed number). */
+export interface SeededRunSummary extends SavedRunSummary {
+	seed: number;
+}
+
+/** Summary of a daily run (includes seed number and whether a new daily is available). */
+export interface DailyRunSummary extends SavedRunSummary {
+	seed: number;
+	newDailyAvailable: boolean;
+	/** UTC month (0-indexed) and day the daily was started. */
+	dailyDate?: { month: number; day: number };
+}
+
 /**
  * Gets summary info about saved games for the menu.
  */
 export function getSavedGameSummaries(): {
-	main: {
-		day: Day;
-		dayIndex: number;
-		timeBlock: TimeBlock;
-		completed: boolean;
-	} | null;
-	seeded: {
-		day: Day;
-		dayIndex: number;
-		timeBlock: TimeBlock;
-		seed: number;
-		completed: boolean;
-	} | null;
+	main: SavedRunSummary | null;
+	seeded: SeededRunSummary | null;
+	daily: DailyRunSummary | null;
 } {
 	const data = loadSaveData();
+	const dailySave = data.runs.daily;
 	return {
 		main: data.runs.main
 			? {
@@ -371,6 +423,17 @@ export function getSavedGameSummaries(): {
 					timeBlock: data.runs.seeded.timeBlock,
 					seed: data.runs.seeded.runSeed,
 					completed: data.runs.seeded.screen === "weekComplete",
+				}
+			: null,
+		daily: dailySave
+			? {
+					day: dailySave.day,
+					dayIndex: dailySave.dayIndex,
+					timeBlock: dailySave.timeBlock,
+					seed: dailySave.runSeed,
+					completed: dailySave.screen === "weekComplete",
+					newDailyAvailable: dailySave.runSeed !== getDailySeed(),
+					dailyDate: dailySave.dailyDate,
 				}
 			: null,
 	};

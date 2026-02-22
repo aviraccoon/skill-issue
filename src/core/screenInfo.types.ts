@@ -139,6 +139,22 @@ export interface MenuScreenInfo {
 		seed: number;
 		completed: boolean;
 	} | null;
+	/** Summary of daily run if exists, null if no save. */
+	dailyRunSummary: {
+		day: string;
+		timeBlock: string;
+		seed: number;
+		completed: boolean;
+		newDailyAvailable: boolean;
+		/** Date label for the saved daily (e.g., "Feb 20"). */
+		dateLabel: string;
+	} | null;
+	/** Whether a daily seed game is available (no save, or new date). */
+	dailyAvailable: boolean;
+	/** Today's daily date label (e.g., "Feb 22"). */
+	dailyDateLabel: string;
+	/** Time remaining until next daily resets (e.g., "5h 23m left"). */
+	dailyTimeRemaining: string;
 	/** Whether patterns have been unlocked (at least one completion). */
 	patternsUnlocked: boolean;
 }

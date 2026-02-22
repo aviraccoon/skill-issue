@@ -203,7 +203,7 @@ export type Screen =
 	| "patterns";
 
 /** Game mode determines which save slot to use. */
-export type GameMode = "main" | "seeded";
+export type GameMode = "main" | "seeded" | "daily";
 
 export interface GameState {
 	day: Day;

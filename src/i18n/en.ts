@@ -101,6 +101,8 @@ export const en = {
 		// Week complete
 		weekComplete: "Week Complete",
 		startNewWeek: "Start New Week",
+		copyResults: "Copy Results",
+		resultsCopied: "Copied!",
 	},
 
 	intro: {
@@ -166,6 +168,48 @@ export const en = {
 			`Seeded run in progress: ${day} (seed ${seed})`,
 		seededRunComplete: (seed: number) => `Seeded run complete (seed ${seed})`,
 		settings: "Settings",
+		// Daily seed
+		todaysDaily: (date: string) => `Daily: ${date}`,
+		continueDaily: "Continue Daily",
+		dailySubtext: (day: string, time: string) => `${day}, ${time}`,
+		dailyRunNotice: (date: string, day: string, seed: number) =>
+			`${date} daily in progress: ${day} (seed ${seed})`,
+		dailyRunComplete: (date: string, seed: number) =>
+			`${date} daily complete (seed ${seed})`,
+		newDailyAvailable: "New daily available",
+		dailyTimeRemaining: (hours: number, minutes: number) => {
+			if (hours > 0) return `${hours}h ${minutes}m left`;
+			return `${minutes}m left`;
+		},
+	},
+
+	/** Date and time formatting. */
+	dates: {
+		/** Formats a UTC date as "Mon Day" (e.g., "Feb 22"). Month is 0-indexed. */
+		shortDate: (monthIndex: number, day: number) => {
+			const months = [
+				"Jan",
+				"Feb",
+				"Mar",
+				"Apr",
+				"May",
+				"Jun",
+				"Jul",
+				"Aug",
+				"Sep",
+				"Oct",
+				"Nov",
+				"Dec",
+			];
+			return `${months[monthIndex] ?? "???"} ${day}`;
+		},
+	},
+
+	/** Mode labels for shareable results. */
+	share: {
+		daily: "Daily",
+		seeded: "Seeded",
+		main: "Week",
 	},
 
 	settings: {

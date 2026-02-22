@@ -118,14 +118,19 @@ export function renderWeekComplete(
 		</section>
 	`;
 
+	// All string content comes from i18n (trusted source), not user input
+	const showRestart = state.gameMode === "main";
+	const showCopy = state.gameMode === "daily" || state.gameMode === "seeded";
+
 	container.innerHTML = `
 		<div class="${styles.summary}">
 			<h1 class="${styles.title}">${s.game.weekComplete}</h1>
 			<div class="${styles.story}">${narrativeParagraphs}</div>
 			${patternsHtml}
 			<div class="${styles.actions}">
-				${state.gameMode === "main" ? `<button class="btn btn-primary ${styles.restartBtn}">${s.game.startNewWeek}</button>` : ""}
-				<button class="btn ${state.gameMode === "main" ? `btn-secondary ${styles.menuBtn}` : `btn-primary ${styles.menuBtn}`}">${s.game.menu}</button>
+				${showRestart ? `<button class="btn btn-primary ${styles.restartBtn}">${s.game.startNewWeek}</button>` : ""}
+				${showCopy ? `<button class="btn btn-secondary ${styles.copyBtn}">${s.game.copyResults}</button>` : ""}
+				<button class="btn ${showRestart ? `btn-secondary ${styles.menuBtn}` : `btn-primary ${styles.menuBtn}`}">${s.game.menu}</button>
 			</div>
 		</div>
 	`;
@@ -158,9 +163,60 @@ export function renderWeekComplete(
 			});
 		});
 
+	// Copy Results button
+	const copyBtn = container.querySelector<HTMLElement>(`.${styles.copyBtn}`);
+	copyBtn?.addEventListener("click", () => {
+		const text = formatShareableResults(screenInfo, state, s);
+		navigator.clipboard.writeText(text).then(() => {
+			if (copyBtn) {
+				copyBtn.textContent = s.game.resultsCopied;
+				setTimeout(() => {
+					copyBtn.textContent = s.game.copyResults;
+				}, 2000);
+			}
+		});
+	});
+
 	container
 		.querySelector(`.${styles.menuBtn}`)
 		?.addEventListener("click", () => {
 			store.set("screen", "menu");
 		});
+}
+
+/**
+ * Formats run results as shareable plaintext.
+ */
+function formatShareableResults(
+	screenInfo: WeekCompleteInfo,
+	state: GameState,
+	s: ReturnType<typeof strings>,
+): string {
+	const { patterns: p } = screenInfo;
+	const stats = state.runStats;
+	const modeLabel =
+		s.share[state.gameMode as keyof typeof s.share] ?? state.gameMode;
+	const lines = [
+		`Skill Issue - ${modeLabel} (seed ${p.seed})`,
+		"",
+		`${stats.tasks.succeeded}/${stats.tasks.attempted} tasks`,
+		`${Math.round(p.successRate * 100)}% success rate`,
+	];
+
+	if (p.bestTimeBlock) {
+		lines.push(`Best time: ${s.timeBlocks[p.bestTimeBlock]}`);
+	}
+	if (p.phoneChecks > 0) {
+		lines.push(`Phone checks: ${p.phoneChecks}`);
+	}
+	if (p.allNighters > 0) {
+		lines.push(`All-nighters: ${p.allNighters}`);
+	}
+	if (p.friendRescues.triggered > 0) {
+		lines.push(
+			`Friend rescues: ${p.friendRescues.accepted}/${p.friendRescues.triggered}`,
+		);
+	}
+
+	return lines.join("\n");
 }

@@ -3,6 +3,8 @@ import { createTestState } from "../test-utils";
 import {
 	clearAllData,
 	createNewGame,
+	getDailySeed,
+	getMillisUntilNextDaily,
 	getPatterns,
 	getSavedGameSummaries,
 	hasHintBeenShown,
@@ -527,5 +529,119 @@ describe("clearAllData", () => {
 		expect(hasSavedGame("seeded")).toBe(false);
 		expect(getPatterns().unlocked).toBe(false);
 		expect(getPatterns().history.length).toBe(0);
+	});
+});
+
+describe("getDailySeed", () => {
+	test("is deterministic for the same date", () => {
+		const date = new Date(Date.UTC(2026, 1, 22));
+		const seed1 = getDailySeed(date);
+		const seed2 = getDailySeed(date);
+		expect(seed1).toBe(seed2);
+	});
+
+	test("differs between dates", () => {
+		const day1 = getDailySeed(new Date(Date.UTC(2026, 1, 22)));
+		const day2 = getDailySeed(new Date(Date.UTC(2026, 1, 23)));
+		const day3 = getDailySeed(new Date(Date.UTC(2026, 1, 24)));
+		expect(day1).not.toBe(day2);
+		expect(day2).not.toBe(day3);
+		expect(day1).not.toBe(day3);
+	});
+
+	test("returns a positive integer", () => {
+		for (let month = 0; month < 12; month++) {
+			const seed = getDailySeed(new Date(Date.UTC(2026, month, 15)));
+			expect(seed).toBeGreaterThan(0);
+			expect(Number.isInteger(seed)).toBe(true);
+		}
+	});
+
+	test("uses UTC date (same seed regardless of timezone offset)", () => {
+		// Two dates that are the same UTC day but could differ in local time
+		const earlyUTC = new Date(Date.UTC(2026, 5, 15, 2, 0, 0));
+		const lateUTC = new Date(Date.UTC(2026, 5, 15, 23, 0, 0));
+		expect(getDailySeed(earlyUTC)).toBe(getDailySeed(lateUTC));
+	});
+});
+
+describe("getMillisUntilNextDaily", () => {
+	test("returns positive value", () => {
+		const millis = getMillisUntilNextDaily();
+		expect(millis).toBeGreaterThan(0);
+	});
+
+	test("returns less than 24 hours", () => {
+		const millis = getMillisUntilNextDaily();
+		expect(millis).toBeLessThanOrEqual(24 * 60 * 60 * 1000);
+	});
+
+	test("returns correct value for known time", () => {
+		// 6pm UTC -> 6 hours until midnight
+		const sixPM = new Date(Date.UTC(2026, 5, 15, 18, 0, 0));
+		const millis = getMillisUntilNextDaily(sixPM);
+		expect(millis).toBe(6 * 60 * 60 * 1000);
+	});
+});
+
+describe("daily save slot", () => {
+	test("daily slot starts empty", () => {
+		expect(hasSavedGame("daily")).toBe(false);
+		expect(loadGame("daily")).toBeNull();
+	});
+
+	test("save and load daily game", () => {
+		const state = createTestState({
+			day: "tuesday",
+			dayIndex: 1,
+			gameMode: "daily",
+		});
+		saveGame(state, "daily");
+		expect(hasSavedGame("daily")).toBe(true);
+		const loaded = loadGame("daily");
+		expect(loaded?.day).toBe("tuesday");
+		expect(loaded?.gameMode).toBe("daily");
+	});
+
+	test("daily slot independent from main and seeded", () => {
+		saveGame(createTestState({ day: "monday" }), "main");
+		saveGame(createTestState({ day: "friday" }), "seeded");
+		saveGame(createTestState({ day: "wednesday", gameMode: "daily" }), "daily");
+		expect(loadGame("main")?.day).toBe("monday");
+		expect(loadGame("seeded")?.day).toBe("friday");
+		expect(loadGame("daily")?.day).toBe("wednesday");
+	});
+
+	test("resetting daily preserves other slots", () => {
+		saveGame(createTestState(), "main");
+		saveGame(createTestState({ gameMode: "daily" }), "daily");
+		resetRun("daily");
+		expect(hasSavedGame("daily")).toBe(false);
+		expect(hasSavedGame("main")).toBe(true);
+	});
+
+	test("daily summary includes newDailyAvailable", () => {
+		const todaySeed = getDailySeed();
+		saveGame(
+			createTestState({ runSeed: todaySeed, gameMode: "daily" }),
+			"daily",
+		);
+		const summaries = getSavedGameSummaries();
+		expect(summaries.daily).not.toBeNull();
+		expect(summaries.daily?.seed).toBe(todaySeed);
+		expect(summaries.daily?.newDailyAvailable).toBe(false);
+	});
+
+	test("newDailyAvailable true when saved seed differs from today", () => {
+		saveGame(createTestState({ runSeed: 99999, gameMode: "daily" }), "daily");
+		const summaries = getSavedGameSummaries();
+		// 99999 is very unlikely to match today's daily seed
+		expect(summaries.daily?.newDailyAvailable).toBe(true);
+	});
+
+	test("daily mode bypasses progression for events", () => {
+		const state = createNewGame(42, "daily");
+		expect(state.events.length).toBeGreaterThan(0);
+		expect(state.gameMode).toBe("daily");
 	});
 });
