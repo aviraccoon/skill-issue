@@ -49,6 +49,8 @@ export interface GameAreaProps {
 	variants: ItemVariants;
 	/** Theme colors for highlights. */
 	themeColors: ThemeColors;
+	/** Override computed dog mood (for playground/debug). */
+	dogMoodOverride?: DogMoodState;
 }
 
 /** How long dog reacts to phone checks (ms). */
@@ -242,8 +244,8 @@ export function renderGameArea(
 		}
 	}
 
-	// Compute dog state
-	const dogMood = computeDogMood(props);
+	// Compute dog state (allow override for playground)
+	const dogMood = props.dogMoodOverride ?? computeDogMood(props);
 	const dogPos = computeDogPosition(props);
 
 	// Draw dog (before character for layering)

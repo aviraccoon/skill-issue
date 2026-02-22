@@ -99,6 +99,9 @@ export function initDevTools(store: Store<GameState>) {
 				<button class="${styles.btn}" data-action="momentum-up">M+</button>
 				<button class="${styles.btn}" data-action="momentum-down">M-</button>
 				<button class="${styles.btn}" data-action="sim-day">Sim Day</button>
+				<button class="${styles.btn}" data-action="playground">Art</button>
+			</div>
+			<div class="${styles.dangerControls}">
 				<button class="${styles.btn} ${styles.btnDanger}" data-action="clear-run">Clear Run</button>
 				<button class="${styles.btn} ${styles.btnDanger}" data-action="clear-all">Clear All</button>
 			</div>
@@ -187,6 +190,10 @@ export function initDevTools(store: Store<GameState>) {
 				break;
 			case "sim-day":
 				simulateDay(store);
+				break;
+			case "playground":
+				location.hash = "#playground";
+				location.reload();
 				break;
 			case "clear-run":
 				resetRun(store.getState().gameMode);

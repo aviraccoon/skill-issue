@@ -5,6 +5,7 @@ declare const styles: {
 	readonly container: string;
 	readonly content: string;
 	readonly controls: string;
+	readonly dangerControls: string;
 	readonly header: string;
 	readonly headerRight: string;
 	readonly key: string;

@@ -143,6 +143,15 @@
 	border-top: 1px solid var(--border);
 }
 
+.dangerControls {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 0.35rem;
+	margin-top: 0.35rem;
+	padding-top: 0.35rem;
+	border-top: 1px dashed var(--border);
+}
+
 .btn {
 	padding: 0.25rem 0.5rem;
 	background: var(--accent);
