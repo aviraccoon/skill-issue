@@ -66,6 +66,7 @@ export interface SimulationResult {
  */
 export interface SimulationObserver {
 	onAction?(state: GameState, decision: Decision, result: ActionResult): void;
+	onDayStart?(state: GameState): void;
 	onDayEnd?(state: GameState, summary: DaySummary): void;
 	onWeekEnd?(result: SimulationResult): void;
 }
@@ -138,6 +139,7 @@ export function simulate(
 		// Handle day summary screen - auto-continue
 		if (state.screen === "daySummary") {
 			continueToNextDay(store);
+			observer?.onDayStart?.(store.getState());
 			continue;
 		}
 

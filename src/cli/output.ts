@@ -132,6 +132,20 @@ const verboseObserver: SimulationObserver = {
 		}
 	},
 
+	onDayStart(state: GameState) {
+		// Show dayStart event banners (disruption events, obligations, etc.)
+		if (state.eventBanner) {
+			for (const line of state.eventBanner.text.split("\n\n")) {
+				if (line.trim()) {
+					console.log(`    Event: ${line}`);
+				}
+			}
+		}
+		if (state.eventBlockedTasks.length > 0) {
+			console.log(`    Blocked: ${state.eventBlockedTasks.join(", ")}`);
+		}
+	},
+
 	onDayEnd(_state: GameState, summary: DaySummary) {
 		console.log("");
 		console.log(`--- ${summary.day.toUpperCase()} END ---`);
