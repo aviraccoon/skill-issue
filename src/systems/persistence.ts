@@ -518,6 +518,7 @@ function fromSavedState(saved: SavedState): GameState {
 		activeEventId,
 		eventBanner: null, // Transient, not persisted
 		eventBlockedTasks: [], // Transient, not persisted
+		dogIsAway: false, // Transient, not persisted
 	};
 }
 

@@ -279,6 +279,9 @@ export interface GameState {
 
 	// Tasks blocked by events for current day (transient, cleared at day transition)
 	eventBlockedTasks: TaskId[];
+
+	// Dog is away for the day (transient, cleared at day transition)
+	dogIsAway: boolean;
 }
 
 /** Returns true if the current day is Saturday or Sunday. */
@@ -337,6 +340,7 @@ export function createInitialState(
 		activeEventId: null,
 		eventBanner: null,
 		eventBlockedTasks: [],
+		dogIsAway: false,
 	};
 }
 

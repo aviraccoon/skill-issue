@@ -385,6 +385,9 @@ function applyEventEffects(
 			return combined;
 		});
 	}
+	if (effects.dogAway) {
+		store.set("dogIsAway", true);
+	}
 	if (effects.skipCurrentBlock) {
 		if (isWeekend(store.getState())) {
 			store.update("weekendPointsRemaining", (p) =>

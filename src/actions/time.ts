@@ -152,9 +152,10 @@ export function continueToNextDay(store: Store<GameState>) {
 	store.set("friendRescueUsedToday", false);
 	store.set("friendRescueChanceBonus", 0);
 
-	// Clear task selection and event blocks for new day
+	// Clear task selection and event state for new day
 	store.set("selectedTaskId", null);
 	store.set("eventBlockedTasks", []);
+	store.set("dogIsAway", false);
 
 	// Fire all matching dayStart events (minor stack, major halts)
 	fireAllMinorEvents(store, "dayStart");

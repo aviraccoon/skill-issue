@@ -273,6 +273,7 @@ function rerenderGameArea(
 		lastTaskOutcome: s.lastTaskOutcome,
 		lastTaskTime: s.lastTaskTime,
 		dogUrgency: getDogUrgency(s),
+		dogIsAway: s.dogIsAway,
 		layout,
 		renderer,
 		timePalette,

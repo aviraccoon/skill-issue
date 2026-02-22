@@ -51,6 +51,8 @@ export interface GameAreaProps {
 	themeColors: ThemeColors;
 	/** Override computed dog mood (for playground/debug). */
 	dogMoodOverride?: DogMoodState;
+	/** Dog is away (e.g. at groomer) -- skip rendering. */
+	dogIsAway?: boolean;
 }
 
 /** How long dog reacts to phone checks (ms). */
@@ -244,20 +246,21 @@ export function renderGameArea(
 		}
 	}
 
-	// Compute dog state (allow override for playground)
-	const dogMood = props.dogMoodOverride ?? computeDogMood(props);
-	const dogPos = computeDogPosition(props);
+	// Draw dog (before character for layering), unless away (e.g. at groomer)
+	if (!props.dogIsAway) {
+		const dogMood = props.dogMoodOverride ?? computeDogMood(props);
+		const dogPos = computeDogPosition(props);
 
-	// Draw dog (before character for layering)
-	renderer.drawDog(
-		ctx,
-		dogPos.x,
-		dogPos.y,
-		variants.dog,
-		timePalette,
-		dogMood,
-		props.energy,
-	);
+		renderer.drawDog(
+			ctx,
+			dogPos.x,
+			dogPos.y,
+			variants.dog,
+			timePalette,
+			dogMood,
+			props.energy,
+		);
+	}
 
 	// Draw character
 	const charPos = props.animationState

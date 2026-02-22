@@ -70,6 +70,8 @@ export interface EventEffects {
 	skipCurrentBlock?: boolean;
 	/** Block tasks from appearing in available list for the rest of this day. */
 	blockTasks?: TaskId[];
+	/** Dog is away for the day (hide from game area rendering). */
+	dogAway?: boolean;
 }
 
 /** Definition for in-place modification of an existing task by an event. */
@@ -1238,10 +1240,15 @@ export const eventPool: readonly EventDefinition[] = [
 			day: ["tuesday", "wednesday", "thursday", "saturday"],
 			phase: "dayStart",
 		},
-		condition: (state) => state.energy > 0.5,
+		condition: (state) =>
+			state.energy > 0.5 &&
+			// Don't send Azor to the groomer during a week where the dog emergency
+			// arc is active -- narratively contradictory ("at groomer" + "sick at home")
+			!state.events.some((e) => e.id === "azor-sick"),
 		effects: {
 			succeedTask: "walk-dog",
 			blockTasks: ["feed-dog", "play-with-dog", "chill-with-dog"],
+			dogAway: true,
 		},
 		storyCategory: "dog",
 		alwaysSelected: true,
