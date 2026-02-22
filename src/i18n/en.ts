@@ -174,6 +174,10 @@ export const en = {
 		theme: "Theme",
 		language: "Language",
 		accessibility: "Accessibility",
+		clearData: "Clear all data",
+		clearDataConfirm: "This removes all saves and progress. Are you sure?",
+		clearDataYes: "Clear everything",
+		clearDataNo: "Cancel",
 	},
 
 	a11y: {

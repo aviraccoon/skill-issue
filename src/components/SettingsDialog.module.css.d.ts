@@ -1,7 +1,13 @@
 declare const styles: {
 	readonly a11yBtn: string;
 	readonly closeBtn: string;
+	readonly confirmButtons: string;
+	readonly confirmNo: string;
+	readonly confirmText: string;
+	readonly confirmYes: string;
 	readonly content: string;
+	readonly dangerBtn: string;
+	readonly dangerRow: string;
 	readonly dialog: string;
 	readonly header: string;
 	readonly label: string;

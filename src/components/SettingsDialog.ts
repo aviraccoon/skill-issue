@@ -1,4 +1,5 @@
 import { getLocale, setLocale, strings } from "../i18n";
+import { clearAllData } from "../systems/persistence";
 import { initTooltips } from "../utils/tooltip";
 import { openAccessibilityDialog } from "./AccessibilityDialog";
 import styles from "./SettingsDialog.module.css";
@@ -73,6 +74,9 @@ function renderSettingsContent(dialog: HTMLDialogElement) {
 			<div class="${styles.row}">
 				<button class="btn btn-secondary ${styles.a11yBtn}">${s.settings.accessibility}</button>
 			</div>
+			<div class="${styles.row} ${styles.dangerRow}">
+				<button class="btn btn-secondary ${styles.dangerBtn}">${s.settings.clearData}</button>
+			</div>
 		</div>
 	`;
 
@@ -121,6 +125,40 @@ function renderSettingsContent(dialog: HTMLDialogElement) {
 		dialog.close();
 		openAccessibilityDialog();
 	});
+
+	// Clear data button handler (two-step confirmation)
+	dialog
+		.querySelector(`.${styles.dangerBtn}`)
+		?.addEventListener("click", () => {
+			const row = dialog.querySelector(`.${styles.dangerRow}`);
+			if (!row) return;
+			row.replaceChildren();
+
+			const confirmText = document.createElement("p");
+			confirmText.className = styles.confirmText;
+			confirmText.textContent = s.settings.clearDataConfirm;
+
+			const cancelBtn = document.createElement("button");
+			cancelBtn.className = `btn btn-secondary ${styles.confirmNo}`;
+			cancelBtn.textContent = s.settings.clearDataNo;
+			cancelBtn.addEventListener("click", () => {
+				renderSettingsContent(dialog);
+			});
+
+			const confirmBtn = document.createElement("button");
+			confirmBtn.className = `btn btn-secondary ${styles.confirmYes}`;
+			confirmBtn.textContent = s.settings.clearDataYes;
+			confirmBtn.addEventListener("click", () => {
+				clearAllData();
+				window.location.reload();
+			});
+
+			const btnGroup = document.createElement("div");
+			btnGroup.className = styles.confirmButtons;
+			btnGroup.append(cancelBtn, confirmBtn);
+
+			row.append(confirmText, btnGroup);
+		});
 }
 
 /**
