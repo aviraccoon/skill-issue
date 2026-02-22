@@ -31,6 +31,13 @@ export interface SearchCriteria {
 	friendUnlocks: string[];
 	/** Event IDs that must fire (status !== "pending"). */
 	events: string[];
+	/** Score filters (0-100 scale). */
+	minFun: number | null;
+	maxFun: number | null;
+	minFrustration: number | null;
+	maxFrustration: number | null;
+	minEngagement: number | null;
+	maxEngagement: number | null;
 }
 
 /**

@@ -43,14 +43,18 @@ export function runCompare(args: CliArgs): void {
 		// Table header
 		const nameWidth = Math.max(...strategyNames.map((s) => s.length), 8);
 		console.log(
-			`${"Strategy".padEnd(nameWidth)}  Energy   Momentum  All-nighters  Phone  Events  Unlocks`,
+			`${"Strategy".padEnd(nameWidth)}  Fun  Frust  Eng   Energy   Momentum  All-nighters  Phone  Events  Unlocks`,
 		);
-		console.log("-".repeat(nameWidth + 60));
+		console.log("-".repeat(nameWidth + 82));
 
 		// Run each strategy (fresh instance per seed)
 		for (const name of strategyNames) {
 			const strategy = createStrategy(name);
 			const result = simulate(seed, strategy);
+			const { scores } = result.stats;
+			const fun = String(Math.round(scores.fun * 100)).padStart(3);
+			const frust = String(Math.round(scores.frustration * 100)).padStart(3);
+			const eng = String(Math.round(scores.engagement * 100)).padStart(3);
 			const energy = formatPercent(result.stats.energy.end).padStart(6);
 			const momentum = formatPercent(result.stats.momentum.end).padStart(6);
 			const allNighters = String(result.stats.allNighters).padStart(5);
@@ -64,7 +68,7 @@ export function runCompare(args: CliArgs): void {
 					: "-";
 
 			console.log(
-				`${name.padEnd(nameWidth)}  ${energy}   ${momentum}  ${allNighters}         ${phone}  ${events}  ${unlocks}`,
+				`${name.padEnd(nameWidth)}  ${fun}    ${frust}  ${eng}   ${energy}   ${momentum}  ${allNighters}         ${phone}  ${events}  ${unlocks}`,
 			);
 		}
 	} else {
@@ -82,6 +86,9 @@ export function runCompare(args: CliArgs): void {
 				allNighters: number;
 				phone: number;
 				events: number;
+				fun: number;
+				frustration: number;
+				engagement: number;
 				variantUnlocks: Record<string, number>;
 			}
 		> = {};
@@ -93,6 +100,9 @@ export function runCompare(args: CliArgs): void {
 				allNighters: 0,
 				phone: 0,
 				events: 0,
+				fun: 0,
+				frustration: 0,
+				engagement: 0,
 				variantUnlocks: {},
 			};
 		}
@@ -118,6 +128,9 @@ export function runCompare(args: CliArgs): void {
 					stats.momentum += result.stats.momentum.end;
 					stats.allNighters += result.stats.allNighters;
 					stats.phone += result.stats.phoneChecks;
+					stats.fun += result.stats.scores.fun;
+					stats.frustration += result.stats.scores.frustration;
+					stats.engagement += result.stats.scores.engagement;
 					stats.events += result.events.filter(
 						(e) => e.status !== "pending",
 					).length;
@@ -132,15 +145,22 @@ export function runCompare(args: CliArgs): void {
 		// Table header
 		const nameWidth = Math.max(...strategyNames.map((s) => s.length), 8);
 		console.log(
-			`${"Strategy".padEnd(nameWidth)}  Avg Energy  Avg Momentum  All-nighters  Phone  Events`,
+			`${"Strategy".padEnd(nameWidth)}  Fun  Frust  Eng   Avg Energy  Avg Momentum  All-nighters  Phone  Events`,
 		);
-		console.log("-".repeat(nameWidth + 60));
+		console.log("-".repeat(nameWidth + 82));
 
 		// Output results
 		for (const name of strategyNames) {
 			const stats = resultsByStrategy[name];
 			if (stats) {
 				const n = args.runs;
+				const fun = String(Math.round((stats.fun / n) * 100)).padStart(3);
+				const frust = String(
+					Math.round((stats.frustration / n) * 100),
+				).padStart(3);
+				const eng = String(Math.round((stats.engagement / n) * 100)).padStart(
+					3,
+				);
 				const energy = formatPercent(stats.energy / n).padStart(9);
 				const momentum = formatPercent(stats.momentum / n).padStart(11);
 				const allNighters = (stats.allNighters / n).toFixed(1).padStart(7);
@@ -148,7 +168,7 @@ export function runCompare(args: CliArgs): void {
 				const events = (stats.events / n).toFixed(1).padStart(5);
 
 				console.log(
-					`${name.padEnd(nameWidth)}  ${energy}    ${momentum}       ${allNighters}  ${phone}  ${events}`,
+					`${name.padEnd(nameWidth)}  ${fun}    ${frust}  ${eng}   ${energy}    ${momentum}       ${allNighters}  ${phone}  ${events}`,
 				);
 			}
 		}

@@ -72,6 +72,14 @@ function tryParseArgs(): CliArgs {
 			"friend-unlocks": { type: "string", multiple: true },
 			event: { type: "string", multiple: true },
 
+			// Score filters
+			"min-fun": { type: "string" },
+			"max-fun": { type: "string" },
+			"min-frustration": { type: "string" },
+			"max-frustration": { type: "string" },
+			"min-engagement": { type: "string" },
+			"max-engagement": { type: "string" },
+
 			// Debug
 			debug: { type: "boolean", short: "d", default: false },
 
@@ -106,12 +114,15 @@ function tryParseArgs(): CliArgs {
 		return Number.isNaN(n) ? null : n;
 	};
 
-	// Parse energy as decimal (input is 0-100, store as 0-1)
-	const parseEnergy = (v: string | undefined): number | null => {
+	// Parse percentage as decimal (input is 0-100, store as 0-1)
+	const parsePct = (v: string | undefined): number | null => {
 		if (!v) return null;
 		const n = Number.parseFloat(v);
 		return Number.isNaN(n) ? null : n / 100;
 	};
+
+	// Alias for readability
+	const parseEnergy = parsePct;
 
 	const runs = Number.parseInt(values.runs, 10);
 	if (Number.isNaN(runs) || runs < 1) {
@@ -149,6 +160,12 @@ function tryParseArgs(): CliArgs {
 			maxEnergy: parseEnergy(values["max-energy"]),
 			friendUnlocks: values["friend-unlocks"] ?? [],
 			events: values.event ?? [],
+			minFun: parsePct(values["min-fun"]),
+			maxFun: parsePct(values["max-fun"]),
+			minFrustration: parsePct(values["min-frustration"]),
+			maxFrustration: parsePct(values["max-frustration"]),
+			minEngagement: parsePct(values["min-engagement"]),
+			maxEngagement: parsePct(values["max-engagement"]),
 		},
 		limit: parseNum(values.limit) ?? 10,
 		groupBy,

@@ -1,4 +1,5 @@
 import type { SimulationResult } from "./engine";
+import type { RunScores } from "./scoring";
 
 /**
  * Available grouping dimensions.
@@ -40,6 +41,8 @@ export interface RunStats {
 	phoneChecks: number;
 	/** Categories with unlocked variants at end of run. */
 	variantsUnlocked: string[];
+	/** Fun, frustration, and engagement scores (0-1). */
+	scores: RunScores;
 }
 
 /**
@@ -96,6 +99,8 @@ export interface BatchStats {
 	phoneChecksAvg: number;
 	/** Rate at which each variant category was unlocked (0-1). */
 	variantUnlockRates: Record<string, number>;
+	/** Average scores across runs. */
+	scores: RunScores;
 }
 
 /**
@@ -208,6 +213,9 @@ export function aggregateStats(
 	let totalFriendRescuesAccepted = 0;
 	let totalAllNighters = 0;
 	let totalPhoneChecks = 0;
+	let totalFun = 0;
+	let totalFrustration = 0;
+	let totalEngagement = 0;
 	const variantUnlockCounts: Record<string, number> = {};
 
 	for (const result of results) {
@@ -227,6 +235,9 @@ export function aggregateStats(
 		totalFriendRescuesAccepted += result.stats.friendRescues.accepted;
 		totalAllNighters += result.stats.allNighters;
 		totalPhoneChecks += result.stats.phoneChecks;
+		totalFun += result.stats.scores.fun;
+		totalFrustration += result.stats.scores.frustration;
+		totalEngagement += result.stats.scores.engagement;
 
 		// Count variant unlocks by category
 		for (const category of result.stats.variantsUnlocked) {
@@ -287,6 +298,11 @@ export function aggregateStats(
 		allNighterRate: totalAllNighters / n,
 		phoneChecksAvg: totalPhoneChecks / n,
 		variantUnlockRates,
+		scores: {
+			fun: totalFun / n,
+			frustration: totalFrustration / n,
+			engagement: totalEngagement / n,
+		},
 	};
 }
 
@@ -326,6 +342,7 @@ function emptyBatchStats(): BatchStats {
 		allNighterRate: 0,
 		phoneChecksAvg: 0,
 		variantUnlockRates: {},
+		scores: { fun: 0, frustration: 0, engagement: 0 },
 	};
 }
 

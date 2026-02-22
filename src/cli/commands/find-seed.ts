@@ -56,6 +56,7 @@ function matchesSearchCriteria(
 			allNighters: number;
 			energy: { end: number };
 			variantsUnlocked: string[];
+			scores: { fun: number; frustration: number; engagement: number };
 		};
 		events: { id: string; status: string }[];
 	},
@@ -125,6 +126,31 @@ function matchesSearchCriteria(
 		}
 	}
 
+	// Scores
+	const { scores } = result.stats;
+	if (criteria.minFun !== null && scores.fun < criteria.minFun) return false;
+	if (criteria.maxFun !== null && scores.fun > criteria.maxFun) return false;
+	if (
+		criteria.minFrustration !== null &&
+		scores.frustration < criteria.minFrustration
+	)
+		return false;
+	if (
+		criteria.maxFrustration !== null &&
+		scores.frustration > criteria.maxFrustration
+	)
+		return false;
+	if (
+		criteria.minEngagement !== null &&
+		scores.engagement < criteria.minEngagement
+	)
+		return false;
+	if (
+		criteria.maxEngagement !== null &&
+		scores.engagement > criteria.maxEngagement
+	)
+		return false;
+
 	return true;
 }
 
@@ -156,6 +182,18 @@ function formatCriteria(
 		parts.push(`unlocks=${criteria.friendUnlocks.join("+")}`);
 	if (criteria.events.length > 0)
 		parts.push(`events=${criteria.events.join(",")}`);
+	if (criteria.minFun !== null)
+		parts.push(`fun>=${formatPercent(criteria.minFun)}`);
+	if (criteria.maxFun !== null)
+		parts.push(`fun<=${formatPercent(criteria.maxFun)}`);
+	if (criteria.minFrustration !== null)
+		parts.push(`frustration>=${formatPercent(criteria.minFrustration)}`);
+	if (criteria.maxFrustration !== null)
+		parts.push(`frustration<=${formatPercent(criteria.maxFrustration)}`);
+	if (criteria.minEngagement !== null)
+		parts.push(`engagement>=${formatPercent(criteria.minEngagement)}`);
+	if (criteria.maxEngagement !== null)
+		parts.push(`engagement<=${formatPercent(criteria.maxEngagement)}`);
 
 	return parts.length > 0 ? parts.join(", ") : "any";
 }
@@ -211,13 +249,15 @@ export function runFindSeed(args: CliArgs): void {
 			const phone = result.stats.phoneChecks;
 			const allNighters = result.stats.allNighters;
 			const events = result.events.filter((e) => e.status !== "pending").length;
+			const { scores } = result.stats;
+			const scoreStr = `fun=${Math.round(scores.fun * 100)} frust=${Math.round(scores.frustration * 100)} eng=${Math.round(scores.engagement * 100)}`;
 			const unlocks =
 				result.stats.variantsUnlocked.length > 0
 					? ` unlocks=${result.stats.variantsUnlocked.join(",")}`
 					: "";
 
 			console.log(
-				`${seed}: ${personality.padEnd(25)} energy=${energy.padStart(6)} phone=${phone} allNighters=${allNighters} events=${events}${unlocks}`,
+				`${seed}: ${personality.padEnd(25)} ${scoreStr}  energy=${energy.padStart(6)} phone=${phone} allNighters=${allNighters} events=${events}${unlocks}`,
 			);
 		}
 

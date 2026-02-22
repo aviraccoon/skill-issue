@@ -18,6 +18,7 @@ import {
 import { createStore } from "../store";
 import { selectEventsForSeed } from "../systems/eventSelection";
 import { nextRoll } from "../utils/random";
+import { calculateScores } from "./scoring";
 import type { RunStats } from "./stats";
 
 // Re-export for consumers that import from engine.ts
@@ -315,5 +316,11 @@ function calculateRunStats(
 		allNighters: totalAllNighters,
 		phoneChecks: totalPhoneChecks,
 		variantsUnlocked: [...finalState.variantsUnlocked],
+		scores: calculateScores(
+			days,
+			finalState.tasks,
+			finalState.events,
+			minEnergy,
+		),
 	};
 }

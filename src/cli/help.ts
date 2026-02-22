@@ -138,11 +138,21 @@ CRITERIA OPTIONS:
   --friend-unlocks <cat>   Require variant unlock (repeatable: hygiene, food, chores)
   --event <id>             Require event to fire (repeatable, e.g., leak-worse)
 
+SCORE FILTERS (0-100):
+  --min-fun <n>            Minimum fun score
+  --max-fun <n>            Maximum fun score
+  --min-frustration <n>    Minimum frustration score
+  --max-frustration <n>    Maximum frustration score
+  --min-engagement <n>     Minimum engagement score
+  --max-engagement <n>     Maximum engagement score
+
 EXAMPLES:
   bun run cli find-seed --max-phone 0
   bun run cli find-seed -p nightOwl+hermit --min-energy 80
   bun run cli find-seed --min-allnighters 2 -l 5
   bun run cli find-seed --friend-unlocks food --friend-unlocks hygiene
   bun run cli find-seed --event leak-worse --event upstairs-party
+  bun run cli find-seed --min-fun 70 --max-frustration 40
+  bun run cli find-seed --min-engagement 60
 `);
 }
