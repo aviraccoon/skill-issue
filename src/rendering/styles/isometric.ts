@@ -8,11 +8,14 @@ import type { AnimationState } from "../../systems/animation";
 import { darken, hueShift, lighten } from "../color";
 import { applyTimeOverlay, isNightPalette } from "../palettes";
 import type {
+	BedVariant,
 	CharacterVariant,
+	DeskVariant,
 	DogMoodState,
 	DogVariant,
 	FloorDecorItem,
 	FurnitureName,
+	KitchenVariant,
 	Rect,
 	RoomDrawOptions,
 	RoomLayout,
@@ -321,9 +324,12 @@ function drawIsoRoom(
 		const c = seedPalette.colors[name] ?? "#888";
 
 		switch (name) {
-			case "bed":
-				drawIsoBed(ctx, ix, iy, iw, ih, c, variants.bed);
+			case "bed": {
+				// Less depth compression so the bed is long enough to sleep in
+				const bedIh = f.h * 0.85;
+				drawIsoBed(ctx, ix, iy, iw, bedIh, c, variants.bed);
 				break;
+			}
 			case "desk":
 				drawIsoDesk(ctx, ix, iy, iw, ih, c, variants.desk, hue);
 				break;
@@ -372,6 +378,27 @@ function drawIsoRoom(
 			ctx.textAlign = "center";
 			ctx.fillText(name, ix + iw / 2, iy + 6);
 		}
+	}
+
+	// Desk shelf (wall extension, drawn before floor items for depth order)
+	const desk = layout.furniture.desk;
+	if (desk && desk.y < floorTop + 10 && variants.desk.hasShelf) {
+		const sc = darken(seedPalette.colors.desk ?? "#888", 0.05);
+		const diy = isoY(desk.y);
+		const diw = desk.w * ISO_W;
+		const shelfY = diy - 16;
+		const shelfW = diw * 0.8;
+		// Shelf board
+		isoBox(ctx, desk.x + 2, shelfY, shelfW, 3, 3, sc);
+		// Brackets
+		ctx.fillStyle = darken(sc, 0.15);
+		ctx.fillRect(desk.x + 6, shelfY + 3, 2, 6);
+		ctx.fillRect(desk.x + 2 + shelfW - 6, shelfY + 3, 2, 6);
+		// Items on shelf
+		isoBox(ctx, desk.x + 5, shelfY - 4, 4, 2, 4, hueShift("#8844aa", hue));
+		ctx.fillStyle = hueShift("#44aa88", hue);
+		ctx.fillRect(desk.x + 12, shelfY - 3, 3, 3);
+		isoBox(ctx, desk.x + 18, shelfY - 5, 4, 2, 5, hueShift("#aa6644", hue));
 	}
 
 	// Floor decor as iso items
@@ -625,32 +652,127 @@ function drawIsoBed(
 	iw: number,
 	ih: number,
 	c: string,
-	v: { pillowCount: number; messy: boolean },
+	v: BedVariant,
 ): void {
-	// Mattress
-	isoBox(ctx, ix, iy, iw, ih, 6, c);
-	// Headboard
-	isoBox(
-		ctx,
-		ix + ih * 0.35,
-		iy - ih * 0.25 - 8,
-		iw * 0.9,
-		ih * 0.2,
-		10,
-		darken(c, 0.2),
-	);
-	// Pillows
 	const pillowC = lighten(c, 0.3);
-	const pw = iw * 0.22;
-	for (let pi = 0; pi < v.pillowCount; pi++) {
-		const pu = 0.05 + pi * (pw / iw + 0.03);
-		isoBoxOnTop(ctx, ix, iy, iw, ih, pu, 0.5, pw, 0.35, 3, pillowC);
+	const blanketC = lighten(c, 0.1);
+
+	if (v.style === "futon") {
+		// Low mattress, no headboard
+		isoBox(ctx, ix, iy, iw, ih, 3, c);
+		isoTopFill(ctx, ix, iy, iw, ih, 0.02, 0.05, 0.96, 0.4, blanketC);
+		drawBlanketPattern(ctx, ix, iy, iw, ih, c, v.blanketPattern, 0.96);
+		// Flatter pillows
+		const pw = iw * 0.22;
+		for (let pi = 0; pi < v.pillowCount; pi++) {
+			const pu = 0.05 + pi * (pw / iw + 0.03);
+			isoBoxOnTop(ctx, ix, iy, iw, ih, pu, 0.55, pw, 0.3, 2, pillowC);
+		}
+	} else if (v.style === "bunk") {
+		// Frame posts at front corners
+		const postC = darken(c, 0.3);
+		ctx.fillStyle = postC;
+		ctx.fillRect(ix + 1, iy - 14, 2, 20);
+		ctx.fillRect(ix + iw - 3, iy - 14, 2, 20);
+		// Lower mattress
+		const bunkW = iw - 6;
+		const bunkH = ih * 0.85;
+		isoBox(ctx, ix + 3, iy, bunkW, bunkH, 4, c);
+		isoTopFill(ctx, ix + 3, iy, bunkW, bunkH, 0.02, 0.05, 0.96, 0.4, blanketC);
+		// Upper mattress
+		isoBox(ctx, ix + 3, iy - 12, bunkW, bunkH, 4, c);
+		isoTopFill(
+			ctx,
+			ix + 3,
+			iy - 12,
+			bunkW,
+			bunkH,
+			0.02,
+			0.05,
+			0.96,
+			0.4,
+			blanketC,
+		);
+		// One pillow on each bunk
+		const pw = bunkW * 0.22;
+		isoBoxOnTop(ctx, ix + 3, iy, bunkW, bunkH, 0.06, 0.5, pw, 0.3, 2, pillowC);
+		isoBoxOnTop(
+			ctx,
+			ix + 3,
+			iy - 12,
+			bunkW,
+			bunkH,
+			0.06,
+			0.5,
+			pw,
+			0.3,
+			2,
+			pillowC,
+		);
+	} else {
+		// single or double
+		const blanketW = v.style === "double" ? 0.96 : 0.68;
+		// Mattress
+		isoBox(ctx, ix, iy, iw, ih, 6, c);
+		// Headboard
+		isoBox(
+			ctx,
+			ix + ih * 0.35,
+			iy - ih * 0.25 - 8,
+			iw * 0.9,
+			ih * 0.2,
+			10,
+			darken(c, 0.2),
+		);
+		// Blanket
+		isoTopFill(ctx, ix, iy, iw, ih, 0.02, 0.05, blanketW, 0.4, blanketC);
+		drawBlanketPattern(ctx, ix, iy, iw, ih, c, v.blanketPattern, blanketW);
+		// Pillows
+		const pw = iw * 0.22;
+		for (let pi = 0; pi < v.pillowCount; pi++) {
+			const pu = 0.05 + pi * (pw / iw + 0.03);
+			isoBoxOnTop(ctx, ix, iy, iw, ih, pu, 0.5, pw, 0.35, 3, pillowC);
+		}
+		if (v.messy) {
+			ctx.fillStyle = lighten(c, 0.08);
+			ctx.fillRect(ix + iw * 0.6, iy + 1, iw * 0.25, 4);
+		}
 	}
-	// Blanket strip
-	isoTopFill(ctx, ix, iy, iw, ih, 0.02, 0.05, 0.96, 0.4, lighten(c, 0.1));
-	if (v.messy) {
-		ctx.fillStyle = lighten(c, 0.08);
-		ctx.fillRect(ix + iw * 0.6, iy + 1, iw * 0.25, 4);
+}
+
+/** Draw blanket pattern (stripes/plaid/dots) on the bed's iso top face. */
+function drawBlanketPattern(
+	ctx: Ctx,
+	ix: number,
+	iy: number,
+	iw: number,
+	ih: number,
+	c: string,
+	pattern: BedVariant["blanketPattern"],
+	blanketW: number,
+): void {
+	if (pattern === "solid") return;
+
+	if (pattern === "striped") {
+		const stripeC = lighten(c, 0.25);
+		for (let sv = 0.1; sv < 0.38; sv += 0.08) {
+			isoTopFill(ctx, ix, iy, iw, ih, 0.04, sv, blanketW - 0.04, 0.03, stripeC);
+		}
+	} else if (pattern === "plaid") {
+		const lineC = darken(lighten(c, 0.1), 0.1);
+		for (let sv = 0.12; sv < 0.38; sv += 0.1) {
+			isoTopFill(ctx, ix, iy, iw, ih, 0.04, sv, blanketW - 0.04, 0.03, lineC);
+		}
+		for (let su = 0.1; su < blanketW; su += 0.12) {
+			isoTopFill(ctx, ix, iy, iw, ih, su, 0.06, 0.03, 0.33, lineC);
+		}
+	} else if (pattern === "dots") {
+		const dotC = lighten(c, 0.3);
+		for (let du = 0.1; du < blanketW - 0.02; du += 0.1) {
+			for (let dv = 0.1; dv < 0.38; dv += 0.1) {
+				isoTopFill(ctx, ix, iy, iw, ih, du, dv, 0.03, 0.04, dotC);
+			}
+		}
 	}
 }
 
@@ -661,7 +783,7 @@ function drawIsoDesk(
 	iw: number,
 	ih: number,
 	c: string,
-	v: { monitor: string; hasLamp: boolean },
+	v: DeskVariant,
 	hue: number,
 ): void {
 	// Surface
@@ -685,6 +807,27 @@ function drawIsoDesk(
 		ctx.fillRect(sp.x + 1, sp.y - 9, mw - 2, 7);
 		ctx.fillStyle = "#444";
 		ctx.fillRect(sp.x + mw * 0.4, sp.y - 1, mw * 0.2, 2);
+	} else if (v.messy) {
+		// No monitor + messy: scattered papers on desk
+		isoTopFill(ctx, ix, iy, iw, ih, 0.15, 0.2, 0.3, 0.25, "#e8e4dc");
+		isoTopFill(ctx, ix, iy, iw, ih, 0.5, 0.35, 0.25, 0.2, "#ddd");
+	}
+	// Plant
+	if (v.hasPlant) {
+		const pp = topFacePoint(ix, iy, iw, ih, 0.05, 0.4);
+		isoBox(ctx, pp.x - 2, pp.y - 1, 4, 2, 4, hueShift("#aa6644", hue));
+		ctx.fillStyle = hueShift("#3a8a3a", hue);
+		ctx.beginPath();
+		ctx.arc(pp.x, pp.y - 6, 3, 0, Math.PI * 2);
+		ctx.fill();
+		ctx.fillStyle = hueShift("#2d7a2d", hue);
+		ctx.beginPath();
+		ctx.arc(pp.x - 1.5, pp.y - 5.5, 1.5, 0, Math.PI * 2);
+		ctx.fill();
+	}
+	// Messy side paper
+	if (v.messy) {
+		isoTopFill(ctx, ix, iy, iw, ih, 0.75, 0.1, 0.15, 0.2, "#e8e4dc");
 	}
 	// Lamp
 	if (v.hasLamp) {
@@ -765,31 +908,92 @@ function drawIsoKitchen(
 	c: string,
 	f: Rect,
 	floorTop: number,
-	v: { hasCabinets: boolean; hasMug: boolean },
+	v: KitchenVariant,
 	hue: number,
 ): void {
-	// Counter
-	isoBox(ctx, ix, iy, iw, ih, 10, c);
-	// Burners
-	ctx.fillStyle = darken(c, 0.15);
-	const b1 = topFacePoint(ix, iy, iw, ih, 0.25, 0.5);
-	const b2 = topFacePoint(ix, iy, iw, ih, 0.6, 0.5);
-	ctx.beginPath();
-	ctx.ellipse(b1.x, b1.y, 5, 3, 0, 0, Math.PI * 2);
-	ctx.fill();
-	ctx.strokeStyle = darken(c, 0.3);
-	ctx.lineWidth = 0.5;
-	ctx.beginPath();
-	ctx.ellipse(b1.x, b1.y, 5, 3, 0, 0, Math.PI * 2);
-	ctx.stroke();
-	ctx.fillStyle = darken(c, 0.15);
-	ctx.beginPath();
-	ctx.ellipse(b2.x, b2.y, 4, 2.5, 0, 0, Math.PI * 2);
-	ctx.fill();
-	ctx.strokeStyle = darken(c, 0.3);
-	ctx.beginPath();
-	ctx.ellipse(b2.x, b2.y, 4, 2.5, 0, 0, Math.PI * 2);
-	ctx.stroke();
+	if (v.style === "mini") {
+		// Fridge (left, taller than counter)
+		const fridgeW = iw * 0.4;
+		const fridgeC = lighten(c, 0.15);
+		isoBox(ctx, ix, iy - 6, fridgeW, ih * 0.8, 16, fridgeC);
+		// Door divider (fridge/freezer)
+		ctx.fillStyle = darken(fridgeC, 0.08);
+		ctx.fillRect(ix, iy - 6 + 7, fridgeW, 1);
+		// Handle
+		ctx.fillStyle = "#bbb";
+		ctx.fillRect(ix + fridgeW - 4, iy - 6 + 3, 1.5, 3);
+		// Small counter (right)
+		const ctrX = ix + fridgeW + 2;
+		const ctrW = iw - fridgeW - 2;
+		isoBox(ctx, ctrX, iy, ctrW, ih, 10, c);
+		// Single burner
+		drawIsoBurner(ctx, ctrX, iy, ctrW, ih, 0.5, 0.5, 2.5, c);
+	} else {
+		// Base counter for stove/counter/full
+		isoBox(ctx, ix, iy, iw, ih, 10, c);
+
+		if (v.style === "stove" || v.style === "full") {
+			// Dark stove surface
+			const stoveEnd = v.style === "full" ? 0.48 : 0.9;
+			isoTopFill(
+				ctx,
+				ix,
+				iy,
+				iw,
+				ih,
+				0.05,
+				0.1,
+				stoveEnd - 0.05,
+				0.8,
+				darken(c, 0.08),
+			);
+			// 4 burners in 2x2 grid
+			const midU = v.style === "full" ? 0.13 : 0.25;
+			const spread = v.style === "full" ? 0.18 : 0.3;
+			drawIsoBurner(ctx, ix, iy, iw, ih, midU, 0.3, 2.5, c);
+			drawIsoBurner(ctx, ix, iy, iw, ih, midU + spread, 0.3, 2, c);
+			drawIsoBurner(ctx, ix, iy, iw, ih, midU, 0.65, 2, c);
+			drawIsoBurner(ctx, ix, iy, iw, ih, midU + spread, 0.65, 2.5, c);
+		}
+
+		if (v.style === "counter" || v.style === "full") {
+			// Sink basin
+			const sinkU = v.style === "full" ? 0.55 : 0.2;
+			isoTopFill(ctx, ix, iy, iw, ih, sinkU, 0.15, 0.3, 0.6, "#aab");
+			isoTopFill(ctx, ix, iy, iw, ih, sinkU + 0.04, 0.25, 0.22, 0.4, "#889");
+			// Faucet
+			const fp = topFacePoint(ix, iy, iw, ih, sinkU + 0.15, 0.82);
+			ctx.fillStyle = "#ccc";
+			ctx.fillRect(fp.x - 1, fp.y - 6, 2, 6);
+			ctx.fillRect(fp.x - 2, fp.y - 7, 4, 2);
+		}
+	}
+
+	// Pot on counter/stove
+	if (v.hasPot) {
+		const potU = v.style === "stove" || v.style === "full" ? 0.2 : 0.5;
+		const pp = topFacePoint(ix, iy, iw, ih, potU, 0.35);
+		isoBox(ctx, pp.x - 3, pp.y - 1, 6, 3, 4, "#666");
+		ctx.fillStyle = "#888";
+		ctx.fillRect(pp.x - 1, pp.y - 6, 2, 2);
+	}
+
+	// Dirty smudges
+	if (v.dirty) {
+		isoTopFill(ctx, ix, iy, iw, ih, 0.6, 0.08, 0.2, 0.15, "#aa9977");
+		isoTopFill(ctx, ix, iy, iw, ih, 0.55, 0.2, 0.15, 0.1, "#99886a");
+	}
+
+	// Mug
+	if (v.hasMug) {
+		const mp = topFacePoint(ix, iy, iw, ih, 0.82, 0.4);
+		ctx.fillStyle = hueShift("#cc6644", hue);
+		ctx.fillRect(mp.x - 2, mp.y - 5, 4, 5);
+		ctx.beginPath();
+		ctx.ellipse(mp.x, mp.y - 5, 2, 1, 0, 0, Math.PI * 2);
+		ctx.fill();
+	}
+
 	// Upper cabinets
 	if (f.y < floorTop + 10 && v.hasCabinets) {
 		const cabC = darken(c, 0.1);
@@ -815,15 +1019,31 @@ function drawIsoKitchen(
 		ctx.fillRect(ix + ih * 0.3 + iw * 0.18, iy - ih * 0.2 - 7, 2, 3);
 		ctx.fillRect(ix + ih * 0.3 + iw * 0.6, iy - ih * 0.2 - 7, 2, 3);
 	}
-	// Mug
-	if (v.hasMug) {
-		const mp = topFacePoint(ix, iy, iw, ih, 0.82, 0.4);
-		ctx.fillStyle = hueShift("#cc6644", hue);
-		ctx.fillRect(mp.x - 2, mp.y - 5, 4, 5);
-		ctx.beginPath();
-		ctx.ellipse(mp.x, mp.y - 5, 2, 1, 0, 0, Math.PI * 2);
-		ctx.fill();
-	}
+}
+
+/** Draw a single burner ring on an iso top face. */
+function drawIsoBurner(
+	ctx: Ctx,
+	bx: number,
+	by: number,
+	bw: number,
+	bh: number,
+	u: number,
+	v: number,
+	r: number,
+	c: string,
+): void {
+	const bp = topFacePoint(bx, by, bw, bh, u, v);
+	ctx.strokeStyle = darken(c, 0.3);
+	ctx.lineWidth = 0.8;
+	ctx.beginPath();
+	ctx.ellipse(bp.x, bp.y, r, r * 0.55, 0, 0, Math.PI * 2);
+	ctx.stroke();
+	// Center dot
+	ctx.fillStyle = darken(c, 0.15);
+	ctx.beginPath();
+	ctx.arc(bp.x, bp.y, 0.8, 0, Math.PI * 2);
+	ctx.fill();
 }
 
 function drawIsoBathroom(
