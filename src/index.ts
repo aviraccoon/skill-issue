@@ -64,14 +64,16 @@ async function initDevToolsIfEnabled() {
 		return;
 	}
 
-	// Fall back to env var via dev server config
-	try {
-		const res = await fetch("/api/config");
-		const config = await res.json();
-		if (config.devTools) {
-			initDevTools(store);
+	// Fall back to env var via dev server config (only available on dev server)
+	if (location.hostname === "localhost" || location.hostname === "127.0.0.1") {
+		try {
+			const res = await fetch("/api/config");
+			const config = await res.json();
+			if (config.devTools) {
+				initDevTools(store);
+			}
+		} catch {
+			// Dev server not running or config endpoint unavailable
 		}
-	} catch {
-		// In production without query param, skip dev tools
 	}
 }
