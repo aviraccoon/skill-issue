@@ -1,5 +1,5 @@
 import { describe, expect, test } from "bun:test";
-import { createInitialState, type GameState, type Task } from "../state";
+import { createTestState, makeTask } from "../test-utils";
 import {
 	applyEnergyChange,
 	applyEnergyDecay,
@@ -17,29 +17,6 @@ import {
 	SCROLL_TRAP_BASE,
 	SCROLL_TRAP_VARIANCE,
 } from "./energy";
-
-function createTestState(overrides: Partial<GameState> = {}): GameState {
-	return {
-		...createInitialState(),
-		personality: { time: "neutral", social: "neutral" },
-		...overrides,
-	};
-}
-
-function makeTask(overrides: Partial<Task> = {}): Task {
-	return {
-		id: "dishes",
-		name: "Test Task",
-		category: "chores",
-		baseRate: 0.5,
-		availableBlocks: ["morning", "afternoon", "evening", "night"],
-		failureCount: 0,
-		successCount: 0,
-		attemptedToday: false,
-		succeededToday: false,
-		...overrides,
-	};
-}
 
 describe("seeded energy constants", () => {
 	test("energy decay base is 2% with 0.5% variance", () => {

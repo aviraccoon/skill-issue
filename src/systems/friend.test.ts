@@ -1,12 +1,8 @@
 import { describe, expect, test } from "bun:test";
 import { getRandomRescueMessage } from "../data/friendRescue";
 import { strings } from "../i18n";
-import {
-	createInitialState,
-	type EventInstance,
-	type GameState,
-} from "../state";
-import { createStore } from "../store";
+import type { EventId, EventInstance } from "../state";
+import { createTestState, createTestStore, getActivity } from "../test-utils";
 import {
 	ACTIVITIES,
 	CORRECT_TIER_MOMENTUM,
@@ -25,17 +21,6 @@ import {
 	WRONG_TIER_ENERGY_PENALTY,
 	WRONG_TIER_MOMENTUM,
 } from "./friend";
-
-function createTestState(overrides: Partial<GameState> = {}): GameState {
-	return {
-		...createInitialState(),
-		...overrides,
-	};
-}
-
-function createTestStore(overrides: Partial<GameState> = {}) {
-	return createStore(createTestState(overrides));
-}
 
 describe("friend rescue trigger", () => {
 	test("does not trigger below threshold", () => {
@@ -141,12 +126,6 @@ describe("activity tiers", () => {
 });
 
 describe("isCorrectTier", () => {
-	function getActivity(id: string) {
-		const activity = ACTIVITIES.find((a) => a.id === id);
-		if (!activity) throw new Error(`Activity ${id} not found`);
-		return activity;
-	}
-
 	test("low tier correct at 0.2 energy", () => {
 		expect(isCorrectTier(getActivity("low"), 0.2)).toBe(true);
 	});
@@ -177,12 +156,6 @@ describe("isCorrectTier", () => {
 });
 
 describe("getActivityEffects", () => {
-	function getActivity(id: string) {
-		const activity = ACTIVITIES.find((a) => a.id === id);
-		if (!activity) throw new Error(`Activity ${id} not found`);
-		return activity;
-	}
-
 	test("correct tier with neutral personality gives +10% energy", () => {
 		const state = createTestState({
 			energy: 0.5,
@@ -296,7 +269,7 @@ describe("getFriendRescueChance", () => {
 
 /** Creates a minimal EventInstance for testing. */
 function makeEvent(
-	id: GameState["events"][number]["id"],
+	id: EventId,
 	overrides: Partial<EventInstance> = {},
 ): EventInstance {
 	return {

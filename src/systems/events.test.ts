@@ -7,9 +7,8 @@ import {
 	getEventVariantSeed,
 	resolveChoiceContent,
 } from "../data/events";
-import type { TaskId } from "../data/tasks";
-import { createInitialState, type GameState, type Task } from "../state";
 import { createStore } from "../store";
+import { createTestState, makeTask } from "../test-utils";
 import {
 	activateEvent,
 	applyTaskModification,
@@ -20,11 +19,6 @@ import {
 } from "./events";
 
 const VARIANCE_FACTOR = 0.2;
-
-/** Creates a test state with overrides. */
-function createTestState(overrides: Partial<GameState> = {}): GameState {
-	return { ...createInitialState(42), ...overrides };
-}
 
 describe("checkForEvent", () => {
 	it("returns null when no events are pending", () => {
@@ -622,18 +616,13 @@ describe("activateEvent with obligations", () => {
 
 describe("succeedTask effect", () => {
 	it("marks specified task as succeeded", () => {
-		const workTask: Task = {
-			id: "work-deadline" as TaskId,
+		const workTask = makeTask({
+			id: "work-deadline",
 			name: "Work Deadline",
 			category: "work",
 			baseRate: 0.35,
-			availableBlocks: ["morning", "afternoon", "evening", "night"],
-			failureCount: 0,
-			successCount: 0,
-			attemptedToday: false,
-			succeededToday: false,
 			isObligation: true,
-		};
+		});
 		const state = createTestState({
 			events: [{ id: "work-missed", status: "active" }],
 			activeEventId: "work-missed",
@@ -650,18 +639,13 @@ describe("succeedTask effect", () => {
 	});
 
 	it("applies energy cost for do-it-now choice", () => {
-		const workTask: Task = {
-			id: "work-deadline" as TaskId,
+		const workTask = makeTask({
+			id: "work-deadline",
 			name: "Work Deadline",
 			category: "work",
 			baseRate: 0.35,
-			availableBlocks: ["morning", "afternoon", "evening", "night"],
-			failureCount: 0,
-			successCount: 0,
-			attemptedToday: false,
-			succeededToday: false,
 			isObligation: true,
-		};
+		});
 		const state = createTestState({
 			events: [{ id: "work-missed", status: "active" }],
 			activeEventId: "work-missed",
@@ -678,18 +662,13 @@ describe("succeedTask effect", () => {
 	});
 
 	it("applies momentum cost for let-it-go choice", () => {
-		const workTask: Task = {
-			id: "work-deadline" as TaskId,
+		const workTask = makeTask({
+			id: "work-deadline",
 			name: "Work Deadline",
 			category: "work",
 			baseRate: 0.35,
-			availableBlocks: ["morning", "afternoon", "evening", "night"],
-			failureCount: 0,
-			successCount: 0,
-			attemptedToday: false,
-			succeededToday: false,
 			isObligation: true,
-		};
+		});
 		const state = createTestState({
 			events: [{ id: "work-missed", status: "active" }],
 			activeEventId: "work-missed",
@@ -711,19 +690,15 @@ describe("succeedTask effect", () => {
 
 describe("obligation consequence conditions", () => {
 	it("dentist-missed fires after afternoon block on obligation day", () => {
-		const dentistTask: Task = {
-			id: "dentist-visit" as TaskId,
+		const dentistTask = makeTask({
+			id: "dentist-visit",
 			name: "Dentist Appointment",
 			category: "selfcare",
 			baseRate: 0.4,
 			availableBlocks: ["afternoon"],
-			failureCount: 0,
-			successCount: 0,
-			attemptedToday: false,
-			succeededToday: false,
 			isObligation: true,
 			availableDay: 3,
-		};
+		});
 		const state = createTestState({
 			events: [
 				{ id: "dentist-reminder", status: "resolved", scheduledDay: 0 },
@@ -739,19 +714,15 @@ describe("obligation consequence conditions", () => {
 	});
 
 	it("dentist-missed does not fire during afternoon block", () => {
-		const dentistTask: Task = {
-			id: "dentist-visit" as TaskId,
+		const dentistTask = makeTask({
+			id: "dentist-visit",
 			name: "Dentist Appointment",
 			category: "selfcare",
 			baseRate: 0.4,
 			availableBlocks: ["afternoon"],
-			failureCount: 0,
-			successCount: 0,
-			attemptedToday: false,
-			succeededToday: false,
 			isObligation: true,
 			availableDay: 3,
-		};
+		});
 		const state = createTestState({
 			events: [
 				{ id: "dentist-reminder", status: "resolved", scheduledDay: 0 },
@@ -767,19 +738,16 @@ describe("obligation consequence conditions", () => {
 	});
 
 	it("dentist-missed does not fire if task was succeeded", () => {
-		const dentistTask: Task = {
-			id: "dentist-visit" as TaskId,
+		const dentistTask = makeTask({
+			id: "dentist-visit",
 			name: "Dentist Appointment",
 			category: "selfcare",
 			baseRate: 0.4,
 			availableBlocks: ["afternoon"],
-			failureCount: 0,
-			successCount: 0,
-			attemptedToday: false,
 			succeededToday: true,
 			isObligation: true,
 			availableDay: 3,
-		};
+		});
 		const state = createTestState({
 			events: [
 				{ id: "dentist-reminder", status: "resolved", scheduledDay: 0 },
@@ -794,19 +762,15 @@ describe("obligation consequence conditions", () => {
 	});
 
 	it("vet-missed fires after morning block on obligation day", () => {
-		const vetTask: Task = {
-			id: "vet-visit" as TaskId,
+		const vetTask = makeTask({
+			id: "vet-visit",
 			name: "Vet Visit",
 			category: "dog",
 			baseRate: 0.55,
 			availableBlocks: ["morning"],
-			failureCount: 0,
-			successCount: 0,
-			attemptedToday: false,
-			succeededToday: false,
 			isObligation: true,
 			availableDay: 2,
-		};
+		});
 		const state = createTestState({
 			events: [
 				{ id: "vet-reminder", status: "resolved", scheduledDay: 0 },
@@ -821,19 +785,14 @@ describe("obligation consequence conditions", () => {
 	});
 
 	it("work-missed fires at dayEnd when task not succeeded", () => {
-		const workTask: Task = {
-			id: "work-deadline" as TaskId,
+		const workTask = makeTask({
+			id: "work-deadline",
 			name: "Work Deadline",
 			category: "work",
 			baseRate: 0.35,
-			availableBlocks: ["morning", "afternoon", "evening", "night"],
-			failureCount: 0,
-			successCount: 0,
-			attemptedToday: false,
-			succeededToday: false,
 			isObligation: true,
 			availableDay: 4,
-		};
+		});
 		const state = createTestState({
 			events: [
 				{ id: "work-reminder", status: "resolved", scheduledDay: 0 },
@@ -847,19 +806,15 @@ describe("obligation consequence conditions", () => {
 	});
 
 	it("work-missed does not fire if task was succeeded", () => {
-		const workTask: Task = {
-			id: "work-deadline" as TaskId,
+		const workTask = makeTask({
+			id: "work-deadline",
 			name: "Work Deadline",
 			category: "work",
 			baseRate: 0.35,
-			availableBlocks: ["morning", "afternoon", "evening", "night"],
-			failureCount: 0,
-			successCount: 0,
-			attemptedToday: false,
 			succeededToday: true,
 			isObligation: true,
 			availableDay: 4,
-		};
+		});
 		const state = createTestState({
 			events: [
 				{ id: "work-reminder", status: "resolved", scheduledDay: 0 },
@@ -1086,9 +1041,9 @@ describe("opportunity events", () => {
 
 describe("contextual task variants (modifyTask)", () => {
 	/** Creates a cook task matching the default pool. */
-	function makeCookTask(): Task {
-		return {
-			id: "cook" as TaskId,
+	function makeCookTask() {
+		return makeTask({
+			id: "cook",
 			name: "Cook Meal",
 			category: "food",
 			baseRate: 0.1,
@@ -1098,11 +1053,7 @@ describe("contextual task variants (modifyTask)", () => {
 				unlockHints: ["hint"],
 			},
 			availableBlocks: ["morning", "afternoon", "evening"],
-			failureCount: 0,
-			successCount: 0,
-			attemptedToday: false,
-			succeededToday: false,
-		};
+		});
 	}
 
 	it("neighbor-hello has a modifyTask targeting cook", () => {
@@ -1166,17 +1117,13 @@ describe("contextual task variants (modifyTask)", () => {
 	});
 
 	it("does nothing when task is not in pool", () => {
-		const otherTask: Task = {
-			id: "shower" as TaskId,
+		const otherTask = makeTask({
+			id: "shower",
 			name: "Shower",
 			category: "hygiene",
 			baseRate: 0.35,
 			availableBlocks: ["morning", "evening"],
-			failureCount: 0,
-			successCount: 0,
-			attemptedToday: false,
-			succeededToday: false,
-		};
+		});
 		const state = createTestState({ tasks: [otherTask] });
 		const store = createStore(state);
 
@@ -1253,7 +1200,7 @@ describe("contextual task variants (modifyTask)", () => {
 			"Cook for Neighbor",
 		);
 
-		revertTaskModification(store, "cook" as TaskId);
+		revertTaskModification(store, "cook");
 
 		const task = store.getState().tasks.find((t) => t.id === "cook");
 		expect(task?.name).toBe("Cook Meal");
@@ -1273,7 +1220,7 @@ describe("contextual task variants (modifyTask)", () => {
 			store.getState().tasks.find((t) => t.id === "cook")?.minimalVariant?.name,
 		).toBe("Order Pizza for Neighbor");
 
-		revertTaskModification(store, "cook" as TaskId);
+		revertTaskModification(store, "cook");
 
 		const task = store.getState().tasks.find((t) => t.id === "cook");
 		expect(task?.minimalVariant?.name).toBe("Microwave something");
@@ -1285,7 +1232,7 @@ describe("contextual task variants (modifyTask)", () => {
 		const store = createStore(state);
 
 		// No modification applied -- revert should be a no-op
-		revertTaskModification(store, "cook" as TaskId);
+		revertTaskModification(store, "cook");
 
 		const task = store.getState().tasks.find((t) => t.id === "cook");
 		expect(task?.name).toBe("Cook Meal");

@@ -1,38 +1,11 @@
 import { describe, expect, test } from "bun:test";
-import { createInitialState, type GameState, type Task } from "../state";
+import { createTestState, makeTask } from "../test-utils";
 import { calculateSuccessProbability } from "./probability";
-
-/** Creates a minimal task for testing. */
-function makeTask(baseRate: number): Task {
-	return {
-		id: "dishes",
-		name: "Test Task",
-		category: "chores",
-		baseRate,
-		availableBlocks: ["morning", "afternoon", "evening", "night"],
-		failureCount: 0,
-		successCount: 0,
-		attemptedToday: false,
-		succeededToday: false,
-	};
-}
-
-/** Creates a game state for testing with sensible defaults. */
-function makeState(overrides: Partial<GameState> = {}): GameState {
-	return {
-		...createInitialState(),
-		energy: 0.5,
-		momentum: 0.5,
-		// Use neutral personality for predictable test results
-		personality: { time: "neutral", social: "neutral" },
-		...overrides,
-	};
-}
 
 describe("calculateSuccessProbability", () => {
 	test("returns base rate when all modifiers are neutral", () => {
-		const task = makeTask(0.5);
-		const state = makeState({
+		const task = makeTask();
+		const state = createTestState({
 			energy: 0.5,
 			momentum: 0.5,
 			timeBlock: "evening",
@@ -45,8 +18,8 @@ describe("calculateSuccessProbability", () => {
 	});
 
 	test("applies night bonus (2am spike)", () => {
-		const task = makeTask(0.5);
-		const state = makeState({ timeBlock: "night" });
+		const task = makeTask();
+		const state = createTestState({ timeBlock: "night" });
 
 		const probability = calculateSuccessProbability(task, state);
 
@@ -56,8 +29,8 @@ describe("calculateSuccessProbability", () => {
 	});
 
 	test("applies morning boost", () => {
-		const task = makeTask(0.5);
-		const state = makeState({ timeBlock: "morning" });
+		const task = makeTask();
+		const state = createTestState({ timeBlock: "morning" });
 
 		const probability = calculateSuccessProbability(task, state);
 
@@ -66,8 +39,8 @@ describe("calculateSuccessProbability", () => {
 	});
 
 	test("applies afternoon penalty", () => {
-		const task = makeTask(0.5);
-		const state = makeState({ timeBlock: "afternoon" });
+		const task = makeTask();
+		const state = createTestState({ timeBlock: "afternoon" });
 
 		const probability = calculateSuccessProbability(task, state);
 
@@ -76,9 +49,9 @@ describe("calculateSuccessProbability", () => {
 	});
 
 	test("high momentum increases probability", () => {
-		const task = makeTask(0.5);
-		const lowMomentum = makeState({ momentum: 0, timeBlock: "evening" });
-		const highMomentum = makeState({ momentum: 1, timeBlock: "evening" });
+		const task = makeTask();
+		const lowMomentum = createTestState({ momentum: 0, timeBlock: "evening" });
+		const highMomentum = createTestState({ momentum: 1, timeBlock: "evening" });
 
 		const lowProb = calculateSuccessProbability(task, lowMomentum);
 		const highProb = calculateSuccessProbability(task, highMomentum);
@@ -87,9 +60,9 @@ describe("calculateSuccessProbability", () => {
 	});
 
 	test("high energy increases probability", () => {
-		const task = makeTask(0.5);
-		const lowEnergy = makeState({ energy: 0, timeBlock: "evening" });
-		const highEnergy = makeState({ energy: 1, timeBlock: "evening" });
+		const task = makeTask();
+		const lowEnergy = createTestState({ energy: 0, timeBlock: "evening" });
+		const highEnergy = createTestState({ energy: 1, timeBlock: "evening" });
 
 		const lowProb = calculateSuccessProbability(task, lowEnergy);
 		const highProb = calculateSuccessProbability(task, highEnergy);
@@ -99,8 +72,8 @@ describe("calculateSuccessProbability", () => {
 
 	test("clamps probability to valid range", () => {
 		// Very high base rate with all positive modifiers
-		const task = makeTask(0.9);
-		const state = makeState({
+		const task = makeTask({ baseRate: 0.9 });
+		const state = createTestState({
 			timeBlock: "night",
 			momentum: 1,
 			energy: 1,
@@ -114,8 +87,8 @@ describe("calculateSuccessProbability", () => {
 
 	test("aspirational tasks remain difficult", () => {
 		// Even with all bonuses, a 5% base rate task should be hard
-		const task = makeTask(0.05);
-		const state = makeState({
+		const task = makeTask({ baseRate: 0.05 });
+		const state = createTestState({
 			timeBlock: "night",
 			momentum: 1,
 			energy: 1,
