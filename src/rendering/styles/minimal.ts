@@ -153,12 +153,14 @@ function drawMinimalRoom(
 					ctx.fill();
 				}
 				break;
-			case "door":
+			case "door": {
+				const knobX = layout.doorSide === "left" ? f.x + f.w - 4 : f.x + 4;
 				ctx.fillStyle = "#d4a040";
 				ctx.beginPath();
-				ctx.arc(f.x + 4, f.y + f.h / 2, 2, 0, Math.PI * 2);
+				ctx.arc(knobX, f.y + f.h / 2, 2, 0, Math.PI * 2);
 				ctx.fill();
 				break;
+			}
 		}
 
 		if (options.showLabels) {

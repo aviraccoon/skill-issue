@@ -214,7 +214,7 @@ function drawFlatRoom(
 				}
 				break;
 			case "door":
-				drawDoorFlat(ctx, f, oc, variants.door, night);
+				drawDoorFlat(ctx, f, oc, variants.door, night, layout.doorSide);
 				break;
 		}
 
@@ -349,16 +349,18 @@ function drawDoorFlat(
 	oc: string,
 	v: { hasWindow: boolean },
 	night: boolean,
+	doorSide: "left" | "right",
 ): void {
-	// Knob
+	// Knob (faces room interior)
+	const knobX = doorSide === "left" ? f.x + f.w - 4 : f.x + 4;
 	ctx.fillStyle = "#e0a020";
 	ctx.beginPath();
-	ctx.arc(f.x + 4, f.y + f.h / 2, 3, 0, Math.PI * 2);
+	ctx.arc(knobX, f.y + f.h / 2, 3, 0, Math.PI * 2);
 	ctx.fill();
 	ctx.strokeStyle = "#a07010";
 	ctx.lineWidth = 1;
 	ctx.beginPath();
-	ctx.arc(f.x + 4, f.y + f.h / 2, 3, 0, Math.PI * 2);
+	ctx.arc(knobX, f.y + f.h / 2, 3, 0, Math.PI * 2);
 	ctx.stroke();
 	if (v.hasWindow) {
 		ctx.fillStyle = night ? "#224" : "#87ceeb";

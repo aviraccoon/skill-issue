@@ -198,7 +198,15 @@ function drawSketchRoom(
 				drawBathroomSketch(ctx, f, variants.bathroom, ink, lightInk, rng);
 				break;
 			case "door":
-				drawDoorSketch(ctx, f, variants.door, ink, lightInk, rng);
+				drawDoorSketch(
+					ctx,
+					f,
+					variants.door,
+					ink,
+					lightInk,
+					rng,
+					layout.doorSide,
+				);
 				break;
 		}
 
@@ -377,13 +385,15 @@ function drawDoorSketch(
 	ink: string,
 	_lightInk: string,
 	rng: Rng,
+	doorSide: "left" | "right",
 ): void {
 	wobbleRect(ctx, f.x, f.y, f.w, f.h, ink, rng);
 	ctx.strokeStyle = ink;
 	ctx.lineWidth = 0.8;
-	// Handle
+	// Handle (faces room interior)
+	const knobX = doorSide === "left" ? f.x + f.w - 4 : f.x + 4;
 	ctx.beginPath();
-	ctx.arc(f.x + 4, f.y + f.h / 2, 2, 0, Math.PI * 2);
+	ctx.arc(knobX, f.y + f.h / 2, 2, 0, Math.PI * 2);
 	ctx.stroke();
 	if (v.hasWindow) {
 		wobbleRect(ctx, f.x + 5, f.y + 6, f.w - 10, 10, ink, rng);

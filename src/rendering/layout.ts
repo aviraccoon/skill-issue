@@ -23,6 +23,9 @@ import type {
 /** Collision padding between furniture pieces. */
 const PAD = 3;
 
+/** Minimum distance from general furniture to room edges. */
+const ROOM_EDGE = 6;
+
 /** Default room dimensions. */
 export const DEFAULT_ROOM_WIDTH = 240;
 export const DEFAULT_ROOM_HEIGHT = 160;
@@ -101,7 +104,12 @@ function rectsOverlap(a: Rect, b: Rect): boolean {
 }
 
 function rectInBounds(r: Rect, rw: number, rh: number): boolean {
-	return r.x >= 2 && r.y >= 2 && r.x + r.w <= rw - 2 && r.y + r.h <= rh - 4;
+	return (
+		r.x >= ROOM_EDGE &&
+		r.y >= 2 &&
+		r.x + r.w <= rw - ROOM_EDGE &&
+		r.y + r.h <= rh - ROOM_EDGE
+	);
 }
 
 // --- Single room placement ---
@@ -114,30 +122,41 @@ function tryPlace(
 	doorSide: "left" | "right",
 	rw: number,
 	rh: number,
-	wallY: number,
 	floorTop: number,
 ): Rect {
+	// Door has a fixed position flush with the wall -- no bounds/collision loop needed
+	if (name === "door") {
+		return {
+			x: doorSide === "left" ? 2 : rw - def.w - 2,
+			y: floorTop - def.h,
+			w: def.w,
+			h: def.h,
+		};
+	}
+
 	for (let attempt = 0; attempt < 80; attempt++) {
 		let x: number;
 		let y: number;
 
-		if (name === "door") {
-			x = doorSide === "left" ? 1 : rw - def.w - 1;
-			y = wallY - 18 + Math.floor(rng() * 8);
-		} else if (def.placement === "backWall") {
-			x = PAD + Math.floor(rng() * (rw - def.w - PAD * 2 - 24));
+		if (def.placement === "backWall") {
+			x = ROOM_EDGE + Math.floor(rng() * (rw - def.w - ROOM_EDGE * 2));
 			y = floorTop + Math.floor(rng() * 6);
 			const wallPick = rng();
 			if (wallPick < 0.2) {
-				x = 2;
+				// Left side wall (skip if door is there)
+				x = doorSide === "left" ? ROOM_EDGE + 24 : ROOM_EDGE;
 				y = floorTop + Math.floor(rng() * (rh - floorTop - def.h - 8));
 			} else if (wallPick < 0.35) {
-				x = rw - def.w - 2;
+				// Right side wall (skip if door is there)
+				x =
+					doorSide === "right"
+						? rw - def.w - ROOM_EDGE - 24
+						: rw - def.w - ROOM_EDGE;
 				y = floorTop + Math.floor(rng() * 20);
 			}
 		} else if (def.placement === "sideWall") {
 			const side = rng() < 0.5 ? "left" : "right";
-			x = side === "left" ? 2 : rw - def.w - 2;
+			x = side === "left" ? ROOM_EDGE : rw - def.w - ROOM_EDGE;
 			y = floorTop + 4 + Math.floor(rng() * (rh - floorTop - def.h - 12));
 		} else {
 			x = 20 + Math.floor(rng() * (rw - def.w - 44));
@@ -146,7 +165,6 @@ function tryPlace(
 
 		const candidate = { x, y, w: def.w, h: def.h };
 		if (!rectInBounds(candidate, rw, rh)) continue;
-		if (candidate.y < floorTop && name !== "door") continue;
 		let collision = false;
 		for (const p of placed) {
 			if (rectsOverlap(candidate, p)) {
@@ -157,7 +175,23 @@ function tryPlace(
 		if (collision) continue;
 		return candidate;
 	}
-	return { x: 4 + placed.length * 8, y: floorTop + 2, w: def.w, h: def.h };
+
+	// Fallback: grid search for a non-colliding position
+	for (let fy = floorTop; fy < rh - def.h - ROOM_EDGE; fy += PAD + 1) {
+		for (let fx = ROOM_EDGE; fx < rw - def.w - ROOM_EDGE; fx += PAD + 1) {
+			const candidate = { x: fx, y: fy, w: def.w, h: def.h };
+			let ok = true;
+			for (const p of placed) {
+				if (rectsOverlap(candidate, p)) {
+					ok = false;
+					break;
+				}
+			}
+			if (ok) return candidate;
+		}
+	}
+	// Last resort -- room is genuinely full
+	return { x: ROOM_EDGE, y: floorTop + 2, w: def.w, h: def.h };
 }
 
 function findOpenFloor(
@@ -403,11 +437,19 @@ export function generateSingleRoomLayout(
 			doorSide,
 			roomWidth,
 			roomHeight,
-			wallY,
 			floorTop,
 		);
 		furniture[name] = rect;
 		placed.push(rect);
+		// Keep floor area in front of the door clear
+		if (name === "door") {
+			placed.push({
+				x: rect.x,
+				y: floorTop,
+				w: rect.w,
+				h: 30,
+			});
+		}
 	}
 
 	const charPos = findOpenFloor(
@@ -529,6 +571,14 @@ function generateRoomContents(
 		);
 		furniture[name] = rect;
 		placed.push(rect);
+		if (name === "door") {
+			placed.push({
+				x: rect.x,
+				y: Math.max(floorTop, rect.y + rect.h),
+				w: rect.w,
+				h: 30,
+			});
+		}
 	}
 
 	const decor = generateDecorInRoom(rng, placed, rw, rh, floorTop);
@@ -558,26 +608,33 @@ function tryPlaceInRoom(
 	rh: number,
 	floorTop: number,
 ): Rect {
+	// Door has a fixed position -- no bounds/collision loop needed
+	if (name === "door") {
+		const x = doorSide === "left" ? 2 : rw - def.w - 2;
+		const y =
+			floorTop > def.h + 2
+				? floorTop - def.h
+				: Math.max(2, floorTop) + Math.floor(rng() * 8);
+		return { x, y, w: def.w, h: def.h };
+	}
+
 	for (let attempt = 0; attempt < 80; attempt++) {
 		let x: number;
 		let y: number;
 
-		if (name === "door") {
-			x = doorSide === "left" ? 1 : rw - def.w - 1;
-			y = Math.max(2, floorTop - 18) + Math.floor(rng() * 8);
-		} else if (def.placement === "backWall" && floorTop > 10) {
-			x = 4 + rng() * (rw - def.w - 8);
+		if (def.placement === "backWall" && floorTop > 10) {
+			x = ROOM_EDGE + rng() * (rw - def.w - ROOM_EDGE * 2);
 			y = floorTop + Math.floor(rng() * 6);
 		} else if (floorTop <= 10) {
-			x = 4 + rng() * (rw - def.w - 8);
-			y = 4 + rng() * (rh - def.h - 8);
+			x = ROOM_EDGE + rng() * (rw - def.w - ROOM_EDGE * 2);
+			y = ROOM_EDGE + rng() * (rh - def.h - ROOM_EDGE * 2);
 		} else {
 			x = 10 + rng() * (rw - def.w - 20);
 			y = floorTop + 10 + rng() * (rh - floorTop - def.h - 14);
 		}
 
 		const candidate = { x, y, w: def.w, h: def.h };
-		if (x < 2 || y < 2 || x + def.w > rw - 2 || y + def.h > rh - 4) continue;
+		if (!rectInBounds(candidate, rw, rh)) continue;
 		let collision = false;
 		for (const p of placed) {
 			if (rectsOverlap(candidate, p)) {
@@ -587,7 +644,23 @@ function tryPlaceInRoom(
 		}
 		if (!collision) return candidate;
 	}
-	return { x: 4, y: floorTop + 2, w: def.w, h: def.h };
+
+	// Fallback: grid search for a non-colliding position
+	const startY = floorTop > 10 ? floorTop : ROOM_EDGE;
+	for (let fy = startY; fy < rh - def.h - ROOM_EDGE; fy += PAD + 1) {
+		for (let fx = ROOM_EDGE; fx < rw - def.w - ROOM_EDGE; fx += PAD + 1) {
+			const candidate = { x: fx, y: fy, w: def.w, h: def.h };
+			let ok = true;
+			for (const p of placed) {
+				if (rectsOverlap(candidate, p)) {
+					ok = false;
+					break;
+				}
+			}
+			if (ok) return candidate;
+		}
+	}
+	return { x: ROOM_EDGE, y: startY + 2, w: def.w, h: def.h };
 }
 
 function generateDecorInRoom(

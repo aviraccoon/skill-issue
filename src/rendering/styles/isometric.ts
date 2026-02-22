@@ -358,9 +358,12 @@ function drawIsoRoom(
 					hue,
 				);
 				break;
-			case "door":
-				drawIsoDoor(ctx, ix, iy, iw, ih, c, variants.door);
+			case "door": {
+				// Anchor door bottom at isoFloor, use ISO_H-scaled height
+				const doorIy = isoFloor - ih;
+				drawIsoDoor(ctx, ix, doorIy, iw, ih, c, variants.door, layout.doorSide);
 				break;
+			}
 		}
 
 		if (options.showLabels) {
@@ -894,21 +897,26 @@ function drawIsoDoor(
 	ih: number,
 	c: string,
 	v: { hasWindow: boolean },
+	doorSide: "left" | "right",
 ): void {
+	const thick = 5; // iso thickness (door is thin)
 	// Frame
-	isoBox(ctx, ix - 1, iy - 1, iw + 2, ih * 0.15, 15, darken(c, 0.15));
+	isoBox(ctx, ix - 1, iy - 1, iw + 2, thick + 1, ih + 2, darken(c, 0.15));
 	// Panel
-	isoBox(ctx, ix, iy, iw, ih * 0.1, 13, c);
-	// Handle
+	isoBox(ctx, ix, iy, iw, thick, ih, c);
+	// Handle at ~60% down
+	const handleX = doorSide === "left" ? ix + iw - 5 : ix + 3;
 	ctx.fillStyle = "#d4a040";
-	ctx.fillRect(ix + 3, iy + 5, 2, 3);
-	// Window
+	ctx.fillRect(handleX, iy + Math.floor(ih * 0.6), 2, 3);
+	// Window in upper portion
 	if (v.hasWindow) {
+		const winY = iy + Math.floor(ih * 0.15);
+		const winH = Math.floor(ih * 0.2);
 		ctx.fillStyle = lighten(c, 0.3);
-		ctx.fillRect(ix + iw * 0.2, iy - ih * 0.1 * 0.2, iw * 0.6, 5);
+		ctx.fillRect(ix + iw * 0.2, winY, iw * 0.6, winH);
 		ctx.strokeStyle = darken(c, 0.3);
 		ctx.lineWidth = 0.5;
-		ctx.strokeRect(ix + iw * 0.2, iy - ih * 0.1 * 0.2, iw * 0.6, 5);
+		ctx.strokeRect(ix + iw * 0.2, winY, iw * 0.6, winH);
 	}
 }
 

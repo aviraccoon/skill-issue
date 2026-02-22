@@ -166,7 +166,7 @@ function drawPixelRoom(
 				drawBathroomPixel(ctx, f, baseColor, variants.bathroom);
 				break;
 			case "door":
-				drawDoorPixel(ctx, f, baseColor, variants.door);
+				drawDoorPixel(ctx, f, baseColor, variants.door, layout.doorSide);
 				break;
 		}
 
@@ -570,7 +570,13 @@ function drawBathroomPixel(
 	ctx.strokeRect(f.x + 0.5, f.y + 0.5, f.w - 1, f.h - 1);
 }
 
-function drawDoorPixel(ctx: Ctx, f: Rect, color: string, v: DoorVariant): void {
+function drawDoorPixel(
+	ctx: Ctx,
+	f: Rect,
+	color: string,
+	v: DoorVariant,
+	doorSide: "left" | "right",
+): void {
 	// Frame
 	ctx.fillStyle = darken(color, 0.3);
 	ctx.fillRect(f.x - 1, f.y, f.w + 2, f.h + 1);
@@ -619,9 +625,10 @@ function drawDoorPixel(ctx: Ctx, f: Rect, color: string, v: DoorVariant): void {
 		ctx.stroke();
 	}
 
-	// Handle
+	// Handle (faces room interior)
 	ctx.fillStyle = "#d4a030";
-	ctx.fillRect(f.x + 3, f.y + f.h * 0.5 - 1, 3, 4);
+	const handleX = doorSide === "left" ? f.x + f.w - 6 : f.x + 3;
+	ctx.fillRect(handleX, f.y + f.h * 0.5 - 1, 3, 4);
 
 	if (v.hasMat) {
 		ctx.fillStyle = hueShift("#887755", 0);
